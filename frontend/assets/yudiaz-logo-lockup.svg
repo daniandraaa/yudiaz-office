@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 300" width="100%" height="100%">
+  <defs>
+    <radialGradient id="c2bl-bg" cx="30%" cy="50%" r="75%">
+      <stop offset="0%" stop-color="#0e1017"/>
+      <stop offset="60%" stop-color="#08090c"/>
+      <stop offset="100%" stop-color="#030406"/>
+    </radialGradient>
+    <linearGradient id="c2bl-silver" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="60%" stop-color="#f8fafc"/>
+      <stop offset="100%" stop-color="#cbd5e1"/>
+    </linearGradient>
+    <linearGradient id="c2bl-divider" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#64748b" stop-opacity="0.1"/>
+    </linearGradient>
+    <filter id="c2bl-drop" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="300" rx="28" fill="url(#c2bl-bg)"/>
+
+  <!-- Left: The Monogram Mark (Scaled) -->
+  <g transform="translate(65, 45) scale(0.42)" filter="url(#c2bl-drop)">
+    <path d="M 118 100 L 182 100 L 236 218 Q 238 222 238 228 L 238 400 L 118 400 Z" fill="#ffffff"/>
+    <path d="M 264 400 L 264 228 Q 264 222 266 218 L 318 100 C 370 100, 412 158, 412 250 C 412 342, 370 400, 264 400 Z" fill="#ffffff"/>
+  </g>
+
+  <!-- Vertical Divider Line -->
+  <line x1="315" y1="65" x2="315" y2="235" stroke="url(#c2bl-divider)" stroke-width="1.5"/>
+
+  <!-- Right: Luxury Minimalist Typography -->
+  <g transform="translate(355, 0)">
+    <!-- Brand Headline: YUDIAZ -->
+    <text x="0" y="132" fill="url(#c2bl-silver)" 
+          font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" 
+          font-size="64" font-weight="800" letter-spacing="5">YUDIAZ</text>
+
+    <!-- Subtitle: CREATIVE STUDIO -->
+    <text x="3" y="174" fill="#94a3b8" 
+          font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" 
+          font-size="15" font-weight="600" letter-spacing="7.5">CREATIVE STUDIO</text>
+
+    <!-- Micro-Badge / Technical Architectural Tag -->
+    <g transform="translate(4, 206)">
+      <rect width="380" height="24" rx="4" fill="#141822" stroke="#242c3d" stroke-width="1"/>
+      <circle cx="12" cy="12" r="3" fill="#cbd5e1"/>
+      <text x="24" y="16" fill="#94a3b8" 
+            font-family="'JetBrains Mono', 'Fira Code', monospace" 
+            font-size="10.5" letter-spacing="1.5">NEGATIVE SPACE PORTAL // GESTALT MONOLITH</text>
+    </g>
+  </g>
+</svg>
