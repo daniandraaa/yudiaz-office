@@ -134,6 +134,7 @@ async def office_action(payload: OfficeActionRequest) -> OfficeStateResponse:
     - gather_war_room: Assemble all personnel in War Room Amphitheater
     - resume_deep_work: Return personnel to departmental workstations
     - trigger_sleep_cycle: Transition headquarters to rest and recharge pods
+    - trigger_recreation: Transition headquarters to recreation and studio break session
     """
     action = payload.action.strip().lower()
 
@@ -143,12 +144,14 @@ async def office_action(payload: OfficeActionRequest) -> OfficeStateResponse:
         return office_engine.resume_deep_work()
     elif action == "trigger_sleep_cycle":
         return office_engine.trigger_sleep_cycle()
+    elif action == "trigger_recreation":
+        return office_engine.trigger_recreation()
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=(
                 f"Unknown office action '{payload.action}'. "
-                "Supported: 'gather_war_room', 'resume_deep_work', 'trigger_sleep_cycle'."
+                "Supported: 'gather_war_room', 'resume_deep_work', 'trigger_sleep_cycle', 'trigger_recreation'."
             ),
         )
 

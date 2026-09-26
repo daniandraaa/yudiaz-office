@@ -113,15 +113,15 @@ async def test_list_and_get_rooms(async_client: AsyncClient):
     assert len(rooms) == 9
 
     expected_rooms = {
-        "room-ceo": ("CEO Executive Suite", "Executive", 4, [150.0, 150.0]),
-        "room-war": ("The War Room & Strategy Amphitheater", "Deliberation", 12, [450.0, 180.0]),
-        "room-dev": ("Engineering Workstations (Dev Core)", "Engineering", 6, [180.0, 450.0]),
-        "room-atelier": ("Architectural & Research Atelier", "R&D", 4, [450.0, 450.0]),
-        "room-creative": ("Creative Director Studio", "Creative", 4, [720.0, 180.0]),
-        "room-intel": ("Intelligence Radar NOC", "Operations", 4, [720.0, 450.0]),
-        "room-concierge": ("Executive Concierge & Pantry", "Hospitality", 6, [180.0, 720.0]),
-        "room-pods": ("Cyber Rest Pods & Zen Quarters", "Resting", 8, [450.0, 720.0]),
-        "room-server": ("Core Server & AI Gateway Vault", "Infrastructure", 4, [720.0, 720.0]),
+        "room-ceo": ("CEO Suite", "Executive", 6, [520.0, 340.0]),
+        "room-war": ("Conference Room", "Deliberation", 12, [1300.0, 290.0]),
+        "room-dev": ("Workstations", "Engineering", 6, [470.0, 840.0]),
+        "room-atelier": ("Research Library", "R&D", 8, [1300.0, 820.0]),
+        "room-creative": ("Creative Studio", "Creative", 6, [2080.0, 340.0]),
+        "room-intel": ("Radar NOC", "Operations", 6, [2130.0, 840.0]),
+        "room-concierge": ("Lounge & Ping-Pong", "Hospitality", 8, [520.0, 1350.0]),
+        "room-pods": ("Bedroom & Rest Pods", "Resting", 8, [1300.0, 1370.0]),
+        "room-server": ("Server Room", "Infrastructure", 4, [2080.0, 1350.0]),
     }
 
     room_map = {r["id"]: r for r in rooms}
@@ -141,10 +141,10 @@ async def test_list_and_get_rooms(async_client: AsyncClient):
     res_ceo = await async_client.get("/api/v1/rooms/room-ceo")
     assert res_ceo.status_code == 200
     ceo_data = res_ceo.json()
-    assert ceo_data["name"] == "CEO Executive Suite"
+    assert ceo_data["name"] == "CEO Suite"
     assert ceo_data["category"] == "Executive"
-    assert ceo_data["capacity"] == 4
-    assert ceo_data["center_coord"] == [150.0, 150.0]
+    assert ceo_data["capacity"] == 6
+    assert ceo_data["center_coord"] == [520.0, 340.0]
 
     # Query 404 room
     res_404 = await async_client.get("/api/v1/rooms/room-nonexistent")
@@ -355,6 +355,109 @@ async def test_resume_deep_work_action(async_client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_trigger_recreation_action(async_client: AsyncClient):
+    """Verify trigger_recreation protocol moves personnel to break activities."""
+    res = await async_client.post(
+        "/api/v1/office/action",
+        json={"action": "trigger_recreation"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["office_mode"] == OfficeMode.RECREATION.value
+
+    # Verify room occupants distribution
+    room_occupants = {r["id"]: r["current_occupants"] for r in data["rooms"]}
+    assert set(room_occupants["room-concierge"]) == {"idris", "mika", "elara", "senna", "jovan", "viktor"}
+    assert set(room_occupants["room-ceo"]) == {"dani", "raziel"}
+    assert set(room_occupants["room-atelier"]) == {"kael", "nara"}
+    assert len(room_occupants["room-war"]) == 0
+    assert len(room_occupants["room-dev"]) == 0
+    assert len(room_occupants["room-creative"]) == 0
+    assert len(room_occupants["room-intel"]) == 0
+    assert len(room_occupants["room-pods"]) == 0
+    assert len(room_occupants["room-server"]) == 0
+
+    # Verify agent tasks and assignments
+    agent_map = {a["id"]: a for a in data["agents"]}
+    assert agent_map["idris"]["position"]["room_id"] == "room-concierge"
+    assert agent_map["idris"]["current_task"] == "Ping-pong table match in Lounge"
+    assert agent_map["mika"]["position"]["room_id"] == "room-concierge"
+    assert agent_map["mika"]["current_task"] == "Ping-pong table match in Lounge"
+
+    assert agent_map["dani"]["position"]["room_id"] == "room-ceo"
+    assert agent_map["dani"]["current_task"] == "Executive lounge sofa discussing vision"
+    assert agent_map["raziel"]["position"]["room_id"] == "room-ceo"
+    assert agent_map["raziel"]["current_task"] == "Executive lounge sofa discussing vision"
+
+    assert agent_map["elara"]["position"]["room_id"] == "room-concierge"
+    assert agent_map["elara"]["current_task"] == "Pantry coffee bar serving refreshments"
+
+    assert agent_map["senna"]["position"]["room_id"] == "room-concierge"
+    assert agent_map["senna"]["current_task"] == "Lounge armchair sketching"
+
+    assert agent_map["jovan"]["position"]["room_id"] == "room-concierge"
+    assert agent_map["jovan"]["current_task"] == "Pantry snacks"
+
+    assert agent_map["kael"]["position"]["room_id"] == "room-atelier"
+    assert agent_map["kael"]["current_task"] == "Research library discussion"
+    assert agent_map["nara"]["position"]["room_id"] == "room-atelier"
+    assert agent_map["nara"]["current_task"] == "Research library discussion"
+
+    assert agent_map["viktor"]["position"]["room_id"] == "room-concierge"
+    assert agent_map["viktor"]["current_task"] == "Checking coffee machine / casual chat"
+
+    # All agents should have RESTING status
+    for agent in data["agents"]:
+        assert agent["status"] == AgentStatus.RESTING.value
+
+    # Verify audit log recorded
+    recent_acts = data["recent_activities"]
+    assert any(
+        "CEO triggered studio break & recreation session (ping-pong & lounge active)" in act["details"]
+        for act in recent_acts
+    )
+
+
+@pytest.mark.asyncio
+async def test_all_mode_transitions(async_client: AsyncClient):
+    """Verify state machine transitions seamlessly across all office modes."""
+    # 1. Start in NORMAL
+    res = await async_client.get("/api/v1/office/state")
+    assert res.json()["office_mode"] == OfficeMode.NORMAL.value
+
+    # 2. NORMAL -> WAR_ROOM
+    res = await async_client.post("/api/v1/office/action", json={"action": "gather_war_room"})
+    assert res.json()["office_mode"] == OfficeMode.WAR_ROOM.value
+
+    # 3. WAR_ROOM -> RECREATION
+    res = await async_client.post("/api/v1/office/action", json={"action": "trigger_recreation"})
+    data_rec = res.json()
+    assert data_rec["office_mode"] == OfficeMode.RECREATION.value
+    assert len([r for r in data_rec["rooms"] if r["id"] == "room-concierge"][0]["current_occupants"]) == 6
+
+    # 4. RECREATION -> REST_CYCLE
+    res = await async_client.post("/api/v1/office/action", json={"action": "trigger_sleep_cycle"})
+    data_sleep = res.json()
+    assert data_sleep["office_mode"] == OfficeMode.REST_CYCLE.value
+    assert len([r for r in data_sleep["rooms"] if r["id"] == "room-pods"][0]["current_occupants"]) == 10
+
+    # 5. REST_CYCLE -> NORMAL (resume deep work)
+    res = await async_client.post("/api/v1/office/action", json={"action": "resume_deep_work"})
+    data_norm = res.json()
+    assert data_norm["office_mode"] == OfficeMode.NORMAL.value
+    agent_map = {a["id"]: a for a in data_norm["agents"]}
+    assert agent_map["idris"]["position"]["room_id"] == "room-dev"
+    assert agent_map["idris"]["status"] == AgentStatus.WORKING.value
+
+    # 6. NORMAL -> RECREATION -> NORMAL
+    res = await async_client.post("/api/v1/office/action", json={"action": "trigger_recreation"})
+    assert res.json()["office_mode"] == OfficeMode.RECREATION.value
+    res = await async_client.post("/api/v1/office/action", json={"action": "resume_deep_work"})
+    assert res.json()["office_mode"] == OfficeMode.NORMAL.value
+
+
+@pytest.mark.asyncio
 async def test_unknown_office_action(async_client: AsyncClient):
     """Verify unknown office macro action returns 400."""
     res = await async_client.post(
@@ -363,6 +466,7 @@ async def test_unknown_office_action(async_client: AsyncClient):
     )
     assert res.status_code == 400
     assert "unknown office action" in res.json()["detail"].lower()
+    assert "trigger_recreation" in res.json()["detail"]
 
 
 # ============================================================================
@@ -491,6 +595,13 @@ def test_office_engine_direct_methods():
     activities = engine.get_activities(limit=50)
     assert len(activities) == 50
     assert activities[0].action == "BENCHMARK_TICK_119"
+
+    # Test direct trigger_recreation method
+    rec_state = engine.trigger_recreation()
+    assert rec_state.office_mode == OfficeMode.RECREATION
+    assert len([r for r in rec_state.rooms if r.id == "room-concierge"][0].current_occupants) == 6
+    assert len([r for r in rec_state.rooms if r.id == "room-ceo"][0].current_occupants) == 2
+    assert len([r for r in rec_state.rooms if r.id == "room-atelier"][0].current_occupants) == 2
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,9 @@
-"""Data models and schemas for Yudiaz Virtual HQ.
+"""Data models and schemas for Yudiaz Virtual HQ 3D Building Diorama.
 
-Defines Pydantic representations for agents, rooms, activities, telemetry,
-and API request/response contracts.
+Defines Pydantic representations for agents, 3D building diorama rooms
+(CEO Suite, Conference Room, Workstations, Research Library, Creative Studio,
+Radar NOC, Lounge & Ping-Pong, Bedroom & Rest Pods, Server Room),
+activities, telemetry, operating modes, and API request/response contracts.
 """
 
 from datetime import datetime, timezone
@@ -27,6 +29,7 @@ class OfficeMode(str, Enum):
     NORMAL = "NORMAL"
     WAR_ROOM = "WAR_ROOM"
     REST_CYCLE = "REST_CYCLE"
+    RECREATION = "RECREATION"
 
 
 class AgentPosition(BaseModel):
@@ -62,22 +65,30 @@ class AgentInfo(BaseModel):
 
 
 class RoomInfo(BaseModel):
-    """Physical zone or chamber definition in the virtual studio."""
+    """Physical zone or chamber definition in the virtual studio 3D building diorama.
+
+    Supports building diorama rooms: CEO Suite, Conference Room, Workstations,
+    Research Library, Creative Studio, Radar NOC, Lounge & Ping-Pong,
+    Bedroom & Rest Pods, Server Room.
+    """
 
     id: str = Field(..., description="Unique room identifier (e.g. 'room-ceo')")
-    name: str = Field(..., description="Display name of the room")
+    name: str = Field(
+        ...,
+        description="Display name of the room (e.g. 'CEO Suite', 'Conference Room', 'Workstations', 'Research Library', 'Creative Studio', 'Radar NOC', 'Lounge & Ping-Pong', 'Bedroom & Rest Pods', 'Server Room')",
+    )
     category: str = Field(..., description="Room classification (e.g. 'Executive', 'Engineering')")
     capacity: int = Field(default=4, description="Maximum agent seating capacity")
-    floor: int = Field(default=1, description="Floor level")
+    floor: int = Field(default=1, description="Floor level in 3D building diorama")
     dimensions: tuple[float, float] = Field(
-        default=(240.0, 220.0),
-        description="Physical dimensions as (width, height)",
+        default=(540.0, 290.0),
+        description="Physical dimensions matching 3D building diorama layout as (width, height)",
     )
     center_coord: tuple[float, float] = Field(
         ...,
-        description="Anchor center coordinate (x, y)",
+        description="Anchor center coordinate (x, y) in 3D building diorama layout",
     )
-    description: str = Field(default="", description="Atmospheric and operational description")
+    description: str = Field(default="", description="Atmospheric and operational description of the diorama room")
     current_occupants: list[str] = Field(
         default_factory=list,
         description="List of agent IDs currently in this room",
@@ -158,7 +169,7 @@ class OfficeStateResponse(BaseModel):
     )
     office_mode: OfficeMode = Field(
         default=OfficeMode.NORMAL,
-        description="Active operating mode ('NORMAL', 'WAR_ROOM', 'REST_CYCLE')",
+        description="Active operating mode ('NORMAL', 'WAR_ROOM', 'REST_CYCLE', 'RECREATION')",
     )
     agents: list[AgentInfo] = Field(default_factory=list)
     rooms: list[RoomInfo] = Field(default_factory=list)
@@ -198,6 +209,6 @@ class OfficeActionRequest(BaseModel):
 
     action: str = Field(
         ...,
-        description="Office action ('gather_war_room', 'resume_deep_work', 'trigger_sleep_cycle')",
+        description="Office action ('gather_war_room', 'resume_deep_work', 'trigger_sleep_cycle', 'trigger_recreation')",
     )
     details: Optional[str] = Field(default=None, description="Optional command context")

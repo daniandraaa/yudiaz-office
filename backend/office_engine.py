@@ -51,106 +51,106 @@ class OfficeEngine:
         self._seed_initial_activity()
 
     def _initialize_rooms(self) -> None:
-        """Seed the 9 distinct physical architectural zones."""
+        """Seed the 9 distinct physical architectural zones matching the 3D diorama building layout."""
         room_configs = [
             {
                 "id": "room-ceo",
-                "name": "CEO Executive Suite",
+                "name": "CEO Suite",
                 "category": "Executive",
-                "capacity": 4,
+                "capacity": 6,
                 "floor": 1,
-                "dimensions": (240.0, 220.0),
-                "center_coord": (150.0, 150.0),
-                "description": "Private executive command chamber for high-level studio governance and strategic direction.",
-                "status_accent": "#FFD700",  # Cyber Gold
+                "dimensions": (540.0, 290.0),
+                "center_coord": (520.0, 340.0),
+                "description": "CEO Suite - Private executive command chamber for high-level studio governance, strategic vision, and private executive lounge.",
+                "status_accent": "#10B981",  # Cyber Emerald
             },
             {
                 "id": "room-war",
-                "name": "The War Room & Strategy Amphitheater",
+                "name": "Conference Room",
                 "category": "Deliberation",
                 "capacity": 12,
                 "floor": 1,
-                "dimensions": (320.0, 260.0),
-                "center_coord": (450.0, 180.0),
-                "description": "All-hands high-stakes strategy amphitheater with holographic projection table.",
-                "status_accent": "#FF0055",  # Crimson Deliberation
-            },
-            {
-                "id": "room-dev",
-                "name": "Engineering Workstations (Dev Core)",
-                "category": "Engineering",
-                "capacity": 6,
-                "floor": 1,
-                "dimensions": (260.0, 240.0),
-                "center_coord": (180.0, 450.0),
-                "description": "High-density developer workstation cluster powering core microservices and neural backends.",
-                "status_accent": "#00FF66",  # Matrix Emerald
-            },
-            {
-                "id": "room-atelier",
-                "name": "Architectural & Research Atelier",
-                "category": "R&D",
-                "capacity": 4,
-                "floor": 1,
-                "dimensions": (260.0, 240.0),
-                "center_coord": (450.0, 450.0),
-                "description": "Quiet zone for multi-agent system design, academic literature synthesis, and patent exploration.",
-                "status_accent": "#00DFD8",  # Neon Teal
+                "dimensions": (580.0, 310.0),
+                "center_coord": (1300.0, 290.0),
+                "description": "Conference Room - All-hands high-stakes strategy amphitheater with circular conference table and holographic 3D monogram projection.",
+                "status_accent": "#F59E0B",  # Amber Deliberation
             },
             {
                 "id": "room-creative",
-                "name": "Creative Director Studio",
+                "name": "Creative Studio",
                 "category": "Creative",
-                "capacity": 4,
+                "capacity": 6,
                 "floor": 1,
-                "dimensions": (240.0, 220.0),
-                "center_coord": (720.0, 180.0),
-                "description": "Visual prototyping suite for cyber-luxury design tokens, UI canvas assets, and spatial aesthetics.",
-                "status_accent": "#FF0080",  # Neon Magenta
+                "dimensions": (540.0, 290.0),
+                "center_coord": (2080.0, 340.0),
+                "description": "Creative Studio - Visual prototyping suite for cyber-luxury design tokens, UI canvas assets, and 3D wireframe polyhedra.",
+                "status_accent": "#A855F7",  # Neon Purple
+            },
+            {
+                "id": "room-dev",
+                "name": "Workstations",
+                "category": "Engineering",
+                "capacity": 6,
+                "floor": 1,
+                "dimensions": (560.0, 300.0),
+                "center_coord": (470.0, 840.0),
+                "description": "Workstations - High-density developer workstation cluster powering core microservices, neural pipelines, and streaming engines.",
+                "status_accent": "#00F2FE",  # Matrix Cyan
+            },
+            {
+                "id": "room-atelier",
+                "name": "Research Library",
+                "category": "R&D",
+                "capacity": 8,
+                "floor": 1,
+                "dimensions": (580.0, 310.0),
+                "center_coord": (1300.0, 820.0),
+                "description": "Research Library - Architectural R&D atelier and quiet zone for multi-agent system design, academic literature synthesis, and patent exploration.",
+                "status_accent": "#6366F1",  # Iris Synthesis
             },
             {
                 "id": "room-intel",
-                "name": "Intelligence Radar NOC",
+                "name": "Radar NOC",
                 "category": "Operations",
-                "capacity": 4,
+                "capacity": 6,
                 "floor": 1,
-                "dimensions": (240.0, 220.0),
-                "center_coord": (720.0, 450.0),
-                "description": "Network operations center monitoring academic pulses, campus radar, and competitive intel.",
-                "status_accent": "#39FF14",  # Radar Lime
+                "dimensions": (560.0, 300.0),
+                "center_coord": (2130.0, 840.0),
+                "description": "Radar NOC - Network operations center monitoring academic pulses, campus radar, and competitive intel.",
+                "status_accent": "#10B981",  # Radar Emerald
             },
             {
                 "id": "room-concierge",
-                "name": "Executive Concierge & Pantry",
+                "name": "Lounge & Ping-Pong",
                 "category": "Hospitality",
-                "capacity": 6,
+                "capacity": 8,
                 "floor": 1,
-                "dimensions": (240.0, 240.0),
-                "center_coord": (180.0, 720.0),
-                "description": "Hospitality and logistical nexus managing daily executive flows, dining, and VIP guest welcome.",
-                "status_accent": "#E0AAFF",  # Lavender Glow
+                "dimensions": (540.0, 290.0),
+                "center_coord": (520.0, 1350.0),
+                "description": "Lounge & Ping-Pong - Executive concierge, pantry coffee bar, recreation area with championship ping-pong table and lounge seating.",
+                "status_accent": "#F59E0B",  # Warm Amber Glow
             },
             {
                 "id": "room-pods",
-                "name": "Cyber Rest Pods & Zen Quarters",
+                "name": "Bedroom & Rest Pods",
                 "category": "Resting",
                 "capacity": 8,
                 "floor": 1,
-                "dimensions": (280.0, 240.0),
-                "center_coord": (450.0, 720.0),
-                "description": "Sensory deprivation pods and restorative bio-rhythm recharging stations.",
-                "status_accent": "#7928CA",  # Deep Indigo Zen
+                "dimensions": (580.0, 310.0),
+                "center_coord": (1300.0, 1370.0),
+                "description": "Bedroom & Rest Pods - Biometric rest quarters, sensory deprivation pods, and restorative bio-rhythm recharging stations.",
+                "status_accent": "#38BDF8",  # Cyber Blue Rest
             },
             {
                 "id": "room-server",
-                "name": "Core Server & AI Gateway Vault",
+                "name": "Server Room",
                 "category": "Infrastructure",
                 "capacity": 4,
                 "floor": 1,
-                "dimensions": (240.0, 240.0),
-                "center_coord": (720.0, 720.0),
-                "description": "Cold-aisle fortified data vault housing the high-availability neural gateway and secure HSMs.",
-                "status_accent": "#0070F3",  # Cobalt Vault
+                "dimensions": (540.0, 290.0),
+                "center_coord": (2080.0, 1350.0),
+                "description": "Server Room - Cold-aisle fortified data vault housing core servers, high-availability neural gateway, and secure HSMs.",
+                "status_accent": "#EF4444",  # Crimson Vault
             },
         ]
 
@@ -576,6 +576,103 @@ class OfficeEngine:
             details="Headquarters rest cycle engaged. Ambient lighting dimmed to bioluminescent indigo.",
             severity="SYSTEM",
             room_id="room-pods",
+        )
+
+        return self.get_state()
+
+    def trigger_recreation(self) -> OfficeStateResponse:
+        """Trigger headquarters-wide break and recreation session.
+
+        Sets office mode to RECREATION, assigns agents to recreational activities:
+        - Idris & Mika: ping-pong table match in Lounge
+        - Dani & Raziel: executive lounge sofa discussing vision
+        - Elara: pantry coffee bar serving refreshments
+        - Senna: lounge armchair sketching
+        - Jovan: pantry snacks
+        - Kael & Nara: research library discussion
+        - Viktor: checking coffee machine / casual chat
+        """
+        self._office_mode = OfficeMode.RECREATION
+
+        # Clear occupants across all rooms
+        for room in self.rooms.values():
+            room.current_occupants.clear()
+
+        recreation_assignments = {
+            "idris": {
+                "room": "room-concierge",
+                "task": "Ping-pong table match in Lounge",
+                "tool": "Ping-Pong Paddle",
+            },
+            "mika": {
+                "room": "room-concierge",
+                "task": "Ping-pong table match in Lounge",
+                "tool": "Ping-Pong Paddle",
+            },
+            "dani": {
+                "room": "room-ceo",
+                "task": "Executive lounge sofa discussing vision",
+                "tool": "Vision Roadmap",
+            },
+            "raziel": {
+                "room": "room-ceo",
+                "task": "Executive lounge sofa discussing vision",
+                "tool": "Vision Roadmap",
+            },
+            "elara": {
+                "room": "room-concierge",
+                "task": "Pantry coffee bar serving refreshments",
+                "tool": "Italian Espresso Bar",
+            },
+            "senna": {
+                "room": "room-concierge",
+                "task": "Lounge armchair sketching",
+                "tool": "Digital Sketchpad",
+            },
+            "jovan": {
+                "room": "room-concierge",
+                "task": "Pantry snacks",
+                "tool": "Snack Inventory",
+            },
+            "kael": {
+                "room": "room-atelier",
+                "task": "Research library discussion",
+                "tool": "Knowledge Archive",
+            },
+            "nara": {
+                "room": "room-atelier",
+                "task": "Research library discussion",
+                "tool": "Knowledge Archive",
+            },
+            "viktor": {
+                "room": "room-concierge",
+                "task": "Checking coffee machine / casual chat",
+                "tool": "Espresso Diagnostics",
+            },
+        }
+
+        for agent_id, info in recreation_assignments.items():
+            agent = self.agents.get(agent_id)
+            if not agent:
+                continue
+            target_room = self.rooms[info["room"]]
+            target_room.current_occupants.append(agent_id)
+
+            agent.status = AgentStatus.RESTING
+            agent.current_task = info["task"]
+            agent.active_tool = info["tool"]
+            agent.updated_at = datetime.now(timezone.utc).isoformat()
+
+        # Reposition all occupants in rooms
+        for room_id in self.rooms:
+            self._reposition_room_occupants(room_id)
+
+        self.add_activity(
+            agent_id="dani",
+            action="RECREATION_TRIGGERED",
+            details="CEO triggered studio break & recreation session (ping-pong & lounge active)",
+            severity="INFO",
+            room_id="room-concierge",
         )
 
         return self.get_state()
