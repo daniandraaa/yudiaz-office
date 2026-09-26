@@ -70,7 +70,7 @@ async def test_health_endpoints(async_client: AsyncClient):
     data_root = res_root.json()
     assert data_root["status"] == "ok"
     assert data_root["active_agents"] == 11
-    assert data_root["total_rooms"] == 9
+    assert data_root["total_rooms"] == 11
 
     # API v1 route
     res_v1 = await async_client.get("/api/v1/health")
@@ -86,14 +86,14 @@ async def test_health_endpoints(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_get_office_state(async_client: AsyncClient):
-    """Verify full spatial state contains 11 agents, 9 rooms, and valid telemetry."""
+    """Verify full spatial state contains 11 agents, 11 rooms, and valid telemetry."""
     res = await async_client.get("/api/v1/office/state")
     assert res.status_code == 200
     data = res.json()
 
     assert data["office_mode"] == OfficeMode.NORMAL.value
     assert len(data["agents"]) == 11
-    assert len(data["rooms"]) == 9
+    assert len(data["rooms"]) == 11
     assert "server_telemetry" in data
     assert "uptime_seconds" in data["server_telemetry"]
     assert "cpu_load_percent" in data["server_telemetry"]
@@ -106,14 +106,16 @@ async def test_get_office_state(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_list_and_get_rooms(async_client: AsyncClient):
-    """Verify listing all 9 rooms and querying individual rooms by id."""
+    """Verify listing all 11 rooms and querying individual rooms by id."""
     res = await async_client.get("/api/v1/rooms")
     assert res.status_code == 200
     rooms = res.json()
-    assert len(rooms) == 9
+    assert len(rooms) == 11
 
     expected_rooms = {
         "room-ceo": ("CEO Suite", "Executive", 6, [520.0, 340.0]),
+        "room-cto": ("CTO Executive Suite", "Engineering Leadership", 4, [520.0, 1850.0]),
+        "room-pa": ("Executive Assistant Office", "Executive Support", 4, [1300.0, 1850.0]),
         "room-war": ("Conference Room", "Deliberation", 12, [1300.0, 290.0]),
         "room-dev": ("Workstations", "Engineering", 6, [470.0, 840.0]),
         "room-atelier": ("Research Library", "R&D", 8, [1300.0, 820.0]),
@@ -146,6 +148,20 @@ async def test_list_and_get_rooms(async_client: AsyncClient):
     assert ceo_data["capacity"] == 6
     assert ceo_data["center_coord"] == [520.0, 340.0]
 
+    # Query room-cto
+    res_cto = await async_client.get("/api/v1/rooms/room-cto")
+    assert res_cto.status_code == 200
+    cto_data = res_cto.json()
+    assert cto_data["name"] == "CTO Executive Suite"
+    assert cto_data["category"] == "Engineering Leadership"
+
+    # Query room-pa
+    res_pa = await async_client.get("/api/v1/rooms/room-pa")
+    assert res_pa.status_code == 200
+    pa_data = res_pa.json()
+    assert pa_data["name"] == "Executive Assistant Office"
+    assert pa_data["category"] == "Executive Support"
+
     # Query 404 room
     res_404 = await async_client.get("/api/v1/rooms/room-nonexistent")
     assert res_404.status_code == 404
@@ -167,14 +183,14 @@ async def test_list_and_get_agents(async_client: AsyncClient):
     agent_map = {a["id"]: a for a in agents}
     expected_agents = [
         ("dani", "Daniandra Prayudisty", "Founder & CEO", "Executive", "room-ceo", "WORKING", "Strategic Direction & Studio Vision"),
-        ("raziel", "Raziel Hendrix", "CTO & Lead Orchestrator", "Engineering Leadership", "room-ceo", "WORKING", "System Orchestration & Cloud Infrastructure"),
+        ("raziel", "Raziel Hendrix", "CTO & Lead Orchestrator", "Engineering Leadership", "room-cto", "WORKING", "System Orchestration & Cloud Infrastructure"),
         ("kael", "Kael Ashford", "Lead Architect", "Architecture", "room-atelier", "RESEARCHING", "Distributed Multi-Agent Architecture Specs"),
         ("nara", "Nara Vasquez", "Lead Researcher", "R&D", "room-atelier", "RESEARCHING", "Telkom University Thesis Literature & arXiv Synthesis"),
         ("senna", "Senna Louviere", "Creative Director", "Design", "room-creative", "WORKING", "Cyber-Luxury Isometric Visual Tokens"),
         ("idris", "Idris Nakamura", "Senior Developer", "Engineering", "room-dev", "WORKING", "FastAPI Telemetry Engine & Socket Streamer"),
         ("mika", "Mika Stellan", "Frontend Engineer", "Engineering", "room-dev", "WORKING", "Isometric Canvas 2.5D Rendering Engine"),
         ("viktor", "Viktor Moreau", "Lead QA & Security Engineer", "QA & Sec", "room-server", "WORKING", "Automated E2E Suite & 4-Layer Defense Audit"),
-        ("elara", "Elara Sinclair", "Personal Assistant CEO", "Executive Support", "room-concierge", "WORKING", "Daily Executive Schedule & Meal Logistics"),
+        ("elara", "Elara Sinclair", "Personal Assistant to CEO", "Executive Support", "room-pa", "WORKING", "Executive Calendar, Briefing Prep & Priority Logistics"),
         ("jovan", "Jovan Aritza", "Intelligence Officer", "Field Intelligence", "room-intel", "STANDBY", "Telkom University Campus Event Radar"),
         ("daffa", "Daffa", "CEO Office", "Executive Office", "room-ceo", "WORKING", "Executive Operations & Strategic Alignment"),
     ]
@@ -268,18 +284,20 @@ async def test_agent_action_tool_and_task_in_place(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_rooms_initial_occupants_distribution(async_client: AsyncClient):
-    """Verify initial baseline distribution of occupants across the 9 rooms."""
+    """Verify initial baseline distribution of occupants across the 11 rooms."""
     res = await async_client.get("/api/v1/rooms")
     assert res.status_code == 200
     rooms = {r["id"]: r["current_occupants"] for r in res.json()}
 
-    assert set(rooms["room-ceo"]) == {"dani", "raziel", "daffa"}
+    assert set(rooms["room-ceo"]) == {"dani", "daffa"}
+    assert set(rooms["room-cto"]) == {"raziel"}
+    assert set(rooms["room-pa"]) == {"elara"}
     assert set(rooms["room-atelier"]) == {"kael", "nara"}
     assert set(rooms["room-dev"]) == {"idris", "mika"}
     assert set(rooms["room-creative"]) == {"senna"}
     assert set(rooms["room-intel"]) == {"jovan"}
-    assert set(rooms["room-concierge"]) == {"elara"}
     assert set(rooms["room-server"]) == {"viktor"}
+    assert len(rooms["room-concierge"]) == 0
     assert len(rooms["room-war"]) == 0
     assert len(rooms["room-pods"]) == 0
 
@@ -344,14 +362,15 @@ async def test_resume_deep_work_action(async_client: AsyncClient):
     assert data["office_mode"] == OfficeMode.NORMAL.value
     agent_map = {a["id"]: a for a in data["agents"]}
     assert agent_map["dani"]["position"]["room_id"] == "room-ceo"
-    assert agent_map["raziel"]["position"]["room_id"] == "room-ceo"
+    assert agent_map["daffa"]["position"]["room_id"] == "room-ceo"
+    assert agent_map["raziel"]["position"]["room_id"] == "room-cto"
+    assert agent_map["elara"]["position"]["room_id"] == "room-pa"
     assert agent_map["kael"]["position"]["room_id"] == "room-atelier"
     assert agent_map["nara"]["position"]["room_id"] == "room-atelier"
     assert agent_map["senna"]["position"]["room_id"] == "room-creative"
     assert agent_map["idris"]["position"]["room_id"] == "room-dev"
     assert agent_map["mika"]["position"]["room_id"] == "room-dev"
     assert agent_map["viktor"]["position"]["room_id"] == "room-server"
-    assert agent_map["elara"]["position"]["room_id"] == "room-concierge"
     assert agent_map["jovan"]["position"]["room_id"] == "room-intel"
 
 
@@ -392,7 +411,7 @@ async def test_trigger_recreation_action(async_client: AsyncClient):
     assert agent_map["raziel"]["current_task"] == "Executive lounge sofa discussing vision"
 
     assert agent_map["elara"]["position"]["room_id"] == "room-concierge"
-    assert agent_map["elara"]["current_task"] == "Pantry coffee bar serving refreshments"
+    assert agent_map["elara"]["current_task"] == "Espresso break & casual executive chat"
 
     assert agent_map["senna"]["position"]["room_id"] == "room-concierge"
     assert agent_map["senna"]["current_task"] == "Lounge armchair sketching"
@@ -577,7 +596,7 @@ def test_office_engine_direct_methods():
     engine = OfficeEngine()
     state = engine.get_state()
     assert len(state.agents) == 11
-    assert len(state.rooms) == 9
+    assert len(state.rooms) == 11
 
     # Test seat position distribution
     room = engine.rooms["room-dev"]
@@ -621,3 +640,158 @@ async def test_simulation_tick_and_lifecycle():
     await engine.stop_simulation()
     assert engine._is_running is False
     assert engine._simulation_task is None
+
+
+# ============================================================================
+# 13. Autonomous Studio Simulation Engine Tests
+# ============================================================================
+
+def test_autonomous_council_meeting_simulation():
+    """Verify autonomous council convening in War Room with explicit leadership logs."""
+    engine = OfficeEngine()
+    engine.resume_deep_work()
+
+    # 1. First council: CEO Daniandra leads
+    engine._simulate_tick(force_event="council")
+    assert engine._council_active is True
+    assert len(engine.rooms["room-war"].current_occupants) == 11
+
+    # Check leadership log explicitly mentions CEO Daniandra is leading the meeting
+    council_logs = [a for a in engine.get_activities(limit=10) if a.action == "COUNCIL_CONVENED"]
+    assert len(council_logs) >= 1
+    first_log = council_logs[0]
+    assert first_log.agent_id == "dani"
+    assert "CEO Daniandra is leading the meeting" in first_log.details
+
+    # Verify all agents are in meeting status
+    for agent in engine.agents.values():
+        assert agent.position.room_id == "room-war"
+        assert agent.status == AgentStatus.MEETING
+
+    # Advance ticks to complete meeting duration (4 ticks)
+    for _ in range(4):
+        engine._simulate_tick()
+
+    # Verify employees naturally returned to their designated workstations
+    assert engine._council_active is False
+    assert len(engine.rooms["room-war"].current_occupants) == 0
+    assert engine.agents["dani"].position.room_id == "room-ceo"
+    assert engine.agents["daffa"].position.room_id == "room-ceo"
+    assert engine.agents["raziel"].position.room_id == "room-cto"
+    assert engine.agents["elara"].position.room_id == "room-pa"
+    assert engine.agents["idris"].position.room_id == "room-dev"
+    assert engine.agents["mika"].position.room_id == "room-dev"
+
+    # Verify council conclusion audit log
+    concluded_logs = [a for a in engine.get_activities(limit=10) if a.action == "COUNCIL_CONCLUDED"]
+    assert len(concluded_logs) >= 1
+
+    # 2. Second council: Daffa (CEO Office) leads
+    engine._simulate_tick(force_event="council")
+    assert engine._council_active is True
+    daffa_logs = [a for a in engine.get_activities(limit=5) if a.action == "COUNCIL_CONVENED"]
+    assert len(daffa_logs) >= 1
+    assert daffa_logs[0].agent_id == "daffa"
+    assert "Daffa (CEO Office) is leading the meeting" in daffa_logs[0].details
+
+
+def test_autonomous_ping_pong_simulation():
+    """Verify autonomous ping-pong breaks in room-concierge and natural return."""
+    engine = OfficeEngine()
+    engine.resume_deep_work()
+
+    # Trigger ping-pong break
+    engine._simulate_tick(force_event="ping_pong")
+
+    # Check that 2 employees moved to room-concierge
+    concierge_occupants = engine.rooms["room-concierge"].current_occupants
+    assert len(concierge_occupants) == 2
+    for p_id in concierge_occupants:
+        agent = engine.agents[p_id]
+        assert agent.position.room_id == "room-concierge"
+        assert agent.status == AgentStatus.RESTING
+        assert "ping-pong" in agent.current_task.lower()
+        assert agent.active_tool == "Ping-Pong Paddle"
+
+    # Check activity log emitted
+    pingpong_logs = [a for a in engine.get_activities(limit=5) if a.action == "PING_PONG_MATCH"]
+    assert len(pingpong_logs) >= 1
+    assert "play ping-pong in room-concierge" in pingpong_logs[0].details
+
+    # Advance ticks for duration (3 ticks)
+    for _ in range(3):
+        engine._simulate_tick()
+
+    # Verify both returned to workstations for deep focus
+    assert len(engine.rooms["room-concierge"].current_occupants) == 0
+    return_logs = [a for a in engine.get_activities(limit=10) if a.action == "DEEP_WORK_RETURN"]
+    assert len(return_logs) >= 2
+
+
+def test_autonomous_coffee_and_pod_simulation():
+    """Verify autonomous lounge coffee breaks and rest pod sleep/recovery cycles."""
+    engine = OfficeEngine()
+    engine.resume_deep_work()
+
+    # 1. Coffee break in Lounge
+    engine._simulate_tick(force_event="coffee")
+    assert len(engine.rooms["room-concierge"].current_occupants) >= 1
+    coffee_logs = [a for a in engine.get_activities(limit=5) if a.action == "COFFEE_BREAK"]
+    assert len(coffee_logs) >= 1
+    assert "get coffee" in coffee_logs[0].details
+
+    # Advance 2 ticks to return from coffee
+    for _ in range(2):
+        engine._simulate_tick()
+    assert len(engine.rooms["room-concierge"].current_occupants) == 0
+
+    # 2. Rest pod sleep/recovery in room-pods
+    engine._simulate_tick(force_event="pod")
+    assert len(engine.rooms["room-pods"].current_occupants) >= 1
+    pod_logs = [a for a in engine.get_activities(limit=5) if a.action == "POD_RECOVERY"]
+    assert len(pod_logs) >= 1
+    assert "sleep and" in pod_logs[0].details
+
+    # Advance 3 ticks to return from pods
+    for _ in range(3):
+        engine._simulate_tick()
+    assert len(engine.rooms["room-pods"].current_occupants) == 0
+
+
+def test_autonomous_natural_schedule_progression():
+    """Verify the autonomous simulation advances through natural organic schedule."""
+    engine = OfficeEngine()
+    engine.resume_deep_work()
+
+    # Advance 40 simulation ticks and observe spontaneous events
+    for _ in range(40):
+        engine._simulate_tick()
+
+    assert engine._sim_ticks == 40
+    activities = engine.get_activities(limit=100)
+    actions = {a.action for a in activities}
+
+    # Should have triggered council, ping pong, coffee, pods, return to deep work, and ambient actions
+    assert "COUNCIL_CONVENED" in actions
+    assert "PING_PONG_MATCH" in actions
+    assert "COFFEE_BREAK" in actions
+    assert "POD_RECOVERY" in actions
+    assert "DEEP_WORK_RETURN" in actions
+
+
+def test_autonomous_sse_stream_broadcast():
+    """Verify each simulation tick broadcasts updated office state over SSE queue."""
+    engine = OfficeEngine()
+    q = engine.subscribe()
+    assert q.qsize() == 0
+
+    engine._simulate_tick()
+    assert q.qsize() >= 1
+
+    event_payload = q.get_nowait()
+    data = json.loads(event_payload)
+    assert len(data["agents"]) == 11
+    assert len(data["rooms"]) == 11
+    assert data["server_telemetry"]["sim_ticks"] == 1
+
+    engine.unsubscribe(q)

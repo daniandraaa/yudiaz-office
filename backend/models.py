@@ -1,8 +1,9 @@
 """Data models and schemas for Yudiaz Virtual HQ 3D Building Diorama.
 
 Defines Pydantic representations for agents, 3D building diorama rooms
-(CEO Suite, Conference Room, Workstations, Research Library, Creative Studio,
-Radar NOC, Lounge & Ping-Pong, Bedroom & Rest Pods, Server Room),
+(CEO Suite, CTO Executive Suite, Executive Assistant Office, Conference Room,
+Workstations, Research Library, Creative Studio, Radar NOC, Lounge & Ping-Pong,
+Bedroom & Rest Pods, Server Room),
 activities, telemetry, operating modes, and API request/response contracts.
 """
 
@@ -67,7 +68,8 @@ class AgentInfo(BaseModel):
 class RoomInfo(BaseModel):
     """Physical zone or chamber definition in the virtual studio 3D building diorama.
 
-    Supports building diorama rooms: CEO Suite, Conference Room, Workstations,
+    Supports building diorama rooms: CEO Suite, CTO Executive Suite,
+    Executive Assistant Office, Conference Room, Workstations,
     Research Library, Creative Studio, Radar NOC, Lounge & Ping-Pong,
     Bedroom & Rest Pods, Server Room.
     """
@@ -154,8 +156,8 @@ class ServerTelemetry(BaseModel):
     uptime_seconds: float = Field(default=0.0)
     cpu_load_percent: float = Field(default=0.0)
     memory_load_mb: float = Field(default=0.0)
-    active_agents: int = Field(default=10)
-    total_rooms: int = Field(default=9)
+    active_agents: int = Field(default=11)
+    total_rooms: int = Field(default=11)
     sim_ticks: int = Field(default=0)
     active_stream_clients: int = Field(default=0)
 

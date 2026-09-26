@@ -261,35 +261,26 @@
     </div>
   </header>
 
-  <!-- BOTTOM FLOATING PILL DOCK (Matching Reference Screenshot) -->
+  <!-- BOTTOM FLOATING PILL DOCK (Autonomous Multi-Agent Engine) -->
   <footer class="fixed bottom-6 left-0 right-0 z-30 flex flex-col items-center pointer-events-none px-4 gap-2.5">
     
-    <!-- Center Floating Pill Dock -->
-    <div class="pointer-events-auto glass-dock rounded-full p-2 flex items-center gap-1.5 sm:gap-2 shadow-2xl max-w-full overflow-x-auto border border-slate-700/60">
+    <!-- Center Floating Pill Dock (Autonomous AI Engine HUD) -->
+    <div class="pointer-events-auto glass-dock rounded-full p-2 flex items-center gap-1.5 sm:gap-2.5 shadow-2xl max-w-full overflow-x-auto border border-slate-700/60">
       
-      <!-- Mode: Deep Work -->
-      <button id="btn-mode-deepwork" onclick="window.YudiazHQ.setMode('deep_work')" class="glass-dock-btn active flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold text-slate-200 border border-transparent">
-        <span class="text-sm">💻</span>
-        <span class="hidden sm:inline">Deep Work</span>
-      </button>
+      <!-- Autonomous Simulation Pill Badge -->
+      <div class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-950/70 border border-emerald-500/40 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
+        <span class="relative flex h-2.5 w-2.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+        </span>
+        <span class="text-xs font-mono font-bold tracking-wider uppercase text-emerald-400 whitespace-nowrap">● AUTONOMOUS AI STUDIO ENGINE: ACTIVE</span>
+      </div>
 
-      <!-- Mode: War Room -->
-      <button id="btn-mode-warroom" onclick="window.YudiazHQ.setMode('war_room')" class="glass-dock-btn flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold text-slate-200 border border-transparent">
-        <span class="text-sm">🤝</span>
-        <span class="hidden sm:inline">War Room</span>
-      </button>
-
-      <!-- Mode: Ping-Pong Break -->
-      <button id="btn-mode-pingpong" onclick="window.YudiazHQ.setMode('ping_pong')" class="glass-dock-btn flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold text-slate-200 border border-transparent">
-        <span class="text-sm">🏓</span>
-        <span class="hidden sm:inline">Ping-Pong Break</span>
-      </button>
-
-      <!-- Mode: Kamar Tidur / Sleep -->
-      <button id="btn-mode-sleep" onclick="window.YudiazHQ.setMode('sleep')" class="glass-dock-btn flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold text-slate-200 border border-transparent">
-        <span class="text-sm">💤</span>
-        <span class="hidden sm:inline">Kamar Tidur</span>
-      </button>
+      <!-- Current State Summary Badge -->
+      <div class="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-xs font-mono text-slate-300">
+        <span class="text-slate-500 text-[10px] font-bold tracking-wider uppercase">CYCLE:</span>
+        <span id="autonomous-state-summary" class="text-cyan-300 font-semibold truncate max-w-xs sm:max-w-sm">Focus Sprint — Deep Engineering & Executive Strategy</span>
+      </div>
 
       <!-- Divider -->
       <div class="w-px h-6 bg-slate-700/80 mx-1"></div>
@@ -328,7 +319,7 @@
     <div class="pointer-events-auto bg-slate-950/85 backdrop-blur-md border border-slate-800/90 px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2 max-w-2xl text-[11px] font-mono text-slate-400">
       <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
       <span class="text-slate-500 font-bold uppercase tracking-wider text-[9.5px]">STREAM:</span>
-      <span id="activity-ticker-text" class="truncate text-slate-300">[IDRIS] 60 FPS Three.js diorama initialized • OrbitControls active • Multi-agent mesh ready</span>
+      <span id="activity-ticker-text" class="truncate text-slate-300">[IDRIS] 60 FPS Three.js diorama initialized • Autonomous multi-agent engine active</span>
     </div>
 
   </footer>
@@ -375,8 +366,10 @@
           <div>
             <label class="block text-[10.5px] font-mono text-slate-400 uppercase tracking-wider mb-1.5">Relocate to Room</label>
             <select id="dossier-room-select" onchange="window.YudiazHQ.dispatchSelectedAgentToRoom(this.value)" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400">
-              <option value="room-ceo">CEO Executive Suite</option>
-              <option value="room-war">The War Room Amphitheater</option>
+              <option value="room-ceo">CEO Executive Suite (Dani & Daffa)</option>
+              <option value="room-pa">Executive PA Station (Elara Sinclair)</option>
+              <option value="room-cto">CTO Executive Suite (Raziel Hendrix)</option>
+              <option value="room-war">The War Room Amphitheater (Executive Deliberation)</option>
               <option value="room-dev">Dev Core (Engineering Workstations)</option>
               <option value="room-atelier">Architectural & Research Atelier</option>
               <option value="room-creative">Creative Director Studio</option>
@@ -491,12 +484,12 @@
   <script>
     (function() {
       // Lucide icons init
-      if (window.lucide) {
+      if (typeof window !== "undefined" && window.lucide) {
         window.lucide.createIcons();
       }
 
       // =========================================================================
-      // 1. Studio Team Data Registry (10 Members)
+      // 1. Studio Team Data Registry (11 Members)
       // =========================================================================
       const AGENTS = [
         {
@@ -511,7 +504,7 @@
           accent: "#10B981",
           clothingColor: 0x1e293b,
           hairColor: 0x1a1a1a,
-          task: "Strategic Direction & Studio Vision",
+          task: "Strategic Governance & Studio Vision",
           tool: "Notion Strategic Roadmap",
           cpu: 28,
           ram: 2.2,
@@ -520,7 +513,7 @@
           skills: ["Strategic Governance", "Creative Vision", "Leadership", "Venture Building"],
           thoughts: [
             "Studio growth trajectory running at 140% efficiency.",
-            "Reviewing Concept 2B design token specifications with Senna."
+            "Reviewing Concept 2B design token specifications with Senna and Daffa."
           ]
         },
         {
@@ -535,8 +528,8 @@
           accent: "#7928CA",
           clothingColor: 0x4c1d95,
           hairColor: 0x222222,
-          task: "System Orchestration & Cloud Infrastructure",
-          tool: "Hermes Agent Hub",
+          task: "System Orchestration & Cloud Mesh Architecture",
+          tool: "Hermes Agent Hub & Terminal Stream",
           cpu: 45,
           ram: 3.4,
           pid: 1002,
@@ -544,7 +537,7 @@
           skills: ["Hermes Agent Mesh", "Multi-Agent Sync", "Cloud Infra", "System Architecture"],
           thoughts: [
             "Telemetry stream synchronized on /api/v1/stream (0.4ms latency).",
-            "Allocating subagent worker processes for parallel frontend tasks."
+            "CTO mesh terminal streaming active microservices topology."
           ]
         },
         {
@@ -640,7 +633,7 @@
           skills: ["FastAPI", "AsyncIO", "SSE Streaming", "Pydantic V2", "Pytest Suite"],
           thoughts: [
             "EventSource heartbeat running at 2.0s intervals cleanly.",
-            "Tested all 19 automated tests with 100% pass rate."
+            "Tested all 21 automated tests with 100% pass rate."
           ]
         },
         {
@@ -655,7 +648,7 @@
           accent: "#FF8800",
           clothingColor: 0xc2410c,
           hairColor: 0xb45309,
-          task: "Isometric Three.js 3D Diorama & Shaders",
+          task: "Isometric Three.js 3D Diorama & Procedural Animations",
           tool: "Chrome DevTools & CanvasProfiler",
           cpu: 48,
           ram: 3.2,
@@ -663,8 +656,8 @@
           uptime: "58h 14m",
           skills: ["Three.js r128", "WebGL / Shaders", "OrbitControls", "Responsive HUD", "Performance Opt"],
           thoughts: [
-            "Calibrated Three.js OrthographicCamera to isometric angle (45, 38, 45).",
-            "Screen projection mapping maintains rock-solid 60 FPS."
+            "Calibrated Three.js OrthographicCamera to isometric angle (42, 36, 42).",
+            "Screen projection mapping and procedural typing animations maintain rock-solid 60 FPS."
           ]
         },
         {
@@ -696,23 +689,23 @@
           name: "Elara Sinclair",
           codename: "YUDIAZ-09 // LOGIX-FLOW",
           initials: "ES",
-          role: "Personal Assistant CEO",
+          role: "Personal Assistant to CEO",
           department: "Executive Support",
-          clearance: "LEVEL 3",
+          clearance: "LEVEL 4 (CONFIDENTIAL)",
           color: "#C084FC",
           accent: "#E0AAFF",
           clothingColor: 0x9333ea,
           hairColor: 0xfef08a,
-          task: "Daily Executive Schedule & Meal Logistics",
-          tool: "Google Calendar & Pantry Inventory",
+          task: "Daily Executive Schedule, CEO Briefings & VIP Logistics",
+          tool: "Executive Agenda Tablet & Google Workspace",
           cpu: 24,
           ram: 2.1,
           pid: 1009,
           uptime: "39h 12m",
-          skills: ["Executive Scheduling", "Concierge Dining", "Logistics Coordination", "Travel Itinerary"],
+          skills: ["Executive Scheduling", "CEO Briefings", "VIP Logistics", "Strategic Calendar Coordination"],
           thoughts: [
-            "Espresso machine refilled with fresh beans for afternoon sprint.",
-            "Briefed Daniandra on today's engineering milestones."
+            "Coordinated Daniandra's executive briefing agenda for today's council.",
+            "Synchronized CEO calendar with Daffa and engineering roadmap."
           ]
         },
         {
@@ -771,14 +764,26 @@
       const ROOMS = {
         "room-ceo": {
           name: "CEO Executive Suite",
-          category: "Executive",
-          desc: "Private executive command chamber for studio vision and governance.",
+          category: "Executive Governance",
+          desc: "Dedicated executive command chamber for Daniandra (CEO) and Daffa (CEO Office) with walnut desks, laptops, and strategic displays.",
           color: "#F59E0B"
+        },
+        "room-pa": {
+          name: "Executive PA Station",
+          category: "Executive Support",
+          desc: "High-end workstation adjacent to the CEO Suite for Elara Sinclair (Personal Assistant to CEO) with agenda tablet, executive schedule board, and modern minimalist desk.",
+          color: "#C084FC"
+        },
+        "room-cto": {
+          name: "CTO Executive Suite",
+          category: "Engineering Leadership",
+          desc: "Dedicated glass-walled office for Raziel Hendrix with executive desk, dual ultrawide monitors streaming terminal code, and architecture blueprint display.",
+          color: "#A855F7"
         },
         "room-war": {
           name: "War Room & Strategy Amphitheater",
-          category: "Deliberation",
-          desc: "All-hands circular strategy table with ultra-wide presentation screen.",
+          category: "Executive Deliberation",
+          desc: "All-hands circular strategy amphitheater with high-table head position reserved for CEO Daniandra or Daffa leading the meeting.",
           color: "#EF4444"
         },
         "room-dev": {
@@ -832,70 +837,115 @@
       };
 
       // =========================================================================
-      // 3. Office Modes & Agent Target Coordinates (3D World Space)
+      // 3. Autonomous Studio Cycles (Self-Driving Office Simulation Engine)
       // =========================================================================
-      // Coordinates in Three.js world space:
-      // X: -18 to +18 (left to right), Z: -14 to +14 (back to front)
-      const MODE_COORDINATES = {
-        deep_work: {
-          dani:    { x: -11.0, z: -8.0,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-ceo" },
-          raziel:  { x: -7.5,  z: -7.5,  y: 0.0, rotY: 0.3,            pose: "seated_desk", room: "room-ceo" },
-          daffa:   { x: -6.2,  z: -9.5,  y: 0.0, rotY: 0.15,           pose: "seated_desk", room: "room-ceo" },
-          kael:    { x: -13.0, z: 6.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-atelier" },
-          nara:    { x: -8.5,  z: 6.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-atelier" },
-          senna:   { x: -3.5,  z: -6.5,  y: 0.0, rotY: 0.2,            pose: "seated_desk", room: "room-creative" },
-          idris:   { x: -13.0, z: 1.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-dev" },
-          mika:    { x: -8.5,  z: 1.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-dev" },
-          viktor:  { x: 9.5,   z: 5.5,   y: 0.0, rotY: -Math.PI / 2,   pose: "standing",    room: "room-server" },
-          elara:   { x: -8.0,  z: 11.0,  y: 0.0, rotY: Math.PI / 2,    pose: "standing",    room: "room-concierge" },
-          jovan:   { x: 14.0,  z: 5.5,   y: 0.0, rotY: Math.PI / 2,    pose: "seated_desk", room: "room-server" }
+      const AUTONOMOUS_CYCLES = [
+        {
+          key: "focus_sprint",
+          name: "Focus Sprint — Deep Engineering & Executive Strategy",
+          shortLabel: "FOCUS SPRINT",
+          duration: 35,
+          stateSummary: "Focus Sprint — Deep Engineering & Executive Strategy",
+          tickerMsg: "[ORCHESTRATOR] Autonomous Focus Sprint active • All agents at dedicated stations",
+          positions: {
+            dani:    { x: -12.5, z: -8.0,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-ceo" },
+            daffa:   { x: -9.2,  z: -8.0,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-ceo" },
+            raziel:  { x: -3.0,  z: -1.5,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-cto" },
+            elara:   { x: -4.5,  z: -9.5,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-pa" },
+            kael:    { x: -13.0, z: 6.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-atelier" },
+            nara:    { x: -8.5,  z: 6.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-atelier" },
+            senna:   { x: -3.5,  z: 6.5,   y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-creative" },
+            idris:   { x: -13.0, z: 1.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-dev" },
+            mika:    { x: -8.5,  z: 1.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-dev" },
+            viktor:  { x: 10.5,  z: 5.5,   y: 0.0, rotY: -Math.PI / 2,   pose: "standing",    room: "room-server" },
+            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI / 2,    pose: "seated_desk", room: "room-server" }
+          }
         },
-        war_room: {
-          // Circular arrangement around round table at center (10.0, -6.5) with radius 2.3 for 11 agents
-          dani:    { x: 10.0 + 2.3 * Math.cos(0 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(0 * (Math.PI*2/11)),   y: 0.0, rotY: -Math.PI * 0.5,  pose: "seated_meeting", room: "room-war" },
-          raziel:  { x: 10.0 + 2.3 * Math.cos(1 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(1 * (Math.PI*2/11)),   y: 0.0, rotY: -Math.PI * 0.7,  pose: "seated_meeting", room: "room-war" },
-          daffa:   { x: 10.0 + 2.3 * Math.cos(2 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(2 * (Math.PI*2/11)),   y: 0.0, rotY: -Math.PI * 0.85, pose: "seated_meeting", room: "room-war" },
-          kael:    { x: 10.0 + 2.3 * Math.cos(3 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(3 * (Math.PI*2/11)),   y: 0.0, rotY: -Math.PI * 1.05, pose: "seated_meeting", room: "room-war" },
-          nara:    { x: 10.0 + 2.3 * Math.cos(4 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(4 * (Math.PI*2/11)),   y: 0.0, rotY: -Math.PI * 1.25, pose: "seated_meeting", room: "room-war" },
-          senna:   { x: 10.0 + 2.3 * Math.cos(5 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(5 * (Math.PI*2/11)),   y: 0.0, rotY: -Math.PI * 1.45, pose: "seated_meeting", room: "room-war" },
-          idris:   { x: 10.0 + 2.3 * Math.cos(6 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(6 * (Math.PI*2/11)),   y: 0.0, rotY: Math.PI * 0.45,  pose: "seated_meeting", room: "room-war" },
-          mika:    { x: 10.0 + 2.3 * Math.cos(7 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(7 * (Math.PI*2/11)),   y: 0.0, rotY: Math.PI * 0.65,  pose: "seated_meeting", room: "room-war" },
-          viktor:  { x: 10.0 + 2.3 * Math.cos(8 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(8 * (Math.PI*2/11)),   y: 0.0, rotY: Math.PI * 0.85,  pose: "seated_meeting", room: "room-war" },
-          elara:   { x: 10.0 + 2.3 * Math.cos(9 * (Math.PI*2/11)),   z: -6.5 + 2.3 * Math.sin(9 * (Math.PI*2/11)),   y: 0.0, rotY: Math.PI * 1.05,  pose: "seated_meeting", room: "room-war" },
-          jovan:   { x: 10.0 + 2.3 * Math.cos(10 * (Math.PI*2/11)),  z: -6.5 + 2.3 * Math.sin(10 * (Math.PI*2/11)),  y: 0.0, rotY: Math.PI * 1.25,  pose: "seated_meeting", room: "room-war" }
+        {
+          key: "council_meeting_ceo",
+          name: "Strategic Council Meeting led by CEO Daniandra",
+          shortLabel: "COUNCIL MEETING (CEO)",
+          duration: 35,
+          stateSummary: "Strategic Council Meeting led by CEO Daniandra",
+          tickerMsg: "[WAR ROOM] CEO Daniandra leading strategic executive council briefing at head podium",
+          positions: {
+            dani:    { x: 10.0,  z: -9.4,  y: 0.0, rotY: 0,              pose: "speaking_lead", room: "room-war" },
+            daffa:   { x: 7.8,   z: -7.8,  y: 0.0, rotY: 0.7,            pose: "seated_meeting", room: "room-war" },
+            raziel:  { x: 12.2,  z: -7.8,  y: 0.0, rotY: -0.7,           pose: "seated_meeting", room: "room-war" },
+            kael:    { x: 7.2,   z: -6.0,  y: 0.0, rotY: 1.2,            pose: "seated_meeting", room: "room-war" },
+            nara:    { x: 12.8,  z: -6.0,  y: 0.0, rotY: -1.2,           pose: "seated_meeting", room: "room-war" },
+            senna:   { x: 7.6,   z: -4.5,  y: 0.0, rotY: 2.0,            pose: "seated_meeting", room: "room-war" },
+            idris:   { x: 12.4,  z: -4.5,  y: 0.0, rotY: -2.0,           pose: "seated_meeting", room: "room-war" },
+            mika:    { x: 8.8,   z: -3.8,  y: 0.0, rotY: 2.6,            pose: "seated_meeting", room: "room-war" },
+            elara:   { x: 11.2,  z: -3.8,  y: 0.0, rotY: -2.6,           pose: "seated_meeting", room: "room-war" },
+            viktor:  { x: 10.0,  z: -3.6,  y: 0.0, rotY: Math.PI,        pose: "seated_meeting", room: "room-war" },
+            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI / 2,    pose: "seated_desk",    room: "room-server" }
+          }
         },
-        ping_pong: {
-          // Idris vs Mika at ping pong table (X: 11.0, Z: 10.5)
-          idris:   { x: 8.6,   z: 10.5,  y: 0.0, rotY: Math.PI / 2,    pose: "pingpong_player", room: "room-pingpong" },
-          mika:    { x: 13.4,  z: 10.5,  y: 0.0, rotY: -Math.PI / 2,   pose: "pingpong_player", room: "room-pingpong" },
-          // Spectators and chilling
-          viktor:  { x: 11.0,  z: 13.2,  y: 0.0, rotY: Math.PI,        pose: "standing",    room: "room-pingpong" },
-          jovan:   { x: 13.2,  z: 13.0,  y: 0.0, rotY: Math.PI * 0.9,  pose: "standing",    room: "room-pingpong" },
-          // Lounge area
-          dani:    { x: -0.5,  z: 6.8,   y: 0.0, rotY: Math.PI,        pose: "seated_couch", room: "room-lounge" },
-          raziel:  { x: 1.2,   z: 6.8,   y: 0.0, rotY: Math.PI,        pose: "seated_couch", room: "room-lounge" },
-          daffa:   { x: 2.2,   z: 8.8,   y: 0.0, rotY: -Math.PI * 0.4, pose: "seated_chair", room: "room-lounge" },
-          senna:   { x: 3.8,   z: 8.2,   y: 0.0, rotY: -Math.PI * 0.7, pose: "seated_chair", room: "room-lounge" },
-          kael:    { x: -1.2,  z: 8.8,   y: 0.0, rotY: 0.3,            pose: "standing",    room: "room-lounge" },
-          nara:    { x: 0.8,   z: 9.0,   y: 0.0, rotY: -0.2,           pose: "standing",    room: "room-lounge" },
-          elara:   { x: -10.5, z: 11.0,  y: 0.0, rotY: 0,              pose: "standing",    room: "room-concierge" }
+        {
+          key: "council_meeting_daffa",
+          name: "Operations Review led by Daffa (CEO Office)",
+          shortLabel: "OPERATIONS REVIEW (DAFFA)",
+          duration: 30,
+          stateSummary: "Operations Review led by Daffa (CEO Office)",
+          tickerMsg: "[WAR ROOM] Daffa (CEO Office) leading cross-departmental operations review",
+          positions: {
+            daffa:   { x: 10.0,  z: -9.4,  y: 0.0, rotY: 0,              pose: "speaking_lead", room: "room-war" },
+            dani:    { x: 7.8,   z: -7.8,  y: 0.0, rotY: 0.7,            pose: "seated_meeting", room: "room-war" },
+            raziel:  { x: 12.2,  z: -7.8,  y: 0.0, rotY: -0.7,           pose: "seated_meeting", room: "room-war" },
+            kael:    { x: 7.2,   z: -6.0,  y: 0.0, rotY: 1.2,            pose: "seated_meeting", room: "room-war" },
+            nara:    { x: 12.8,  z: -6.0,  y: 0.0, rotY: -1.2,           pose: "seated_meeting", room: "room-war" },
+            senna:   { x: 7.6,   z: -4.5,  y: 0.0, rotY: 2.0,            pose: "seated_meeting", room: "room-war" },
+            idris:   { x: 12.4,  z: -4.5,  y: 0.0, rotY: -2.0,           pose: "seated_meeting", room: "room-war" },
+            mika:    { x: 8.8,   z: -3.8,  y: 0.0, rotY: 2.6,            pose: "seated_meeting", room: "room-war" },
+            elara:   { x: 11.2,  z: -3.8,  y: 0.0, rotY: -2.6,           pose: "seated_meeting", room: "room-war" },
+            viktor:  { x: 10.0,  z: -3.6,  y: 0.0, rotY: Math.PI,        pose: "seated_meeting", room: "room-war" },
+            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI / 2,    pose: "seated_desk",    room: "room-server" }
+          }
         },
-        sleep: {
-          // Dani & Raziel in platform beds
-          dani:    { x: -2.0,  z: -8.0,  y: 0.6, rotY: 0,              pose: "sleeping_bed", room: "room-pods" },
-          raziel:  { x: 1.6,   z: -8.0,  y: 0.6, rotY: 0,              pose: "sleeping_bed", room: "room-pods" },
-          daffa:   { x: 3.5,   z: -6.0,  y: 0.6, rotY: 0,              pose: "seated_couch", room: "room-pods" },
-          // Others resting in quiet lounge & rest pods
-          kael:    { x: -0.5,  z: 6.8,   y: 0.0, rotY: Math.PI,        pose: "seated_couch", room: "room-pods" },
-          nara:    { x: 1.2,   z: 6.8,   y: 0.0, rotY: Math.PI,        pose: "seated_couch", room: "room-pods" },
-          senna:   { x: 3.8,   z: 8.2,   y: 0.0, rotY: -Math.PI * 0.7, pose: "seated_chair", room: "room-pods" },
-          idris:   { x: -13.0, z: 1.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-pods" },
-          mika:    { x: -8.5,  z: 1.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-pods" },
-          viktor:  { x: 9.5,   z: 5.5,   y: 0.0, rotY: -Math.PI / 2,   pose: "standing",    room: "room-pods" },
-          elara:   { x: -8.0,  z: 11.0,  y: 0.0, rotY: Math.PI / 2,    pose: "standing",    room: "room-pods" },
-          jovan:   { x: 14.0,  z: 5.5,   y: 0.0, rotY: Math.PI / 2,    pose: "seated_desk", room: "room-pods" }
+        {
+          key: "recreation_break",
+          name: "Studio Break & Championship Ping-Pong",
+          shortLabel: "BREAK & PING-PONG",
+          duration: 35,
+          stateSummary: "Studio Break — Ping-Pong Showdown & Lounge",
+          tickerMsg: "[RECREATION] Idris & Mika ping-pong rally • Dani & Raziel in lounge discussion",
+          positions: {
+            idris:   { x: 8.6,   z: 10.5,  y: 0.0, rotY: Math.PI / 2,    pose: "pingpong_player", room: "room-pingpong" },
+            mika:    { x: 13.4,  z: 10.5,  y: 0.0, rotY: -Math.PI / 2,   pose: "pingpong_player", room: "room-pingpong" },
+            viktor:  { x: 11.0,  z: 13.2,  y: 0.0, rotY: Math.PI,        pose: "standing",        room: "room-pingpong" },
+            jovan:   { x: 13.2,  z: 13.0,  y: 0.0, rotY: Math.PI * 0.9,  pose: "standing",        room: "room-pingpong" },
+            dani:    { x: -0.5,  z: 6.8,   y: 0.0, rotY: Math.PI,        pose: "seated_couch",    room: "room-lounge" },
+            raziel:  { x: 1.2,   z: 6.8,   y: 0.0, rotY: Math.PI,        pose: "seated_couch",    room: "room-lounge" },
+            daffa:   { x: 2.2,   z: 8.8,   y: 0.0, rotY: -Math.PI * 0.4, pose: "seated_chair",    room: "room-lounge" },
+            senna:   { x: 3.8,   z: 8.2,   y: 0.0, rotY: -Math.PI * 0.7, pose: "seated_chair",    room: "room-lounge" },
+            kael:    { x: -1.2,  z: 8.8,   y: 0.0, rotY: 0.3,            pose: "standing",        room: "room-lounge" },
+            nara:    { x: 0.8,   z: 9.0,   y: 0.0, rotY: -0.2,           pose: "standing",        room: "room-lounge" },
+            elara:   { x: -4.5,  z: -9.5,  y: 0.0, rotY: 0,              pose: "seated_desk",     room: "room-pa" }
+          }
+        },
+        {
+          key: "zen_rest_cycle",
+          name: "Zen Rest Cycle & Biometric Quarters",
+          shortLabel: "REST & BIO-RECHARGE",
+          duration: 30,
+          stateSummary: "Zen Rest & Biometric Recharge Quarters",
+          tickerMsg: "[BIO-REST] Rest cycle active • Daniandra & Raziel recharging in rest quarters",
+          positions: {
+            dani:    { x: 1.8,   z: -8.5,  y: 0.65, rotY: 0,             pose: "sleeping_bed",    room: "room-pods" },
+            raziel:  { x: 4.2,   z: -8.5,  y: 0.65, rotY: 0,             pose: "sleeping_bed",    room: "room-pods" },
+            daffa:   { x: -0.5,  z: 6.8,   y: 0.0,  rotY: Math.PI,       pose: "seated_couch",    room: "room-lounge" },
+            kael:    { x: 1.2,   z: 6.8,   y: 0.0,  rotY: Math.PI,       pose: "seated_couch",    room: "room-lounge" },
+            nara:    { x: 3.8,   z: 8.2,   y: 0.0,  rotY: -Math.PI * 0.7,pose: "seated_chair",    room: "room-lounge" },
+            senna:   { x: 2.2,   z: 8.8,   y: 0.0,  rotY: -Math.PI * 0.4,pose: "seated_chair",    room: "room-lounge" },
+            elara:   { x: -4.5,  z: -9.5,  y: 0.0,  rotY: 0,             pose: "seated_desk",     room: "room-pa" },
+            idris:   { x: -13.0, z: 1.5,   y: 0.0,  rotY: Math.PI,       pose: "seated_desk",     room: "room-dev" },
+            mika:    { x: -8.5,  z: 1.5,   y: 0.0,  rotY: Math.PI,       pose: "seated_desk",     room: "room-dev" },
+            viktor:  { x: 10.5,  z: 5.5,   y: 0.0,  rotY: -Math.PI / 2,  pose: "standing",        room: "room-server" },
+            jovan:   { x: 14.5,  z: 5.5,   y: 0.0,  rotY: Math.PI / 2,   pose: "seated_desk",     room: "room-server" }
+          }
         }
-      };
+      ];
 
       // =========================================================================
       // 4. Procedural Audio Synthesizer (Web Audio API)
@@ -932,9 +982,9 @@
         ambientHumGain = audioCtx.createGain();
 
         osc1.type = "sine";
-        osc1.frequency.setValueAtTime(55, audioCtx.currentTime); // A1 note
+        osc1.frequency.setValueAtTime(55, audioCtx.currentTime);
         osc2.type = "sine";
-        osc2.frequency.setValueAtTime(110.5, audioCtx.currentTime); // Slight detune
+        osc2.frequency.setValueAtTime(110.5, audioCtx.currentTime);
 
         filter.type = "lowpass";
         filter.frequency.setValueAtTime(180, audioCtx.currentTime);
@@ -978,8 +1028,8 @@
         } else if (type === "mode") {
           osc.type = "sine";
           osc.frequency.setValueAtTime(440, now);
-          osc.frequency.exponentialRampToValueAtTime(880, now + 0.18);
-          gain.gain.setValueAtTime(0.1, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+          gain.gain.setValueAtTime(0.09, now);
           gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
           osc.start(now);
           osc.stop(now + 0.2);
@@ -998,13 +1048,24 @@
       // 5. Three.js Scene Setup & Diorama Construction
       // =========================================================================
       let scene, camera, renderer, controls;
-      let avatarObjects = {}; // id -> { group, targetPos, targetRotY, currentPos, currentRotY, limbs, agent }
+      let avatarObjects = {};
       let serverLeds = [];
+      let animatedScreens = [];
       let pingPongBall = null;
       let pingPongTime = 0;
-      let currentMode = "deep_work";
+      let currentAutonomousIdx = 0;
       let presentationTexture, presentationMesh;
       let zzzSprites = [];
+      let clock;
+
+      function registerScreen(mesh, baseIntensity = 0.6, speed = 4.0, pulseOffset = 0) {
+        animatedScreens.push({
+          mesh: mesh,
+          baseIntensity: baseIntensity,
+          speed: speed,
+          pulseOffset: pulseOffset
+        });
+      }
 
       function initThreeScene() {
         const container = document.getElementById("webgl-container");
@@ -1037,7 +1098,7 @@
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2.05; // Do not go below ground
+        controls.maxPolarAngle = Math.PI / 2.05;
         controls.minZoom = 0.45;
         controls.maxZoom = 2.6;
         controls.target.set(0, 0, 0);
@@ -1048,11 +1109,17 @@
         // Architectural Diorama Construction
         buildDioramaModel();
 
-        // 10 3D Humanoid Avatars
+        // 11 3D Humanoid Avatars
         buildAllAvatars();
 
         // HTML Pill Badges
         buildDomBadges();
+
+        // Start Autonomous Studio Engine
+        startAutonomousEngine();
+
+        // Listen to SSE Stream if available
+        initSSEStream();
 
         // Events
         window.addEventListener("resize", onWindowResize);
@@ -1063,18 +1130,13 @@
         animate();
       }
 
-      let clock;
-
       function setupLighting() {
-        // Soft warm ambient
         const ambient = new THREE.AmbientLight(0xfff5ea, 0.65);
         scene.add(ambient);
 
-        // Hemisphere sky/ground tint
         const hemi = new THREE.HemisphereLight(0xe0f2fe, 0x181e28, 0.4);
         scene.add(hemi);
 
-        // Main directional sun casting soft shadows
         const sun = new THREE.DirectionalLight(0xfffaec, 0.95);
         sun.position.set(32, 45, 26);
         sun.castShadow = true;
@@ -1087,48 +1149,50 @@
         sun.shadow.bias = -0.0004;
         scene.add(sun);
 
-        // Secondary soft fill
         const fill = new THREE.DirectionalLight(0x6366f1, 0.25);
         fill.position.set(-25, 20, -25);
         scene.add(fill);
 
-        // Bedside cozy warm lamps
-        const lamp1 = new THREE.PointLight(0xffe4b5, 0.8, 7, 2);
-        lamp1.position.set(-2.8, 1.4, -8.0);
-        scene.add(lamp1);
+        // Suite & Room Accent Lights
+        const ceoGlow = new THREE.PointLight(0xf59e0b, 0.8, 8, 2);
+        ceoGlow.position.set(-11.0, 2.2, -8.0);
+        scene.add(ceoGlow);
 
-        const lamp2 = new THREE.PointLight(0xffe4b5, 0.8, 7, 2);
-        lamp2.position.set(2.4, 1.4, -8.0);
-        scene.add(lamp2);
+        const paGlow = new THREE.PointLight(0xe0aaff, 0.75, 7, 2);
+        paGlow.position.set(-4.5, 2.0, -8.5);
+        scene.add(paGlow);
 
-        // Server Room cold blue glow
+        const ctoGlow = new THREE.PointLight(0xa855f7, 0.9, 8, 2);
+        ctoGlow.position.set(-3.0, 2.2, -0.5);
+        scene.add(ctoGlow);
+
+        const bedGlow = new THREE.PointLight(0xffe4b5, 0.8, 7, 2);
+        bedGlow.position.set(3.0, 1.4, -8.5);
+        scene.add(bedGlow);
+
         const serverGlow = new THREE.PointLight(0x00f2fe, 1.2, 9, 2);
         serverGlow.position.set(12.5, 1.0, 4.0);
         scene.add(serverGlow);
 
-        // War Room conference display glow
-        const warRoomGlow = new THREE.PointLight(0x38bdf8, 0.7, 8, 2);
+        const warRoomGlow = new THREE.PointLight(0x38bdf8, 0.75, 8, 2);
         warRoomGlow.position.set(10.0, 2.0, -11.5);
         scene.add(warRoomGlow);
 
-        // Lounge cozy warm lamp
         const loungeGlow = new THREE.PointLight(0xfed7aa, 0.6, 6, 2);
         loungeGlow.position.set(4.0, 2.2, 8.5);
         scene.add(loungeGlow);
       }
 
-      // Procedural Canvas Texture for warm wooden parquet floor
+      // Procedural Textures
       function createParquetTexture() {
         const canvas = document.createElement("canvas");
         canvas.width = 512;
         canvas.height = 512;
         const ctx = canvas.getContext("2d");
 
-        // Base warm cream beige
         ctx.fillStyle = "#ede5d8";
         ctx.fillRect(0, 0, 512, 512);
 
-        // Subtle wooden plank lines
         ctx.strokeStyle = "rgba(180, 165, 145, 0.25)";
         ctx.lineWidth = 2;
 
@@ -1158,25 +1222,21 @@
         return texture;
       }
 
-      // Procedural Presentation Screen Canvas
       function createPresentationTexture() {
         const canvas = document.createElement("canvas");
         canvas.width = 1024;
         canvas.height = 512;
         const ctx = canvas.getContext("2d");
 
-        // Deep cyber obsidian screen
         ctx.fillStyle = "#0c1322";
         ctx.fillRect(0, 0, 1024, 512);
 
-        // Header bar
         ctx.fillStyle = "#1e293b";
         ctx.fillRect(0, 0, 1024, 55);
         ctx.fillStyle = "#00f2fe";
         ctx.font = "bold 22px 'JetBrains Mono', monospace";
-        ctx.fillText("YUDIAZ STRATEGIC ARCHITECTURE // Q4 AUTONOMOUS ROADMAP", 25, 36);
+        ctx.fillText("YUDIAZ STRATEGIC ARCHITECTURE // EXECUTIVE COUNCIL BRIEFING", 25, 36);
 
-        // System Graph Nodes
         ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -1187,7 +1247,6 @@
         ctx.closePath();
         ctx.stroke();
 
-        // Node circles
         const nodes = [
           { x: 200, y: 250, label: "HERMES CORE", color: "#10b981" },
           { x: 512, y: 180, label: "TELEMETRY MESH", color: "#00f2fe" },
@@ -1206,17 +1265,213 @@
           ctx.fillText(n.label, n.x - 45, n.y - 22);
         });
 
-        // Metrics box
         ctx.fillStyle = "rgba(30, 41, 59, 0.7)";
         ctx.fillRect(25, 420, 974, 65);
         ctx.fillStyle = "#94a3b8";
         ctx.font = "14px 'JetBrains Mono', monospace";
-        ctx.fillText("STREAM: ACTIVE (10/10) | LATENCY: 0.4ms | DIORAMA: 60 FPS | CLEARANCE: LEVEL 5", 45, 458);
+        ctx.fillText("AUTONOMOUS ENGINE: RUNNING | LATENCY: 0.4ms | DIORAMA: 60 FPS | CLEARANCE: LEVEL 5", 45, 458);
 
-        const tex = new THREE.CanvasTexture(canvas);
-        return tex;
+        return new THREE.CanvasTexture(canvas);
       }
 
+      function createBlueprintTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1024;
+        canvas.height = 768;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#071328";
+        ctx.fillRect(0, 0, 1024, 768);
+
+        ctx.strokeStyle = "rgba(0, 242, 254, 0.15)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x < 1024; x += 32) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 768); ctx.stroke();
+        }
+        for (let y = 0; y < 768; y += 32) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1024, y); ctx.stroke();
+        }
+
+        ctx.fillStyle = "#00f2fe";
+        ctx.font = "bold 26px 'JetBrains Mono', monospace";
+        ctx.fillText("YUDIAZ DISTRIBUTED MESH // SYSTEM ARCHITECTURE V2.4", 40, 50);
+        ctx.fillStyle = "#a855f7";
+        ctx.font = "16px 'JetBrains Mono', monospace";
+        ctx.fillText("ENGINEERING LEADERSHIP // ARCHITECT: RAZIEL HENDRIX (CTO)", 40, 80);
+
+        const boxes = [
+          { x: 80,  y: 150, w: 240, h: 100, label: "HERMES AGENT HUB", sub: "Mesh Orchestrator", color: "#a855f7" },
+          { x: 390, y: 150, w: 240, h: 100, label: "FASTAPI SSE GATEWAY", sub: "0.4ms Low Latency", color: "#10b981" },
+          { x: 700, y: 150, w: 240, h: 100, label: "REDIS PUB/SUB MESH", sub: "Distributed Memory", color: "#ef4444" },
+          { x: 235, y: 360, w: 240, h: 100, label: "THREE.JS 3D DIORAMA", sub: "60 FPS WebGL Engine", color: "#00f2fe" },
+          { x: 545, y: 360, w: 240, h: 100, label: "AI INFERENCE PIPELINE", sub: "Spatial Multi-Agent", color: "#f59e0b" },
+          { x: 390, y: 560, w: 240, h: 90,  label: "SECURITY ZERO-TRUST", sub: "PIN Gate 2609 Auth", color: "#ec4899" }
+        ];
+
+        ctx.strokeStyle = "rgba(0, 242, 254, 0.6)";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([8, 6]);
+
+        ctx.beginPath(); ctx.moveTo(320, 200); ctx.lineTo(390, 200); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(630, 200); ctx.lineTo(700, 200); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(470, 250); ctx.lineTo(355, 360); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(550, 250); ctx.lineTo(665, 360); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(355, 460); ctx.lineTo(470, 560); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(665, 460); ctx.lineTo(550, 560); ctx.stroke();
+        ctx.setLineDash([]);
+
+        boxes.forEach(b => {
+          ctx.fillStyle = "rgba(11, 22, 45, 0.85)";
+          ctx.fillRect(b.x, b.y, b.w, b.h);
+          ctx.strokeStyle = b.color;
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(b.x, b.y, b.w, b.h);
+
+          ctx.fillStyle = b.color;
+          ctx.font = "bold 15px 'JetBrains Mono', monospace";
+          ctx.fillText(b.label, b.x + 14, b.y + 40);
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "12px 'JetBrains Mono', monospace";
+          ctx.fillText(b.sub, b.x + 14, b.y + 70);
+        });
+
+        ctx.fillStyle = "rgba(0, 242, 254, 0.8)";
+        ctx.font = "bold 14px 'JetBrains Mono', monospace";
+        ctx.fillText("CLASSIFIED // YUDIAZ CORE ARCHITECTURE SCHEMATIC [SEC-4]", 40, 725);
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createScheduleTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1024;
+        canvas.height = 640;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#0a0f1d";
+        ctx.fillRect(0, 0, 1024, 640);
+
+        ctx.fillStyle = "rgba(192, 132, 252, 0.15)";
+        ctx.fillRect(0, 0, 1024, 65);
+        ctx.strokeStyle = "rgba(192, 132, 252, 0.4)";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, 1024, 65);
+
+        ctx.fillStyle = "#e0aaff";
+        ctx.font = "bold 24px 'Plus Jakarta Sans', sans-serif";
+        ctx.fillText("EXECUTIVE SCHEDULE // CEO & EXECUTIVE OFFICE", 30, 42);
+
+        ctx.fillStyle = "#a855f7";
+        ctx.font = "14px 'JetBrains Mono', monospace";
+        ctx.fillText("COORDINATOR: ELARA SINCLAIR (PERSONAL ASSISTANT TO CEO)", 30, 95);
+
+        const entries = [
+          { time: "09:00 WIB", title: "Strategic Vision Alignment & Studio OKRs", with: "Daniandra P. & Daffa", status: "COMPLETED", color: "#10b981" },
+          { time: "11:30 WIB", title: "Distributed Mesh Architecture & Hermes Sync", with: "Raziel Hendrix & Kael", status: "IN PROGRESS", color: "#00f2fe" },
+          { time: "14:00 WIB", title: "Concept 2B Visual Tokens & 3D Review", with: "Senna Louviere", status: "SCHEDULED", color: "#f59e0b" },
+          { time: "16:30 WIB", title: "Telkom University Campus Radar Briefing", with: "Jovan & Nara", status: "CONFIRMED", color: "#c084fc" }
+        ];
+
+        entries.forEach((e, idx) => {
+          const y = 135 + idx * 115;
+          ctx.fillStyle = "rgba(19, 27, 46, 0.75)";
+          ctx.fillRect(30, y, 964, 95);
+          ctx.strokeStyle = "rgba(51, 65, 85, 0.7)";
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(30, y, 964, 95);
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 18px 'JetBrains Mono', monospace";
+          ctx.fillText(e.time, 50, y + 42);
+
+          ctx.fillStyle = "#f8fafc";
+          ctx.font = "bold 18px 'Plus Jakarta Sans', sans-serif";
+          ctx.fillText(e.title, 220, y + 42);
+
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "14px 'Plus Jakarta Sans', sans-serif";
+          ctx.fillText(`Personnel: ${e.with}`, 220, y + 74);
+
+          ctx.fillStyle = e.color;
+          ctx.beginPath();
+          ctx.arc(880, y + 48, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = e.color;
+          ctx.font = "bold 13px 'JetBrains Mono', monospace";
+          ctx.fillText(e.status, 898, y + 53);
+        });
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createTerminalTexture(type) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#050811";
+        ctx.fillRect(0, 0, 512, 320);
+
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(0, 0, 512, 28);
+        ctx.fillStyle = type === "green" ? "#10b981" : "#a855f7";
+        ctx.font = "bold 12px 'JetBrains Mono', monospace";
+        ctx.fillText(type === "green" ? "bash // raziel@yudiaz-cto-mesh:~" : "hermes // mesh-telemetry-live", 12, 19);
+
+        const lines = type === "green" ? [
+          "$ hermes-agent mesh --status",
+          "[OK] Mesh node 1002 (Raziel) connected (0.4ms)",
+          "[OK] Subagent worker pool: 8 active threads",
+          "[OK] Cloud infra healthy • 60 FPS diorama synced",
+          "$ git commit -m 'feat: autonomous office engine'",
+          "[main 8cf421] 11 agents autonomous sync",
+          "$ tail -f /var/log/yudiaz/telemetry.stream",
+          "> SSE event broadcast sent to /api/v1/stream",
+          "> Memory footprint: 3.4GB / 16GB [NOMINAL]"
+        ] : [
+          "class DistributedMeshGateway:",
+          "    async def stream_telemetry(self):",
+          "        while self.is_running:",
+          "            state = await self.fetch_spatial_state()",
+          "            yield ServerSentEvent(data=state)",
+          "            await asyncio.sleep(2.0)",
+          "# Autonomous Office Controller Active",
+          "Mesh nodes: 11 agents | Topology: OK",
+          "Security clearance: LEVEL 5 (ALPHA)"
+        ];
+
+        ctx.fillStyle = type === "green" ? "#34d399" : "#c084fc";
+        ctx.font = "11.5px 'JetBrains Mono', monospace";
+        lines.forEach((l, i) => {
+          ctx.fillText(l, 14, 52 + i * 28);
+        });
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createZzzTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 128;
+        canvas.height = 128;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, 128, 128);
+
+        ctx.shadowColor = "#00f2fe";
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = "#38bdf8";
+        ctx.font = "bold 72px 'JetBrains Mono', monospace";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Z", 64, 64);
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      // =========================================================================
+      // 6. Diorama Architecture Construction
+      // =========================================================================
       function buildDioramaModel() {
         const floorTexture = createParquetTexture();
 
@@ -1255,6 +1510,8 @@
 
         // 3. Furniture & Props
         buildCeoSuite();
+        buildPaStation();
+        buildCtoSuite();
         buildWarRoom();
         buildWorkstations();
         buildServerRoom();
@@ -1277,30 +1534,34 @@
           mesh.receiveShadow = true;
           wallGroup.add(mesh);
 
-          // Top beveled cap
           const cap = new THREE.Mesh(new THREE.BoxGeometry(width + 0.04, 0.08, depth + 0.04), wallCapMat);
           cap.position.set(x, height + 0.04, z);
           wallGroup.add(cap);
         }
 
-        // Perimeter Cutaway Walls (Back & Left walls are higher/solid, Front & Right are low or cut open)
+        // Perimeter Walls
         addWallSegment(0, -13.8, 35.8, 0.4, 2.0); // Full back wall
         addWallSegment(-17.8, 0, 0.4, 27.8, 2.0);  // Full left wall
 
-        // Right perimeter: lower architectural cutaway
+        // Right perimeter cutaway
         addWallSegment(17.8, -7, 0.4, 13.8, 1.2);
         addWallSegment(17.8, 8, 0.4, 11.8, 1.2);
 
-        // Front perimeter: low border with main entrance opening
+        // Front perimeter opening
         addWallSegment(-11, 13.8, 13.6, 0.4, 0.9);
         addWallSegment(10, 13.8, 15.6, 0.4, 0.9);
 
         // Interior Partitions
-        // CEO partition (separating CEO from Kamar Tidur)
-        addWallSegment(-5.0, -9.5, 0.35, 8.5, 1.8);
+        // CEO Suite divider (doorway to PA station)
+        addWallSegment(-7.5, -12.0, 0.35, 3.2, 1.8);
 
-        // War Room partition (separating War Room from Kamar Tidur & Hallway)
-        addWallSegment(3.5, -9.5, 0.35, 8.5, 1.8);
+        // PA station to Bedroom partition
+        addWallSegment(-1.2, -10.5, 0.35, 6.2, 1.8);
+
+        // Bedroom to War Room partition
+        addWallSegment(5.8, -10.5, 0.35, 6.2, 1.8);
+
+        // War Room right partition
         addWallSegment(10.5, -1.0, 14.5, 0.35, 1.8);
 
         // Dev Core partition
@@ -1313,112 +1574,381 @@
         const ceoGroup = new THREE.Group();
         ceoGroup.userData = { roomId: "room-ceo" };
 
-        // Executive Desk (Rich dark walnut with brass metal trim)
+        const legMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
+
+        // Daniandra Executive Walnut Desk with brass trim
         const deskTop = new THREE.Mesh(
-          new THREE.BoxGeometry(4.2, 0.14, 2.0),
-          new THREE.MeshStandardMaterial({ color: 0x362215, roughness: 0.4, metalness: 0.1 })
+          new THREE.BoxGeometry(4.0, 0.14, 2.0),
+          new THREE.MeshStandardMaterial({ color: 0x362215, roughness: 0.4, metalness: 0.15 })
         );
-        deskTop.position.set(-11.0, 1.05, -7.5);
+        deskTop.position.set(-12.5, 1.05, -8.0);
         deskTop.castShadow = true;
         ceoGroup.add(deskTop);
 
-        // Desk metal slab legs
-        const legMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
+        const brassTrim = new THREE.Mesh(
+          new THREE.BoxGeometry(4.02, 0.04, 0.06),
+          new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85, roughness: 0.25 })
+        );
+        brassTrim.position.set(-12.5, 1.1, -7.0);
+        ceoGroup.add(brassTrim);
+
         const legL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.05, 1.8), legMat);
-        legL.position.set(-12.9, 0.525, -7.5);
+        legL.position.set(-14.3, 0.525, -8.0);
         legL.castShadow = true;
         ceoGroup.add(legL);
 
         const legR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.05, 1.8), legMat);
-        legR.position.set(-9.1, 0.525, -7.5);
+        legR.position.set(-10.7, 0.525, -8.0);
         legR.castShadow = true;
         ceoGroup.add(legR);
 
-        // Executive Leather Chair
-        const chairSeat = new THREE.Mesh(
-          new THREE.BoxGeometry(1.0, 0.14, 1.0),
-          new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.6 })
-        );
-        chairSeat.position.set(-11.0, 0.65, -8.7);
+        // High-back leather chair for Daniandra
+        const chairMat = new THREE.MeshStandardMaterial({ color: 0x151922, roughness: 0.5 });
+        const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.14, 1.0), chairMat);
+        chairSeat.position.set(-12.5, 0.65, -9.2);
         chairSeat.castShadow = true;
         ceoGroup.add(chairSeat);
 
-        const chairBack = new THREE.Mesh(
-          new THREE.BoxGeometry(1.0, 1.2, 0.15),
-          new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.6 })
-        );
-        chairBack.position.set(-11.0, 1.25, -9.2);
+        const chairBack = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.25, 0.15), chairMat);
+        chairBack.position.set(-12.5, 1.28, -9.7);
         chairBack.castShadow = true;
         ceoGroup.add(chairBack);
 
-        // Tall Bookshelf against back wall
-        const shelfGroup = new THREE.Group();
-        const shelfFrame = new THREE.Mesh(
-          new THREE.BoxGeometry(3.6, 2.4, 0.6),
-          new THREE.MeshStandardMaterial({ color: 0x452f1e, roughness: 0.5 })
-        );
-        shelfFrame.position.set(-15.6, 1.2, -10.0);
-        shelfGroup.add(shelfFrame);
-
-        // Books on shelf
-        const bookColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0xa855f7];
-        for (let i = 0; i < 12; i++) {
-          const book = new THREE.Mesh(
-            new THREE.BoxGeometry(0.14, 0.45, 0.4),
-            new THREE.MeshStandardMaterial({ color: bookColors[i % bookColors.length] })
-          );
-          book.position.set(-17.0 + i * 0.25, 1.0 + (i > 6 ? 0.7 : 0), -10.0);
-          shelfGroup.add(book);
-        }
-        ceoGroup.add(shelfGroup);
-
-        // CEO Laptop on desk with glowing screen
+        // CEO Laptop
         const laptopBase = new THREE.Mesh(
           new THREE.BoxGeometry(0.65, 0.03, 0.45),
           new THREE.MeshStandardMaterial({ color: 0xcfd8dc, metalness: 0.8, roughness: 0.2 })
         );
-        laptopBase.position.set(-11.0, 1.14, -7.5);
+        laptopBase.position.set(-12.5, 1.14, -8.0);
         ceoGroup.add(laptopBase);
 
         const laptopScreen = new THREE.Mesh(
           new THREE.BoxGeometry(0.65, 0.42, 0.03),
-          new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00f2fe, emissiveIntensity: 0.6 })
+          new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00f2fe, emissiveIntensity: 0.65 })
         );
-        laptopScreen.position.set(-11.0, 1.34, -7.7);
+        laptopScreen.position.set(-12.5, 1.34, -8.2);
         laptopScreen.rotation.x = -0.2;
         ceoGroup.add(laptopScreen);
+        registerScreen(laptopScreen, 0.65, 3.5, 0.2);
 
-        // Daffa (CEO Office) Executive Workstation & Chair in CEO Suite
-        const daffaDesk = new THREE.Mesh(
-          new THREE.BoxGeometry(2.4, 0.12, 1.4),
-          new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.4, metalness: 0.2 })
+        // Brass Nameplate
+        const nameplate = new THREE.Mesh(
+          new THREE.BoxGeometry(0.5, 0.08, 0.12),
+          new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 })
         );
-        daffaDesk.position.set(-6.2, 1.05, -9.5);
+        nameplate.position.set(-11.2, 1.15, -7.3);
+        ceoGroup.add(nameplate);
+
+        // Daffa (CEO Office) Workstation
+        const daffaDesk = new THREE.Mesh(
+          new THREE.BoxGeometry(2.2, 0.12, 1.4),
+          new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.3 })
+        );
+        daffaDesk.position.set(-9.2, 1.05, -8.0);
         daffaDesk.castShadow = true;
         ceoGroup.add(daffaDesk);
+
+        const daffaLeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 1.2), legMat);
+        daffaLeg1.position.set(-10.15, 0.5, -8.0);
+        ceoGroup.add(daffaLeg1);
+
+        const daffaLeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 1.2), legMat);
+        daffaLeg2.position.set(-8.25, 0.5, -8.0);
+        ceoGroup.add(daffaLeg2);
 
         const daffaChair = new THREE.Mesh(
           new THREE.BoxGeometry(0.8, 0.12, 0.8),
           new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 })
         );
-        daffaChair.position.set(-6.2, 0.65, -10.4);
+        daffaChair.position.set(-9.2, 0.65, -9.1);
         ceoGroup.add(daffaChair);
 
-        const daffaMonitor = new THREE.Mesh(
-          new THREE.BoxGeometry(0.8, 0.5, 0.05),
-          new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 0.5 })
+        const daffaChairBack = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 0.9, 0.12),
+          new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 })
         );
-        daffaMonitor.position.set(-6.2, 1.35, -9.4);
+        daffaChairBack.position.set(-9.2, 1.1, -9.5);
+        ceoGroup.add(daffaChairBack);
+
+        const daffaMonitor = new THREE.Mesh(
+          new THREE.BoxGeometry(0.85, 0.5, 0.04),
+          new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 0.55 })
+        );
+        daffaMonitor.position.set(-9.2, 1.35, -7.8);
         ceoGroup.add(daffaMonitor);
+        registerScreen(daffaMonitor, 0.55, 4.2, 1.1);
+
+        // Bookshelf on left perimeter wall
+        const shelfGroup = new THREE.Group();
+        const shelfFrame = new THREE.Mesh(
+          new THREE.BoxGeometry(0.6, 2.4, 3.6),
+          new THREE.MeshStandardMaterial({ color: 0x452f1e, roughness: 0.5 })
+        );
+        shelfFrame.position.set(-17.2, 1.2, -9.5);
+        shelfGroup.add(shelfFrame);
+
+        const bookColors = [0xef4444, 0x3b82f6, 0x10b981, 0xf59e0b, 0xa855f7];
+        for (let i = 0; i < 10; i++) {
+          const book = new THREE.Mesh(
+            new THREE.BoxGeometry(0.4, 0.45, 0.14),
+            new THREE.MeshStandardMaterial({ color: bookColors[i % bookColors.length] })
+          );
+          book.position.set(-17.2, 0.9 + (i > 5 ? 0.7 : 0), -10.8 + i * 0.28);
+          shelfGroup.add(book);
+        }
+        ceoGroup.add(shelfGroup);
 
         scene.add(ceoGroup);
+      }
+
+      function buildPaStation() {
+        const paGroup = new THREE.Group();
+        paGroup.userData = { roomId: "room-pa" };
+
+        const marbleMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2, metalness: 0.1 });
+        const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.25 });
+        const chairMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 });
+
+        // Minimalist Modern Desk for Elara
+        const deskTop = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.1, 1.4), marbleMat);
+        deskTop.position.set(-4.5, 1.0, -8.5);
+        deskTop.castShadow = true;
+        paGroup.add(deskTop);
+
+        const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 1.2), goldMat);
+        leg1.position.set(-5.75, 0.475, -8.5);
+        paGroup.add(leg1);
+
+        const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 1.2), goldMat);
+        leg2.position.set(-3.25, 0.475, -8.5);
+        paGroup.add(leg2);
+
+        // Executive Chair
+        const chair = new THREE.Group();
+        chair.position.set(-4.5, 0, -9.6);
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.1, 0.75), chairMat);
+        seat.position.y = 0.55;
+        chair.add(seat);
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.1), chairMat);
+        back.position.set(0, 0.95, -0.35);
+        chair.add(back);
+        paGroup.add(chair);
+
+        // Agenda Tablet on Desk
+        const tabletStand = new THREE.Mesh(
+          new THREE.BoxGeometry(0.2, 0.1, 0.2),
+          new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 })
+        );
+        tabletStand.position.set(-4.2, 1.06, -8.5);
+        paGroup.add(tabletStand);
+
+        const tabletScreen = new THREE.Mesh(
+          new THREE.BoxGeometry(0.55, 0.38, 0.02),
+          new THREE.MeshStandardMaterial({ color: 0xe0aaff, emissive: 0xc084fc, emissiveIntensity: 0.75 })
+        );
+        tabletScreen.position.set(-4.2, 1.22, -8.55);
+        tabletScreen.rotation.x = -0.35;
+        paGroup.add(tabletScreen);
+        registerScreen(tabletScreen, 0.75, 3.2, 2.5);
+
+        // Executive Schedule Board on wall
+        const scheduleTex = createScheduleTexture();
+        const scheduleMat = new THREE.MeshStandardMaterial({
+          map: scheduleTex,
+          emissive: 0x1e1533,
+          emissiveIntensity: 0.5,
+          roughness: 0.2
+        });
+        const scheduleMesh = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.6, 0.08), scheduleMat);
+        scheduleMesh.position.set(-4.5, 1.9, -13.55);
+        scheduleMesh.castShadow = true;
+        paGroup.add(scheduleMesh);
+        registerScreen(scheduleMesh, 0.5, 2.0, 0.8);
+
+        // Ceramic Vase with Orchid
+        const vase = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.12, 0.15, 0.35, 16),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 })
+        );
+        vase.position.set(-5.4, 1.22, -8.3);
+        paGroup.add(vase);
+
+        const stem = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.015, 0.015, 0.45, 8),
+          new THREE.MeshStandardMaterial({ color: 0x15803d })
+        );
+        stem.position.set(-5.4, 1.55, -8.3);
+        paGroup.add(stem);
+
+        for (let i = 0; i < 3; i++) {
+          const petal = new THREE.Mesh(
+            new THREE.SphereGeometry(0.07, 8, 8),
+            new THREE.MeshStandardMaterial({ color: 0xf3e8ff })
+          );
+          petal.scale.set(1.5, 0.5, 1.0);
+          petal.position.set(-5.4 + Math.sin(i * 2) * 0.08, 1.65 + i * 0.08, -8.3 + Math.cos(i * 2) * 0.08);
+          paGroup.add(petal);
+        }
+
+        scene.add(paGroup);
+      }
+
+      function buildCtoSuite() {
+        const ctoGroup = new THREE.Group();
+        ctoGroup.userData = { roomId: "room-cto" };
+
+        const glassMat = new THREE.MeshPhysicalMaterial({
+          color: 0xa855f7,
+          transparent: true,
+          opacity: 0.26,
+          roughness: 0.08,
+          metalness: 0.15,
+          transmission: 0.85
+        });
+        const frameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.8 });
+
+        // Glass Wall Enclosure
+        const wallBack = new THREE.Mesh(new THREE.BoxGeometry(6.4, 1.9, 0.08), glassMat);
+        wallBack.position.set(-3.0, 0.95, -3.8);
+        ctoGroup.add(wallBack);
+
+        const capBack = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.08, 0.12), frameMat);
+        capBack.position.set(-3.0, 1.9, -3.8);
+        ctoGroup.add(capBack);
+
+        const wallLeft = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.9, 6.6), glassMat);
+        wallLeft.position.set(-6.2, 0.95, -0.5);
+        ctoGroup.add(wallLeft);
+
+        const capLeft = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 6.6), frameMat);
+        capLeft.position.set(-6.2, 1.9, -0.5);
+        ctoGroup.add(capLeft);
+
+        const wallRight = new THREE.Mesh(new THREE.BoxGeometry(0.08, 1.9, 6.6), glassMat);
+        wallRight.position.set(0.2, 0.95, -0.5);
+        ctoGroup.add(wallRight);
+
+        const capRight = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.08, 6.6), frameMat);
+        capRight.position.set(0.2, 1.9, -0.5);
+        ctoGroup.add(capRight);
+
+        // Front glass wall with open doorway
+        const wallFrontLeft = new THREE.Mesh(new THREE.BoxGeometry(4.2, 1.9, 0.08), glassMat);
+        wallFrontLeft.position.set(-4.1, 0.95, 2.8);
+        ctoGroup.add(wallFrontLeft);
+
+        const capFront = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.08, 0.12), frameMat);
+        capFront.position.set(-3.0, 1.9, 2.8);
+        ctoGroup.add(capFront);
+
+        // Neon border glow
+        const rimMat = new THREE.MeshBasicMaterial({ color: 0xa855f7 });
+        const rimMesh = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.04, 0.04), rimMat);
+        rimMesh.position.set(-3.0, 0.02, 2.8);
+        ctoGroup.add(rimMesh);
+
+        // Executive Titanium Desk
+        const deskMat = new THREE.MeshStandardMaterial({ color: 0x121722, roughness: 0.3, metalness: 0.4 });
+        const deskTop = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.12, 1.8), deskMat);
+        deskTop.position.set(-3.0, 1.05, -0.5);
+        deskTop.castShadow = true;
+        ctoGroup.add(deskTop);
+
+        const underGlow = new THREE.Mesh(
+          new THREE.BoxGeometry(3.62, 0.03, 1.82),
+          new THREE.MeshBasicMaterial({ color: 0xa855f7 })
+        );
+        underGlow.position.set(-3.0, 1.0, -0.5);
+        ctoGroup.add(underGlow);
+
+        const deskLeg1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 1.6), frameMat);
+        deskLeg1.position.set(-4.6, 0.5, -0.5);
+        ctoGroup.add(deskLeg1);
+
+        const deskLeg2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.0, 1.6), frameMat);
+        deskLeg2.position.set(-1.4, 0.5, -0.5);
+        ctoGroup.add(deskLeg2);
+
+        // Ergonomic Chair for Raziel
+        const chairMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.5 });
+        const chair = new THREE.Group();
+        chair.position.set(-3.0, 0, -1.5);
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.12, 0.85), chairMat);
+        seat.position.y = 0.55;
+        chair.add(seat);
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.85, 0.1), chairMat);
+        back.position.set(0, 1.0, -0.4);
+        chair.add(back);
+        ctoGroup.add(chair);
+
+        // Dual Ultrawide Curved Monitors
+        const termGreenTex = createTerminalTexture("green");
+        const termPurpleTex = createTerminalTexture("purple");
+
+        const mon1Mat = new THREE.MeshStandardMaterial({
+          map: termGreenTex,
+          emissive: 0x052e16,
+          emissiveIntensity: 0.75,
+          roughness: 0.2
+        });
+        const mon1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.06), mon1Mat);
+        mon1.position.set(-3.75, 1.55, 0.2);
+        mon1.rotation.y = 0.18;
+        ctoGroup.add(mon1);
+        registerScreen(mon1, 0.75, 5.0, 0.0);
+
+        const mon2Mat = new THREE.MeshStandardMaterial({
+          map: termPurpleTex,
+          emissive: 0x2e1065,
+          emissiveIntensity: 0.7,
+          roughness: 0.2
+        });
+        const mon2 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.06), mon2Mat);
+        mon2.position.set(-2.25, 1.55, 0.2);
+        mon2.rotation.y = -0.18;
+        ctoGroup.add(mon2);
+        registerScreen(mon2, 0.7, 4.5, 1.8);
+
+        // Architecture Blueprint Display
+        const blueprintTex = createBlueprintTexture();
+        const blueprintMat = new THREE.MeshStandardMaterial({
+          map: blueprintTex,
+          emissive: 0x071e3d,
+          emissiveIntensity: 0.65,
+          roughness: 0.2
+        });
+        const blueprintMesh = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.5, 2.5), blueprintMat);
+        blueprintMesh.position.set(-6.12, 1.45, -0.5);
+        ctoGroup.add(blueprintMesh);
+        registerScreen(blueprintMesh, 0.65, 2.5, 3.1);
+
+        // Corner Micro-Server Rack
+        const miniRack = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 1.8, 0.8),
+          new THREE.MeshStandardMaterial({ color: 0x070a14, roughness: 0.4, metalness: 0.6 })
+        );
+        miniRack.position.set(-5.4, 0.9, -2.8);
+        ctoGroup.add(miniRack);
+
+        for (let r = 0; r < 4; r++) {
+          for (let c = 0; c < 2; c++) {
+            const led = new THREE.Mesh(
+              new THREE.BoxGeometry(0.04, 0.04, 0.02),
+              new THREE.MeshBasicMaterial({ color: (r + c) % 2 === 0 ? 0xa855f7 : 0x00f2fe })
+            );
+            led.position.set(-5.55 + c * 0.3, 0.5 + r * 0.3, -2.39);
+            ctoGroup.add(led);
+            serverLeds.push({ mesh: led, baseColor: led.material.color.getHex() });
+          }
+        }
+
+        scene.add(ctoGroup);
       }
 
       function buildWarRoom() {
         const warGroup = new THREE.Group();
         warGroup.userData = { roomId: "room-war" };
 
-        // Circular Conference Table (Diameter 5.0, Oak Top)
         const tableGeo = new THREE.CylinderGeometry(2.5, 2.5, 0.12, 32);
         const tableMat = new THREE.MeshStandardMaterial({ color: 0xbaa17f, roughness: 0.5 });
         const table = new THREE.Mesh(tableGeo, tableMat);
@@ -1427,7 +1957,6 @@
         table.receiveShadow = true;
         warGroup.add(table);
 
-        // Central metal pedestal
         const pedGeo = new THREE.CylinderGeometry(0.5, 0.8, 0.95, 24);
         const pedMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 });
         const ped = new THREE.Mesh(pedGeo, pedMat);
@@ -1435,7 +1964,6 @@
         ped.castShadow = true;
         warGroup.add(ped);
 
-        // Center table Holographic disc
         const holoDisc = new THREE.Mesh(
           new THREE.CylinderGeometry(0.6, 0.6, 0.04, 24),
           new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00f2fe, emissiveIntensity: 0.8 })
@@ -1443,10 +1971,11 @@
         holoDisc.position.set(10.0, 1.02, -6.5);
         warGroup.add(holoDisc);
 
-        // 8 Swivel Conference Chairs around table
+        // Seating with Head Position Open
         const chairMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.6 });
-        for (let i = 0; i < 8; i++) {
-          const angle = (i / 8) * Math.PI * 2;
+        const numChairs = 9;
+        for (let i = 0; i < numChairs; i++) {
+          const angle = Math.PI * 0.2 + (i / (numChairs - 1)) * (Math.PI * 1.6);
           const chairGroup = new THREE.Group();
           chairGroup.position.set(10.0 + 3.1 * Math.cos(angle), 0, -6.5 + 3.1 * Math.sin(angle));
           chairGroup.rotation.y = -angle - Math.PI / 2;
@@ -1466,12 +1995,18 @@
           warGroup.add(chairGroup);
         }
 
+        // Executive Head Position Podium
+        const lecternMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+        const lectern = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.1, 0.5), lecternMat);
+        lectern.position.set(10.0, 0.55, -9.0);
+        warGroup.add(lectern);
+
         // Ultra-wide Wall Presentation Screen
         presentationTexture = createPresentationTexture();
         const screenMat = new THREE.MeshStandardMaterial({
           map: presentationTexture,
           emissive: 0x1e293b,
-          emissiveIntensity: 0.3,
+          emissiveIntensity: 0.4,
           roughness: 0.2
         });
         const screenGeo = new THREE.BoxGeometry(6.2, 2.5, 0.12);
@@ -1479,6 +2014,7 @@
         presentationMesh.position.set(10.0, 1.8, -13.5);
         presentationMesh.castShadow = true;
         warGroup.add(presentationMesh);
+        registerScreen(presentationMesh, 0.4, 2.0, 0.0);
 
         scene.add(warGroup);
       }
@@ -1491,7 +2027,6 @@
         const metalMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 });
         const screenMat = new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00b4d8, emissiveIntensity: 0.7 });
 
-        // 4 Desks in 2x2 Pod
         const desks = [
           { x: -13.0, z: 2.0 },
           { x: -8.5,  z: 2.0 },
@@ -1499,14 +2034,12 @@
           { x: -8.5,  z: 7.0 }
         ];
 
-        desks.forEach(d => {
-          // Tabletop
+        desks.forEach((d, idx) => {
           const top = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.1, 1.8), deskMat);
           top.position.set(d.x, 0.95, d.z);
           top.castShadow = true;
           devGroup.add(top);
 
-          // Legs
           const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.95, 1.6), metalMat);
           leg1.position.set(d.x - 1.65, 0.475, d.z);
           devGroup.add(leg1);
@@ -1515,18 +2048,18 @@
           leg2.position.set(d.x + 1.65, 0.475, d.z);
           devGroup.add(leg2);
 
-          // Dual Glowing Monitors
           const mon1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), screenMat);
           mon1.position.set(d.x - 0.65, 1.5, d.z + 0.6);
           mon1.rotation.y = 0.1;
           devGroup.add(mon1);
+          registerScreen(mon1, 0.65, 4.0 + idx * 0.5, idx * 0.7);
 
           const mon2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), screenMat);
           mon2.position.set(d.x + 0.65, 1.5, d.z + 0.6);
           mon2.rotation.y = -0.1;
           devGroup.add(mon2);
+          registerScreen(mon2, 0.6, 4.2 + idx * 0.4, idx * 0.8 + 1.0);
 
-          // Ergonomic Caster Chair
           const chair = new THREE.Group();
           chair.position.set(d.x, 0, d.z - 0.7);
           const seat = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.1, 0.75), metalMat);
@@ -1545,7 +2078,6 @@
         const serverGroup = new THREE.Group();
         serverGroup.userData = { roomId: "room-server" };
 
-        // Translucent Glass Partition Walls
         const glassMat = new THREE.MeshPhysicalMaterial({
           color: 0x00f2fe,
           transparent: true,
@@ -1556,7 +2088,6 @@
         });
         const frameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.8 });
 
-        // Glass wall along corridor (Z = 1.0, X: 7 to 17)
         const glass1 = new THREE.Mesh(new THREE.BoxGeometry(10.0, 1.8, 0.1), glassMat);
         glass1.position.set(12.0, 0.9, 1.0);
         serverGroup.add(glass1);
@@ -1565,7 +2096,6 @@
         frameTop.position.set(12.0, 1.8, 1.0);
         serverGroup.add(frameTop);
 
-        // 3 Tall Black Server Rack Cabinets
         const rackMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.5, metalness: 0.6 });
         const rackPositions = [10.5, 12.5, 14.5];
 
@@ -1575,7 +2105,6 @@
           rack.castShadow = true;
           serverGroup.add(rack);
 
-          // LED matrix on front face (Z = 4.62)
           for (let row = 0; row < 6; row++) {
             for (let col = 0; col < 3; col++) {
               const ledGeo = new THREE.BoxGeometry(0.06, 0.06, 0.02);
@@ -1597,7 +2126,6 @@
         const loungeGroup = new THREE.Group();
         loungeGroup.userData = { roomId: "room-lounge" };
 
-        // Floor Rug (Geometric Slate/Cream)
         const rugGeo = new THREE.BoxGeometry(7.0, 0.02, 5.0);
         const rugMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
         const rug = new THREE.Mesh(rugGeo, rugMat);
@@ -1605,7 +2133,6 @@
         rug.receiveShadow = true;
         loungeGroup.add(rug);
 
-        // Contemporary Navy Blue Sofa (3-Seater)
         const sofaMat = new THREE.MeshStandardMaterial({ color: 0x1b2838, roughness: 0.7 });
         const sofaBase = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.5, 1.5), sofaMat);
         sofaBase.position.set(0.2, 0.35, 6.2);
@@ -1617,7 +2144,6 @@
         sofaBack.castShadow = true;
         loungeGroup.add(sofaBack);
 
-        // Modern Terracotta Orange Accent Armchair
         const chairMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.6 });
         const armChair = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.6, 1.3), chairMat);
         armChair.position.set(4.0, 0.4, 8.2);
@@ -1625,14 +2151,12 @@
         armChair.castShadow = true;
         loungeGroup.add(armChair);
 
-        // Low Scandinavian Oak Coffee Table
         const coffeeMat = new THREE.MeshStandardMaterial({ color: 0xc89f72, roughness: 0.5 });
         const coffeeTable = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.2, 0.4, 24), coffeeMat);
         coffeeTable.position.set(1.2, 0.22, 8.2);
         coffeeTable.castShadow = true;
         loungeGroup.add(coffeeTable);
 
-        // Floor Lamp
         const lampPole = new THREE.Mesh(
           new THREE.CylinderGeometry(0.04, 0.04, 2.8, 8),
           new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8 })
@@ -1657,7 +2181,6 @@
         const posX = 11.0;
         const posZ = 10.5;
 
-        // Regulation Green Ping-Pong Table
         const tableMat = new THREE.MeshStandardMaterial({ color: 0x1b5e20, roughness: 0.4 });
         const tableTop = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.1, 2.5), tableMat);
         tableTop.position.set(posX, 0.95, posZ);
@@ -1665,19 +2188,16 @@
         tableTop.receiveShadow = true;
         ppGroup.add(tableTop);
 
-        // White perimeter boundary lines & center division stripe
         const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
         const centerLine = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.105, 0.04), lineMat);
         centerLine.position.set(posX, 0.955, posZ);
         ppGroup.add(centerLine);
 
-        // Center Net
         const netMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, opacity: 0.8, transparent: true, roughness: 0.8 });
         const net = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.35, 2.7), netMat);
         net.position.set(posX, 1.15, posZ);
         ppGroup.add(net);
 
-        // Net posts
         const postMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 });
         const post1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.42, 8), postMat);
         post1.position.set(posX, 1.15, posZ - 1.35);
@@ -1687,7 +2207,6 @@
         post2.position.set(posX, 1.15, posZ + 1.35);
         ppGroup.add(post2);
 
-        // Table Steel Legs with wheels
         const legMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, metalness: 0.7, roughness: 0.3 });
         const legs = [
           { x: posX - 1.8, z: posZ - 1.0 },
@@ -1702,7 +2221,7 @@
           ppGroup.add(leg);
         });
 
-        // 2 Paddles (Red and Blue)
+        // 2 Paddles
         const redPaddleMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 });
         const bluePaddleMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.5 });
 
@@ -1733,51 +2252,61 @@
         const blanketMat2 = new THREE.MeshStandardMaterial({ color: 0x0f766e, roughness: 0.7 });
 
         const beds = [
-          { x: -2.0, z: -8.0, blanket: blanketMat1 },
-          { x: 1.6,  z: -8.0, blanket: blanketMat2 }
+          { x: 1.8, z: -8.5, blanket: blanketMat1 },
+          { x: 4.2, z: -8.5, blanket: blanketMat2 }
         ];
 
         beds.forEach(b => {
-          // Wooden Frame
-          const frame = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.35, 3.6), woodMat);
+          const frame = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.35, 3.4), woodMat);
           frame.position.set(b.x, 0.175, b.z);
           frame.castShadow = true;
           bedGroup.add(frame);
 
-          // Headboard
-          const headboard = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2, 0.25), woodMat);
-          headboard.position.set(b.x, 0.7, b.z - 1.7);
+          const headboard = new THREE.Mesh(new THREE.BoxGeometry(2.1, 1.2, 0.25), woodMat);
+          headboard.position.set(b.x, 0.7, b.z - 1.6);
           headboard.castShadow = true;
           bedGroup.add(headboard);
 
-          // Mattress
-          const mattress = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.4, 3.2), matMat);
+          const mattress = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.4, 3.0), matMat);
           mattress.position.set(b.x, 0.45, b.z + 0.1);
           mattress.castShadow = true;
           bedGroup.add(mattress);
 
-          // Blanket (folded neatly)
-          const blanket = new THREE.Mesh(new THREE.BoxGeometry(2.12, 0.42, 2.0), b.blanket);
-          blanket.position.set(b.x, 0.47, b.z + 0.7);
+          const blanket = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.42, 1.9), b.blanket);
+          blanket.position.set(b.x, 0.47, b.z + 0.65);
           bedGroup.add(blanket);
 
-          // Pillow
-          const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.16, 0.7), matMat);
-          pillow.position.set(b.x, 0.72, b.z - 1.1);
+          const pillow = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.16, 0.65), matMat);
+          pillow.position.set(b.x, 0.72, b.z - 1.0);
           bedGroup.add(pillow);
 
-          // Bedside Nightstand
-          const stand = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.8), woodMat);
-          stand.position.set(b.x > 0 ? b.x + 1.7 : b.x - 1.7, 0.3, b.z - 1.2);
+          const stand = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.6, 0.7), woodMat);
+          stand.position.set(b.x > 3.0 ? b.x + 1.4 : b.x - 1.4, 0.3, b.z - 1.1);
           bedGroup.add(stand);
 
-          // Glowing Bedside Lamp
           const lampShade = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.2, 0.3, 0.35, 12),
-            new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.8 })
+            new THREE.CylinderGeometry(0.18, 0.28, 0.32, 12),
+            new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfef08a, emissiveIntensity: 0.85 })
           );
-          lampShade.position.set(b.x > 0 ? b.x + 1.7 : b.x - 1.7, 0.78, b.z - 1.2);
+          lampShade.position.set(b.x > 3.0 ? b.x + 1.4 : b.x - 1.4, 0.78, b.z - 1.1);
           bedGroup.add(lampShade);
+        });
+
+        // Floating 3D "Zzz" Particles
+        const zzzTex = createZzzTexture();
+        beds.forEach((b, bIdx) => {
+          for (let i = 0; i < 3; i++) {
+            const mat = new THREE.SpriteMaterial({ map: zzzTex, transparent: true, opacity: 0.0, depthWrite: false });
+            const sprite = new THREE.Sprite(mat);
+            sprite.scale.set(0.35, 0.35, 1.0);
+            sprite.userData = {
+              bedX: b.x,
+              bedZ: b.z - 1.0,
+              offset: i * 0.95 + bIdx * 0.45
+            };
+            scene.add(sprite);
+            zzzSprites.push(sprite);
+          }
         });
 
         scene.add(bedGroup);
@@ -1787,7 +2316,6 @@
         const kitchenGroup = new THREE.Group();
         kitchenGroup.userData = { roomId: "room-concierge" };
 
-        // Kitchen Island Counter (White quartz top with dark base)
         const counterTop = new THREE.Mesh(
           new THREE.BoxGeometry(5.0, 0.12, 1.8),
           new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.2, metalness: 0.1 })
@@ -1804,13 +2332,11 @@
         counterBase.castShadow = true;
         kitchenGroup.add(counterBase);
 
-        // Espresso Coffee Machine
         const espressoMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
         const espresso = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.7, 0.6), espressoMat);
         espresso.position.set(-12.4, 1.45, 11.5);
         kitchenGroup.add(espresso);
 
-        // Water Cooler Dispenser (White base with blue water gallon)
         const coolerBase = new THREE.Mesh(
           new THREE.CylinderGeometry(0.35, 0.35, 1.4, 16),
           new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 })
@@ -1848,7 +2374,6 @@
           pot.castShadow = true;
           plantGroup.add(pot);
 
-          // Multiple stylized leaf discs
           for (let i = 0; i < 5; i++) {
             const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.35 * p.scale, 8, 8), leafMat);
             leaf.scale.set(1.4, 0.25, 0.8);
@@ -1862,7 +2387,7 @@
       }
 
       // =========================================================================
-      // 6. Stylized 3D Humanoid Avatars
+      // 7. Stylized 3D Humanoid Avatars
       // =========================================================================
       function buildAllAvatars() {
         AGENTS.forEach(agent => {
@@ -1870,16 +2395,12 @@
           scene.add(avatar.group);
           avatarObjects[agent.id] = avatar;
         });
-
-        // Initialize target coordinates for current mode
-        applyModePositions("deep_work", true);
       }
 
       function createAvatar(agent) {
         const root = new THREE.Group();
         root.userData = { agentId: agent.id, name: agent.name, role: agent.role };
 
-        // Contact Shadow Disc
         const shadowGeo = new THREE.CircleGeometry(0.45, 16);
         const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, opacity: 0.35, transparent: true });
         const shadow = new THREE.Mesh(shadowGeo, shadowMat);
@@ -1891,13 +2412,8 @@
         bodyGroup.position.y = 0.0;
         root.add(bodyGroup);
 
-        // Skin material
         const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd1b3, roughness: 0.6 });
-
-        // Clothing material
         const clothesMat = new THREE.MeshStandardMaterial({ color: agent.clothingColor, roughness: 0.5 });
-
-        // Hair material
         const hairMat = new THREE.MeshStandardMaterial({ color: agent.hairColor, roughness: 0.5 });
 
         // Torso
@@ -1906,98 +2422,88 @@
         torso.castShadow = true;
         bodyGroup.add(torso);
 
-        // Head
+        // Head Group (for independent tilting down when typing, nodding, etc.)
+        const headGroup = new THREE.Group();
+        headGroup.position.set(0, 1.72, 0);
+        bodyGroup.add(headGroup);
+
         const head = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.48, 0.44), skinMat);
-        head.position.y = 1.72;
         head.castShadow = true;
-        bodyGroup.add(head);
+        headGroup.add(head);
 
-        // Hair
         const hair = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.28, 0.5), hairMat);
-        hair.position.y = 1.94;
+        hair.position.y = 0.22;
         hair.castShadow = true;
-        bodyGroup.add(hair);
+        headGroup.add(hair);
 
-        // Left & Right Arms
-        const armL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), clothesMat);
-        armL.position.set(-0.42, 1.05, 0);
-        armL.castShadow = true;
-        bodyGroup.add(armL);
+        // Arm Left (pivot at shoulder)
+        const armLGroup = new THREE.Group();
+        armLGroup.position.set(-0.42, 1.35, 0);
+        const armLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), clothesMat);
+        armLMesh.position.set(0, -0.325, 0);
+        armLMesh.castShadow = true;
+        armLGroup.add(armLMesh);
+        bodyGroup.add(armLGroup);
 
-        const armR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), clothesMat);
-        armR.position.set(0.42, 1.05, 0);
-        armR.castShadow = true;
-        bodyGroup.add(armR);
+        // Arm Right (pivot at shoulder)
+        const armRGroup = new THREE.Group();
+        armRGroup.position.set(0.42, 1.35, 0);
+        const armRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), clothesMat);
+        armRMesh.position.set(0, -0.325, 0);
+        armRMesh.castShadow = true;
+        armRGroup.add(armRMesh);
+        bodyGroup.add(armRGroup);
 
-        // Legs Group
-        const legL = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.22), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-        legL.position.set(-0.18, 0.325, 0);
-        legL.castShadow = true;
-        bodyGroup.add(legL);
+        // Leg Left (pivot at hip)
+        const legLGroup = new THREE.Group();
+        legLGroup.position.set(-0.18, 0.65, 0);
+        const legLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.22), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+        legLMesh.position.set(0, -0.325, 0);
+        legLMesh.castShadow = true;
+        legLGroup.add(legLMesh);
+        bodyGroup.add(legLGroup);
 
-        const legR = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.22), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-        legR.position.set(0.18, 0.325, 0);
-        legR.castShadow = true;
-        bodyGroup.add(legR);
+        // Leg Right (pivot at hip)
+        const legRGroup = new THREE.Group();
+        legRGroup.position.set(0.18, 0.65, 0);
+        const legRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.22), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+        legRMesh.position.set(0, -0.325, 0);
+        legRMesh.castShadow = true;
+        legRGroup.add(legRMesh);
+        bodyGroup.add(legRGroup);
 
         return {
           group: root,
           bodyGroup: bodyGroup,
-          armL: armL,
-          armR: armR,
-          legL: legL,
-          legR: legR,
+          headGroup: headGroup,
+          armL: armLGroup,
+          armR: armRGroup,
+          legL: legLGroup,
+          legR: legRGroup,
           agent: agent,
           targetPos: new THREE.Vector3(0, 0, 0),
           targetRotY: 0,
           currentPos: new THREE.Vector3(0, 0, 0),
           currentRotY: 0,
           currentPose: "seated_desk",
+          currentRoom: "room-dev",
           isMoving: false,
           walkCycle: 0
         };
       }
 
-      function applyModePositions(modeKey, instant = false) {
-        currentMode = modeKey;
-        const config = MODE_COORDINATES[modeKey] || MODE_COORDINATES.deep_work;
-
-        Object.keys(avatarObjects).forEach(id => {
-          const avatar = avatarObjects[id];
-          const target = config[id] || { x: 0, z: 0, y: 0, rotY: 0, pose: "standing" };
-
-          avatar.targetPos.set(target.x, target.y, target.z);
-          avatar.targetRotY = target.rotY;
-          avatar.currentPose = target.pose;
-
-          if (instant) {
-            avatar.currentPos.copy(avatar.targetPos);
-            avatar.currentRotY = target.rotY;
-            avatar.group.position.copy(avatar.targetPos);
-            avatar.group.rotation.y = target.rotY;
-          }
-
-          // Update Status Badge text & dot color
-          updateAgentBadge(avatar.agent, target.pose);
-        });
-
-        // Update presentation screen in war room
-        if (presentationMesh) {
-          presentationMesh.material.emissiveIntensity = (modeKey === "war_room") ? 0.8 : 0.3;
-        }
-      }
-
       // =========================================================================
-      // 7. Floating HTML/CSS Projected Name Badges
+      // 8. Floating Projected Name Badges
       // =========================================================================
       function buildDomBadges() {
         const container = document.getElementById("badge-container");
+        if (!container) return;
         container.innerHTML = "";
 
         AGENTS.forEach(agent => {
           const pill = document.createElement("div");
           pill.id = `badge-${agent.id}`;
-          pill.className = "agent-pill-badge bg-slate-950/85 backdrop-blur-md border border-slate-700/80 px-2.5 py-1 rounded-full text-[11px] font-semibold text-slate-100 shadow-xl flex items-center gap-1.5";
+          pill.className = "agent-pill-badge bg-slate-950/85 backdrop-blur-md border border-slate-700/80 px-2.5 py-1 rounded-full text-[11px] font-semibold text-slate-100 shadow-xl flex items-center gap-1.5 cursor-pointer hover:border-cyan-400 transition-colors";
           pill.innerHTML = `
             <span class="w-2 h-2 rounded-full bg-emerald-400 badge-dot" id="dot-${agent.id}"></span>
             <span class="font-display">${agent.name.split(" ")[0]}</span>
@@ -2020,6 +2526,8 @@
           dot.className += "bg-sky-400 animate-pulse";
         } else if (pose === "pingpong_player") {
           dot.className += "bg-amber-400 animate-ping";
+        } else if (pose === "speaking_lead") {
+          dot.className += "bg-cyan-400 animate-ping";
         } else if (pose === "seated_meeting") {
           dot.className += "bg-amber-400";
         } else {
@@ -2039,11 +2547,10 @@
           if (!badge) return;
 
           tempVec.copy(avatar.group.position);
-          tempVec.y += 2.4; // Position above head
+          tempVec.y += 2.4;
 
           tempVec.project(camera);
 
-          // Check if inside camera view frustum
           if (tempVec.z > -1 && tempVec.z < 1) {
             const x = (tempVec.x * 0.5 + 0.5) * w;
             const y = (-(tempVec.y * 0.5) + 0.5) * h;
@@ -2056,14 +2563,14 @@
       }
 
       // =========================================================================
-      // 8. Animation & Update Loop
+      // 9. Procedural 3D Animations & Render Loop
       // =========================================================================
       function animate() {
         requestAnimationFrame(animate);
         const delta = Math.min(clock.getDelta(), 0.1);
         const time = clock.getElapsedTime();
 
-        // Smooth Lerping of Avatars
+        // 1. Smooth Lerping of Avatars & Walking Animations
         Object.keys(avatarObjects).forEach(id => {
           const avatar = avatarObjects[id];
           const dist = avatar.currentPos.distanceTo(avatar.targetPos);
@@ -2073,64 +2580,191 @@
             avatar.currentPos.lerp(avatar.targetPos, delta * 3.8);
             avatar.group.position.copy(avatar.currentPos);
 
-            // Rotate towards target heading
             const angleDiff = avatar.targetRotY - avatar.currentRotY;
             avatar.currentRotY += angleDiff * delta * 5.0;
             avatar.group.rotation.y = avatar.currentRotY;
+            avatar.group.rotation.x = 0;
 
-            // Walking bounce
+            // Walking: alternating leg swings and body bobbing
             avatar.walkCycle += delta * 12;
-            avatar.bodyGroup.position.y = Math.abs(Math.sin(avatar.walkCycle)) * 0.12;
-            avatar.armL.rotation.x = Math.sin(avatar.walkCycle) * 0.6;
-            avatar.armR.rotation.x = -Math.sin(avatar.walkCycle) * 0.6;
+            avatar.bodyGroup.position.y = Math.abs(Math.sin(avatar.walkCycle)) * 0.14;
+            avatar.legL.rotation.x = Math.sin(avatar.walkCycle) * 0.65;
+            avatar.legR.rotation.x = -Math.sin(avatar.walkCycle) * 0.65;
+            avatar.armL.rotation.x = -Math.sin(avatar.walkCycle) * 0.5;
+            avatar.armR.rotation.x = Math.sin(avatar.walkCycle) * 0.5;
+            avatar.headGroup.rotation.set(0, 0, 0);
+            avatar.bodyGroup.scale.set(1, 1, 1);
           } else {
             avatar.isMoving = false;
             avatar.bodyGroup.position.y = 0;
+            avatar.legL.rotation.x = 0;
+            avatar.legR.rotation.x = 0;
 
-            // Pose-specific limb rotations
+            // Pose-specific procedural limb animations
             if (avatar.currentPose === "seated_desk") {
-              avatar.armL.rotation.x = -Math.PI / 3 + Math.sin(time * 3 + id.charCodeAt(0)) * 0.08;
-              avatar.armR.rotation.x = -Math.PI / 3 + Math.cos(time * 3 + id.charCodeAt(0)) * 0.08;
+              avatar.group.rotation.x = 0;
+              avatar.group.position.y = avatar.targetPos.y;
+              avatar.bodyGroup.scale.set(1, 1, 1);
+
+              // Typing at desk: subtle tapping on keyboard (Math.sin(time * 8))
+              const typeOffset = id.charCodeAt(0);
+              avatar.armL.rotation.x = -Math.PI / 2.5 + Math.sin(time * 8 + typeOffset) * 0.08;
+              avatar.armL.rotation.y = 0.12;
+              avatar.armR.rotation.x = -Math.PI / 2.5 + Math.cos(time * 8 + typeOffset) * 0.08;
+              avatar.armR.rotation.y = -0.12;
+
+              // Head slightly tilted down towards screen
+              avatar.headGroup.rotation.x = 0.16 + Math.sin(time * 2 + typeOffset) * 0.03;
+              avatar.headGroup.rotation.y = 0;
+            } else if (avatar.currentPose === "speaking_lead") {
+              // War Room meeting leader standing at head position gesturing
+              avatar.group.rotation.x = 0;
+              avatar.group.position.y = 0;
+              avatar.bodyGroup.scale.set(1, 1, 1);
+
+              avatar.armR.rotation.x = -Math.PI / 3.2 + Math.sin(time * 3.2) * 0.35;
+              avatar.armR.rotation.z = Math.cos(time * 2.5) * 0.22;
+              avatar.armR.rotation.y = -0.15;
+              avatar.armL.rotation.x = -Math.PI / 6 + Math.sin(time * 2.0) * 0.15;
+              avatar.armL.rotation.z = -0.1;
+
+              avatar.headGroup.rotation.y = Math.sin(time * 1.6) * 0.25;
+              avatar.headGroup.rotation.x = Math.sin(time * 2.2) * 0.08;
+            } else if (avatar.currentPose === "seated_meeting") {
+              avatar.group.rotation.x = 0;
+              avatar.group.position.y = avatar.targetPos.y;
+              avatar.bodyGroup.scale.set(1, 1, 1);
+
+              // Turn towards speaker at head position (10.0, -9.4)
+              const speakerX = 10.0;
+              const speakerZ = -9.4;
+              const dx = speakerX - avatar.group.position.x;
+              const dz = speakerZ - avatar.group.position.z;
+              const targetFacing = Math.atan2(dx, dz);
+              avatar.group.rotation.y = targetFacing;
+
+              avatar.armL.rotation.set(-Math.PI / 3.0, 0.1, 0);
+              avatar.armR.rotation.set(-Math.PI / 3.0, -0.1, 0);
+              avatar.headGroup.rotation.x = -0.1 + Math.sin(time * 1.5 + id.charCodeAt(0)) * 0.04;
+              avatar.headGroup.rotation.y = 0;
             } else if (avatar.currentPose === "pingpong_player") {
-              // Paddle swinging towards pingpong ball
-              const swing = Math.sin(time * 6) * 0.5;
-              avatar.armR.rotation.x = -Math.PI / 4 + swing;
+              avatar.group.rotation.x = 0;
+              avatar.group.position.y = 0;
+              avatar.bodyGroup.scale.set(1, 1, 1);
+              avatar.headGroup.rotation.set(0, 0, 0);
+              avatar.armL.rotation.set(-Math.PI / 6, 0.2, 0);
             } else if (avatar.currentPose === "sleeping_bed") {
+              // Lying horizontally on bed with slow breathing expansion
               avatar.group.rotation.x = -Math.PI / 2;
               avatar.group.position.y = 0.65;
-            } else {
-              avatar.armL.rotation.x = 0;
-              avatar.armR.rotation.x = 0;
+              avatar.armL.rotation.set(0, 0, 0);
+              avatar.armR.rotation.set(0, 0, 0);
+              avatar.headGroup.rotation.set(0, 0, 0);
+
+              // Breathing expansion (Math.sin(time * 2) * 0.05)
+              const breath = Math.sin(time * 2 + id.charCodeAt(0)) * 0.05;
+              avatar.bodyGroup.scale.set(1 + breath, 1 + breath * 1.5, 1);
+            } else if (avatar.currentPose === "seated_couch" || avatar.currentPose === "seated_chair") {
               avatar.group.rotation.x = 0;
+              avatar.group.position.y = 0;
+              avatar.bodyGroup.scale.set(1, 1, 1);
+              avatar.headGroup.rotation.set(0, 0, 0);
+              avatar.armL.rotation.set(-Math.PI / 5, 0.1, 0);
+              avatar.armR.rotation.set(-Math.PI / 5, -0.1, 0);
+            } else {
+              avatar.armL.rotation.set(0, 0, 0);
+              avatar.armR.rotation.set(0, 0, 0);
+              avatar.group.rotation.x = 0;
+              avatar.headGroup.rotation.set(0, 0, 0);
+              avatar.bodyGroup.scale.set(1, 1, 1);
             }
           }
         });
 
-        // Ping-Pong Ball Animation (in ping_pong mode)
+        // 2. Animated Screen Glow & Flicker
+        animatedScreens.forEach((scr, idx) => {
+          const pulse = Math.sin(time * scr.speed + scr.pulseOffset);
+          const flicker = (Math.sin(time * 20 + idx * 3) > 0.94) ? 0.14 : 0;
+          if (scr.mesh && scr.mesh.material && scr.mesh.material.emissiveIntensity !== undefined) {
+            scr.mesh.material.emissiveIntensity = scr.baseIntensity + pulse * 0.14 + flicker;
+          }
+        });
+
+        // 3. Ping-Pong Match Engine (Parabolic Arc & Paddle Swings)
+        const idrisAv = avatarObjects["idris"];
+        const mikaAv = avatarObjects["mika"];
+        const isPingPongPlaying = (idrisAv && idrisAv.currentPose === "pingpong_player") &&
+                                  (mikaAv && mikaAv.currentPose === "pingpong_player");
+
         if (pingPongBall) {
-          if (currentMode === "ping_pong") {
-            pingPongTime += delta * 4.0;
-            const progress = (Math.sin(pingPongTime) + 1) / 2; // 0 to 1
-            const ballX = 8.8 + progress * 4.4;
-            const bounceY = 1.05 + Math.abs(Math.sin(pingPongTime * 2)) * 0.45;
-            pingPongBall.position.set(ballX, bounceY, 10.5);
+          if (isPingPongPlaying) {
+            pingPongTime += delta * 4.2;
+            const progress = (Math.sin(pingPongTime) + 1) / 2;
+            const ballMinX = 8.8;
+            const ballMaxX = 13.2;
+            const ballX = ballMinX + progress * (ballMaxX - ballMinX);
+
+            let bounceY;
+            if (progress < 0.5) {
+              const p = progress / 0.5;
+              bounceY = 1.03 + Math.abs(Math.sin(p * Math.PI)) * 0.38;
+            } else {
+              const p = (progress - 0.5) / 0.5;
+              bounceY = 1.03 + Math.abs(Math.sin(p * Math.PI)) * 0.38;
+            }
+            const ballZ = 10.5 + Math.sin(pingPongTime * 1.5) * 0.25;
+            pingPongBall.position.set(ballX, bounceY, ballZ);
+
+            if (progress < 0.2) {
+              const swing = Math.sin((1 - progress / 0.2) * Math.PI);
+              idrisAv.armR.rotation.x = -Math.PI / 3 - swing * 0.75;
+              idrisAv.bodyGroup.rotation.y = swing * 0.25;
+            } else {
+              idrisAv.armR.rotation.x = -Math.PI / 3;
+              idrisAv.bodyGroup.rotation.y = 0;
+            }
+
+            if (progress > 0.8) {
+              const swing = Math.sin(((progress - 0.8) / 0.2) * Math.PI);
+              mikaAv.armR.rotation.x = -Math.PI / 3 - swing * 0.75;
+              mikaAv.bodyGroup.rotation.y = -swing * 0.25;
+            } else {
+              mikaAv.armR.rotation.x = -Math.PI / 3;
+              mikaAv.bodyGroup.rotation.y = 0;
+            }
           } else {
             pingPongBall.position.set(11.0, 1.05, 10.5);
           }
         }
 
-        // Blinking Server LEDs
+        // 4. Floating 3D "Zzz" Particles for Bedroom
+        const isAnyoneSleeping = Object.values(avatarObjects).some(a => a.currentPose === "sleeping_bed");
+        zzzSprites.forEach(sp => {
+          if (isAnyoneSleeping) {
+            const cycle = (time * 0.65 + sp.userData.offset) % 2.4;
+            const progress = cycle / 2.4;
+            sp.position.x = sp.userData.bedX + Math.sin(time * 2.2 + sp.userData.offset) * 0.2;
+            sp.position.y = 1.05 + progress * 1.8;
+            sp.position.z = sp.userData.bedZ - 0.15;
+            sp.scale.setScalar(0.28 + progress * 0.32);
+            sp.material.opacity = Math.sin(progress * Math.PI) * 0.85;
+          } else {
+            sp.material.opacity = 0;
+          }
+        });
+
+        // 5. Blinking Server LEDs
         if (serverLeds.length > 0 && Math.random() < 0.15) {
           const randomIdx = Math.floor(Math.random() * serverLeds.length);
           const led = serverLeds[randomIdx];
           led.mesh.material.color.setHex(Math.random() > 0.5 ? 0x000000 : led.baseColor);
         }
 
-        // Update OrbitControls & Project badges
+        // 6. Update OrbitControls & Project Badges
         controls.update();
         updateProjectedBadges();
 
-        // Render Scene
+        // 7. Render Scene
         renderer.render(scene, camera);
       }
 
@@ -2150,7 +2784,112 @@
       }
 
       // =========================================================================
-      // 9. Raycasting (Click on Avatar or Room)
+      // 10. Autonomous Studio Simulation Engine
+      // =========================================================================
+      let cycleTimer = null;
+      let cycleTimeRemaining = 35;
+
+      function startAutonomousEngine() {
+        applyAutonomousCycle(0, true);
+
+        if (cycleTimer) clearInterval(cycleTimer);
+        cycleTimer = setInterval(() => {
+          cycleTimeRemaining--;
+          if (cycleTimeRemaining <= 0) {
+            currentAutonomousIdx = (currentAutonomousIdx + 1) % AUTONOMOUS_CYCLES.length;
+            applyAutonomousCycle(currentAutonomousIdx, false);
+          }
+        }, 1000);
+      }
+
+      function applyAutonomousCycle(cycleIdx, instant = false) {
+        currentAutonomousIdx = cycleIdx;
+        const cycle = AUTONOMOUS_CYCLES[cycleIdx];
+        if (!cycle) return;
+
+        cycleTimeRemaining = cycle.duration;
+
+        // Update Bottom Dock State Summary
+        const summaryEl = document.getElementById("autonomous-state-summary");
+        if (summaryEl) summaryEl.textContent = cycle.stateSummary;
+
+        // Update Header HUD Mode
+        const headerModeEl = document.getElementById("header-mode-text");
+        if (headerModeEl) headerModeEl.textContent = cycle.shortLabel;
+
+        // Update Activity Ticker
+        const tickerEl = document.getElementById("activity-ticker-text");
+        if (tickerEl && cycle.tickerMsg) tickerEl.textContent = cycle.tickerMsg;
+
+        // Relocate Avatars
+        const posMap = cycle.positions;
+        Object.keys(avatarObjects).forEach(id => {
+          const avatar = avatarObjects[id];
+          const target = posMap[id] || { x: 0, z: 0, y: 0, rotY: 0, pose: "standing", room: "room-dev" };
+
+          avatar.targetPos.set(target.x, target.y, target.z);
+          avatar.targetRotY = target.rotY;
+          avatar.currentPose = target.pose;
+          avatar.currentRoom = target.room;
+
+          if (instant) {
+            avatar.currentPos.copy(avatar.targetPos);
+            avatar.currentRotY = target.rotY;
+            avatar.group.position.copy(avatar.targetPos);
+            avatar.group.rotation.y = target.rotY;
+          }
+
+          updateAgentBadge(avatar.agent, target.pose);
+        });
+
+        // Presentation Screen Glow
+        if (presentationMesh) {
+          const isMeeting = cycle.key.includes("meeting");
+          presentationMesh.material.emissiveIntensity = isMeeting ? 0.85 : 0.35;
+        }
+      }
+
+      function initSSEStream() {
+        try {
+          const evtSource = new EventSource("/api/v1/stream");
+          evtSource.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.office_mode) {
+                if (data.office_mode === "WAR_ROOM") {
+                  const targetIdx = AUTONOMOUS_CYCLES.findIndex(c => c.key === "council_meeting_ceo");
+                  if (targetIdx !== -1 && currentAutonomousIdx !== targetIdx) {
+                    applyAutonomousCycle(targetIdx, false);
+                  }
+                } else if (data.office_mode === "RECREATION") {
+                  const targetIdx = AUTONOMOUS_CYCLES.findIndex(c => c.key === "recreation_break");
+                  if (targetIdx !== -1 && currentAutonomousIdx !== targetIdx) {
+                    applyAutonomousCycle(targetIdx, false);
+                  }
+                } else if (data.office_mode === "REST_CYCLE") {
+                  const targetIdx = AUTONOMOUS_CYCLES.findIndex(c => c.key === "zen_rest_cycle");
+                  if (targetIdx !== -1 && currentAutonomousIdx !== targetIdx) {
+                    applyAutonomousCycle(targetIdx, false);
+                  }
+                }
+              }
+              if (data.activities && data.activities.length > 0) {
+                const latest = data.activities[0];
+                const tickerEl = document.getElementById("activity-ticker-text");
+                if (tickerEl && latest.detail) {
+                  tickerEl.textContent = `[${latest.agent_id ? latest.agent_id.toUpperCase() : "HQ"}] ${latest.detail}`;
+                }
+              }
+            } catch (err) {}
+          };
+          evtSource.onerror = () => {
+            // Autonomous client engine continues running smoothly
+          };
+        } catch (e) {}
+      }
+
+      // =========================================================================
+      // 11. Raycasting (Click on Avatar or Room)
       // =========================================================================
       const raycaster = new THREE.Raycaster();
       const mouse = new THREE.Vector2();
@@ -2160,9 +2899,8 @@
       }
 
       function onPointerDown(event) {
-        // Only left click and ignore clicks on UI HUD
         if (event.button !== 0) return;
-        if (event.target.closest("#top-header") || event.target.closest("#bottom-hud") || event.target.closest("#agent-dossier-modal") || event.target.closest("#pin-gate-modal")) {
+        if (event.target.closest("#top-header") || event.target.closest("footer") || event.target.closest("#agent-dossier-modal") || event.target.closest("#pin-gate-modal")) {
           return;
         }
 
@@ -2171,7 +2909,6 @@
 
         raycaster.setFromCamera(mouse, camera);
 
-        // Check avatar intersections
         const avatarRoots = Object.values(avatarObjects).map(a => a.group);
         const intersects = raycaster.intersectObjects(avatarRoots, true);
 
@@ -2187,7 +2924,6 @@
           }
         }
 
-        // Check room intersections
         const roomIntersects = raycaster.intersectObjects(scene.children, true);
         for (let i = 0; i < roomIntersects.length; i++) {
           let obj = roomIntersects[i].object;
@@ -2212,11 +2948,9 @@
         document.getElementById("room-card-category").textContent = room.category;
         document.getElementById("room-card-desc").textContent = room.desc;
 
-        // Count occupants currently in this room
         let count = 0;
-        const config = MODE_COORDINATES[currentMode] || MODE_COORDINATES.deep_work;
-        Object.keys(config).forEach(id => {
-          if (config[id].room === roomId) count++;
+        Object.keys(avatarObjects).forEach(id => {
+          if (avatarObjects[id].currentRoom === roomId) count++;
         });
 
         document.getElementById("room-card-occupants").textContent = `${count} Agents`;
@@ -2225,107 +2959,46 @@
 
       function hideRoomCard() {
         const card = document.getElementById("room-card");
-        card.classList.add("opacity-0", "translate-y-2");
+        if (card) card.classList.add("opacity-0", "translate-y-2");
       }
 
       // =========================================================================
-      // 10. Live Clock & Telemetry Loop
+      // 12. Live WIB Clock
       // =========================================================================
       function startLiveClock() {
         function updateClock() {
           const now = new Date();
-          // Convert to WIB (UTC+7)
           const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
           const wib = new Date(utc + (3600000 * 7));
           const h = String(wib.getHours()).padStart(2, "0");
           const m = String(wib.getMinutes()).padStart(2, "0");
           const s = String(wib.getSeconds()).padStart(2, "0");
           const el = document.getElementById("live-wib-clock");
-          if (el) {
-            el.textContent = `${h}:${m}:${s} WIB`;
-          }
+          if (el) el.textContent = `${h}:${m}:${s} WIB`;
         }
         setInterval(updateClock, 1000);
         updateClock();
       }
 
-      // Activity Ticker Rotating messages
-      const TICKER_MSGS = [
-        "[IDRIS] 60 FPS Three.js diorama initialized • OrbitControls active",
-        "[RAZIEL] Telemetry stream synchronized on /api/v1/stream (0.4ms latency)",
-        "[MIKA] Isometric shader buffers & screen projection mapped cleanly",
-        "[VIKTOR] Zero trust perimeter verified • Security PIN 2609 authenticated",
-        "[NARA] Telkom University research corpus ingested into vector memory",
-        "[SENNA] Concept 2B cyber-luxury design tokens active across viewport"
-      ];
-      let tickerIdx = 0;
-      function startTicker() {
-        setInterval(() => {
-          tickerIdx = (tickerIdx + 1) % TICKER_MSGS.length;
-          const el = document.getElementById("activity-ticker-text");
-          if (el) {
-            el.textContent = TICKER_MSGS[tickerIdx];
-          }
-        }, 5000);
-      }
-
       // =========================================================================
-      // 11. Backend Integration & Synchronization
+      // 13. Public API: window.YudiazHQ
       // =========================================================================
       let isVoiceActive = false;
       let selectedAgentId = "dani";
 
-      async function syncWithBackendMode(mode) {
-        try {
-          let backendAction = "resume_deep_work";
-          if (mode === "war_room") backendAction = "gather_war_room";
-          else if (mode === "sleep") backendAction = "trigger_sleep_cycle";
-
-          await fetch("/api/v1/office/action", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: backendAction })
-          });
-        } catch (e) {
-          // Backend may be offline; fallback simulation handles everything
-        }
-      }
-
-      // =========================================================================
-      // 12. Public API: window.YudiazHQ
-      // =========================================================================
       window.YudiazHQ = {
-        setMode: function(modeKey) {
+        setMode: function(cycleKey) {
           playUiChime("mode");
-          applyModePositions(modeKey);
+          const targetIdx = AUTONOMOUS_CYCLES.findIndex(c => c.key === cycleKey);
+          if (targetIdx !== -1) {
+            applyAutonomousCycle(targetIdx, false);
+          }
+        },
 
-          // Update active button state
-          const buttons = ["deepwork", "warroom", "pingpong", "sleep"];
-          buttons.forEach(b => {
-            const btn = document.getElementById(`btn-mode-${b}`);
-            if (btn) btn.classList.remove("active");
-          });
-
-          const activeMap = {
-            deep_work: "deepwork",
-            war_room: "warroom",
-            ping_pong: "pingpong",
-            sleep: "sleep"
-          };
-          const activeBtn = document.getElementById(`btn-mode-${activeMap[modeKey]}`);
-          if (activeBtn) activeBtn.classList.add("active");
-
-          // Header text
-          const labels = {
-            deep_work: "DEEP WORK",
-            war_room: "WAR ROOM MEETING",
-            ping_pong: "PING-PONG BREAK",
-            sleep: "KAMAR TIDUR (SLEEP)"
-          };
-          document.getElementById("header-mode-text").textContent = labels[modeKey] || "ACTIVE";
-
-          // Sync with backend
-          syncWithBackendMode(modeKey);
+        triggerAutonomousCycle: function(nextIdx) {
+          playUiChime("mode");
+          const idx = nextIdx !== undefined ? nextIdx : (currentAutonomousIdx + 1) % AUTONOMOUS_CYCLES.length;
+          applyAutonomousCycle(idx, false);
         },
 
         toggleVoiceLink: function() {
@@ -2389,13 +3062,11 @@
           document.getElementById("dossier-uptime").textContent = agent.uptime;
           document.getElementById("dossier-task").textContent = agent.task;
 
-          // Tools list
           const toolsEl = document.getElementById("dossier-tools-list");
           toolsEl.innerHTML = `
             <span class="px-2.5 py-1 rounded-lg text-xs font-mono bg-cyan-950/70 border border-cyan-800/60 text-cyan-300 font-semibold">${agent.tool}</span>
           `;
 
-          // Thoughts
           const thoughtsEl = document.getElementById("dossier-thoughts-stream");
           thoughtsEl.innerHTML = agent.thoughts.map(t => `<div class="text-slate-300">• ${t}</div>`).join("");
 
@@ -2412,7 +3083,7 @@
           playUiChime("click");
           const agent = AGENTS.find(a => a.id === selectedAgentId);
           if (agent) {
-            agent.task = `Manual Override: [${newStatus}] assigned by CEO`;
+            agent.task = `Autonomous Directive: [${newStatus}] synchronized`;
             document.getElementById("dossier-task").textContent = agent.task;
           }
         },
@@ -2422,20 +3093,22 @@
           const avatar = avatarObjects[selectedAgentId];
           const room = ROOMS[roomId];
           if (avatar && room) {
-            // Find room center approx
             let tx = 0, tz = 0;
-            if (roomId === "room-ceo") { tx = -11; tz = -8; }
-            else if (roomId === "room-war") { tx = 10; tz = -6.5; }
-            else if (roomId === "room-dev") { tx = -11; tz = 4; }
-            else if (roomId === "room-atelier") { tx = -8; tz = 7; }
-            else if (roomId === "room-creative") { tx = -3.5; tz = -6.5; }
-            else if (roomId === "room-server") { tx = 11; tz = 5; }
+            if (roomId === "room-ceo") { tx = -12.5; tz = -8.0; }
+            else if (roomId === "room-pa") { tx = -4.5; tz = -9.0; }
+            else if (roomId === "room-cto") { tx = -3.0; tz = -0.5; }
+            else if (roomId === "room-war") { tx = 10.0; tz = -6.5; }
+            else if (roomId === "room-dev") { tx = -11.0; tz = 5.0; }
+            else if (roomId === "room-atelier") { tx = -8.5; tz = 7.0; }
+            else if (roomId === "room-creative") { tx = -3.5; tz = 6.5; }
+            else if (roomId === "room-server") { tx = 12.0; tz = 4.0; }
             else if (roomId === "room-lounge") { tx = 1.5; tz = 7.5; }
-            else if (roomId === "room-pingpong") { tx = 11; tz = 10.5; }
-            else if (roomId === "room-pods") { tx = -0.5; tz = -8; }
-            else if (roomId === "room-concierge") { tx = -10; tz = 11; }
+            else if (roomId === "room-pingpong") { tx = 11.0; tz = 10.5; }
+            else if (roomId === "room-pods") { tx = 2.5; tz = -8.5; }
+            else if (roomId === "room-concierge") { tx = -11.0; tz = 11.5; }
 
             avatar.targetPos.set(tx, 0, tz);
+            avatar.currentRoom = roomId;
           }
         },
 
@@ -2471,18 +3144,17 @@
 
       // Initialization on Load
       window.addEventListener("DOMContentLoaded", () => {
-        // Check PIN Gate persistence
         if (localStorage.getItem("yudiaz_auth_pin") === "2609") {
           const pinModal = document.getElementById("pin-gate-modal");
-          pinModal.classList.add("opacity-0", "pointer-events-none");
+          if (pinModal) pinModal.classList.add("opacity-0", "pointer-events-none");
         }
 
         initThreeScene();
         startLiveClock();
-        startTicker();
       });
 
     })();
+
   </script>
 </body>
 </html>

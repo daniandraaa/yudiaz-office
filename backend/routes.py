@@ -52,7 +52,7 @@ async def get_office_state() -> OfficeStateResponse:
 
 @router.get("/rooms", response_model=list[RoomInfo], summary="List All Architectural Rooms")
 async def list_rooms() -> list[RoomInfo]:
-    """Retrieve list of all 9 zones and their live occupant IDs."""
+    """Retrieve list of all 11 zones and their live occupant IDs."""
     return list(office_engine.rooms.values())
 
 
@@ -68,7 +68,7 @@ async def get_room(room_id: str) -> RoomInfo:
     return room
 
 
-@router.get("/agents", response_model=list[AgentInfo], summary="List All 10 Personnel")
+@router.get("/agents", response_model=list[AgentInfo], summary="List All 11 Personnel")
 async def list_agents() -> list[AgentInfo]:
     """Retrieve profiles, locations, tasks, and telemetry for all studio agents."""
     return list(office_engine.agents.values())

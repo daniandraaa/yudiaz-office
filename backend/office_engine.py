@@ -1,6 +1,6 @@
 """Spatial simulation engine and real-time state machine for Yudiaz Virtual HQ.
 
-Manages 10 autonomous agents across 9 cyber-luxury zones, coordinates spatial
+Manages 11 autonomous agents across 11 cyber-luxury zones, coordinates spatial
 positioning, mode switches (War Room, Deep Work, Rest Cycle), audit logging,
 and live telemetry streaming.
 """
@@ -46,12 +46,17 @@ class OfficeEngine:
         # Baseline definitions for deep work restoration
         self._baseline_agents: dict[str, dict[str, Any]] = {}
 
+        # Autonomous simulation lifecycle state
+        self._temporary_assignments: dict[str, dict[str, Any]] = {}
+        self._council_active: bool = False
+        self._council_leader_toggle: bool = False
+
         self._initialize_rooms()
         self._initialize_agents()
         self._seed_initial_activity()
 
     def _initialize_rooms(self) -> None:
-        """Seed the 9 distinct physical architectural zones matching the 3D diorama building layout."""
+        """Seed the 11 distinct physical architectural zones matching the 3D diorama building layout."""
         room_configs = [
             {
                 "id": "room-ceo",
@@ -61,8 +66,30 @@ class OfficeEngine:
                 "floor": 1,
                 "dimensions": (540.0, 290.0),
                 "center_coord": (520.0, 340.0),
-                "description": "CEO Suite - Private executive command chamber for high-level studio governance, strategic vision, and private executive lounge.",
+                "description": "CEO Suite - Dedicated executive chamber for Daniandra Prayudisty (Founder & CEO) and Daffa (CEO Office), strategic vision, and studio governance.",
                 "status_accent": "#10B981",  # Cyber Emerald
+            },
+            {
+                "id": "room-cto",
+                "name": "CTO Executive Suite",
+                "category": "Engineering Leadership",
+                "capacity": 4,
+                "floor": 1,
+                "dimensions": (540.0, 290.0),
+                "center_coord": (520.0, 1850.0),
+                "description": "CTO Executive Suite - Dedicated engineering leadership chamber for Raziel Hendrix, high-level technical architecture, multi-agent mesh orchestration, and cloud infrastructure.",
+                "status_accent": "#7928CA",  # Cyber Purple
+            },
+            {
+                "id": "room-pa",
+                "name": "Executive Assistant Office",
+                "category": "Executive Support",
+                "capacity": 4,
+                "floor": 1,
+                "dimensions": (540.0, 290.0),
+                "center_coord": (1300.0, 1850.0),
+                "description": "Executive Assistant Office - Dedicated office for Elara Sinclair (Personal Assistant to CEO), executive calendar dispatch, briefing prep, and priority logistics.",
+                "status_accent": "#E0AAFF",  # Soft Lavender
             },
             {
                 "id": "room-war",
@@ -188,7 +215,7 @@ class OfficeEngine:
                 "name": "Raziel Hendrix",
                 "role": "CTO & Lead Orchestrator",
                 "department": "Engineering Leadership",
-                "room_id": "room-ceo",
+                "room_id": "room-cto",
                 "status": AgentStatus.WORKING,
                 "task": "System Orchestration & Cloud Infrastructure",
                 "avatar_color": "#7928CA",
@@ -270,14 +297,14 @@ class OfficeEngine:
             {
                 "id": "elara",
                 "name": "Elara Sinclair",
-                "role": "Personal Assistant CEO",
+                "role": "Personal Assistant to CEO",
                 "department": "Executive Support",
-                "room_id": "room-concierge",
+                "room_id": "room-pa",
                 "status": AgentStatus.WORKING,
-                "task": "Daily Executive Schedule & Meal Logistics",
+                "task": "Executive Calendar, Briefing Prep & Priority Logistics",
                 "avatar_color": "#E0AAFF",
-                "tool": "Google Calendar & Pantry Inventory",
-                "context": "Daniandra's itinerary, concierge dining order, calendar dispatch",
+                "tool": "Executive Calendar & Briefing Suite",
+                "context": "Daniandra's itinerary, executive briefings, priority logistics, and VIP communications",
             },
             {
                 "id": "jovan",
@@ -333,7 +360,7 @@ class OfficeEngine:
         self.add_activity(
             agent_id="raziel",
             action="SYSTEM_ONLINE",
-            details="Yudiaz Virtual HQ Spatial Engine booted. 11 autonomous agents deployed across 9 zones.",
+            details="Yudiaz Virtual HQ Spatial Engine booted. 11 autonomous agents deployed across 11 zones.",
             severity="SYSTEM",
         )
         self.add_activity(
@@ -474,6 +501,9 @@ class OfficeEngine:
             if agent_id not in target_room.current_occupants:
                 target_room.current_occupants.append(agent_id)
 
+        if agent_id in self._temporary_assignments:
+            del self._temporary_assignments[agent_id]
+
         if new_status:
             agent.status = new_status
         if new_task:
@@ -497,6 +527,8 @@ class OfficeEngine:
     def gather_war_room(self) -> OfficeStateResponse:
         """Trigger War Room protocol: move all personnel to War Room Amphitheater."""
         self._office_mode = OfficeMode.WAR_ROOM
+        self._temporary_assignments.clear()
+        self._council_active = False
         war_room = self.rooms["room-war"]
 
         # Clear occupants across all rooms
@@ -528,6 +560,8 @@ class OfficeEngine:
     def resume_deep_work(self) -> OfficeStateResponse:
         """Disperse personnel back to core workstations and resume deep focus."""
         self._office_mode = OfficeMode.NORMAL
+        self._temporary_assignments.clear()
+        self._council_active = False
 
         # Clear occupants across all rooms
         for room in self.rooms.values():
@@ -553,7 +587,7 @@ class OfficeEngine:
             action="DEEP_WORK_RESUMED",
             details="All personnel dispersed to departmental workstations. Deep focus mode engaged.",
             severity="INFO",
-            room_id="room-ceo",
+            room_id="room-cto",
         )
 
         return self.get_state()
@@ -561,6 +595,8 @@ class OfficeEngine:
     def trigger_sleep_cycle(self) -> OfficeStateResponse:
         """Trigger headquarters-wide rest and regeneration cycle."""
         self._office_mode = OfficeMode.REST_CYCLE
+        self._temporary_assignments.clear()
+        self._council_active = False
         rest_room = self.rooms["room-pods"]
 
         for room in self.rooms.values():
@@ -605,6 +641,8 @@ class OfficeEngine:
         - Viktor: checking coffee machine / casual chat
         """
         self._office_mode = OfficeMode.RECREATION
+        self._temporary_assignments.clear()
+        self._council_active = False
 
         # Clear occupants across all rooms
         for room in self.rooms.values():
@@ -638,8 +676,8 @@ class OfficeEngine:
             },
             "elara": {
                 "room": "room-concierge",
-                "task": "Pantry coffee bar serving refreshments",
-                "tool": "Italian Espresso Bar",
+                "task": "Espresso break & casual executive chat",
+                "tool": "Italian Espresso",
             },
             "senna": {
                 "room": "room-concierge",
@@ -738,8 +776,20 @@ class OfficeEngine:
         self._simulation_task = None
 
     async def _simulation_loop(self) -> None:
-        """Autonomous background loop: fluctuates telemetry and produces ambient events."""
-        autonomous_events = [
+        """Autonomous background loop: executes _simulate_tick on interval."""
+        while self._is_running:
+            try:
+                await asyncio.sleep(self.settings.simulation_interval)
+                self._simulate_tick()
+            except asyncio.CancelledError:
+                break
+            except Exception:
+                # Keep background simulation resilient
+                pass
+
+    def _get_ambient_events(self) -> list[tuple[str, str, str, str]]:
+        """Catalog of ambient micro-actions performed by agents during deep focus."""
+        return [
             (
                 "viktor",
                 "SECURITY_PROBE",
@@ -773,7 +823,7 @@ class OfficeEngine:
             (
                 "raziel",
                 "HEARTBEAT_ACKNOWLEDGED",
-                "Raziel Hendrix verified telemetry heartbeats across all 11 worker subagents.",
+                "Raziel Hendrix verified telemetry heartbeats across all 11 worker subagents from the CTO Executive Suite.",
                 "INFO",
             ),
             (
@@ -791,7 +841,7 @@ class OfficeEngine:
             (
                 "elara",
                 "LOGISTICS_DISPATCH",
-                "Elara Sinclair completed afternoon refreshment distribution & schedule alignment.",
+                "Elara Sinclair completed executive briefing prep & priority calendar logistics.",
                 "INFO",
             ),
             (
@@ -808,49 +858,271 @@ class OfficeEngine:
             ),
         ]
 
-        while self._is_running:
-            try:
-                await asyncio.sleep(self.settings.simulation_interval)
-                self._sim_ticks += 1
+    def _simulate_tick(self, force_event: Optional[str] = None) -> None:
+        """Single simulation step for autonomous office lifecycle."""
+        self._sim_ticks += 1
 
-                # Fluctuating light telemetry footprint
-                for agent in self.agents.values():
-                    if agent.status in (AgentStatus.WORKING, AgentStatus.RESEARCHING):
-                        agent.cpu_footprint = round(
-                            max(10.0, min(95.0, agent.cpu_footprint + random.uniform(-4.0, 4.0))),
-                            1,
-                        )
-                        agent.ram_footprint = round(
-                            max(100.0, min(550.0, agent.ram_footprint + random.uniform(-6.0, 6.0))),
-                            1,
-                        )
-                    elif agent.status == AgentStatus.MEETING:
-                        agent.cpu_footprint = round(
-                            max(30.0, min(75.0, agent.cpu_footprint + random.uniform(-2.0, 3.0))),
-                            1,
-                        )
-                    else:  # RESTING, SLEEPING, STANDBY
-                        agent.cpu_footprint = round(
-                            max(2.0, min(15.0, agent.cpu_footprint + random.uniform(-1.0, 1.0))),
-                            1,
-                        )
-                        agent.ram_footprint = round(
-                            max(80.0, min(180.0, agent.ram_footprint + random.uniform(-2.0, 2.0))),
-                            1,
-                        )
+        # 1. Fluctuating light telemetry footprint
+        for agent in self.agents.values():
+            if agent.status in (AgentStatus.WORKING, AgentStatus.RESEARCHING):
+                agent.cpu_footprint = round(
+                    max(10.0, min(95.0, agent.cpu_footprint + random.uniform(-4.0, 4.0))),
+                    1,
+                )
+                agent.ram_footprint = round(
+                    max(100.0, min(550.0, agent.ram_footprint + random.uniform(-6.0, 6.0))),
+                    1,
+                )
+            elif agent.status == AgentStatus.MEETING:
+                agent.cpu_footprint = round(
+                    max(30.0, min(75.0, agent.cpu_footprint + random.uniform(-2.0, 3.0))),
+                    1,
+                )
+            else:  # RESTING, SLEEPING, STANDBY
+                agent.cpu_footprint = round(
+                    max(2.0, min(15.0, agent.cpu_footprint + random.uniform(-1.0, 1.0))),
+                    1,
+                )
+                agent.ram_footprint = round(
+                    max(80.0, min(180.0, agent.ram_footprint + random.uniform(-2.0, 2.0))),
+                    1,
+                )
 
-                # Periodic ambient micro-action (every ~3 ticks)
-                if self._sim_ticks % 3 == 0 and self._office_mode == OfficeMode.NORMAL:
-                    agent_id, action, details, sev = random.choice(autonomous_events)
-                    self.add_activity(agent_id=agent_id, action=action, details=details, severity=sev)
+        # 2. Check returning agents whose temporary assignment expired
+        returning_agent_ids = [
+            aid for aid, info in self._temporary_assignments.items()
+            if info["return_tick"] <= self._sim_ticks
+        ]
+
+        had_council_return = False
+        for aid in returning_agent_ids:
+            info = self._temporary_assignments.pop(aid)
+            agent = self.agents.get(aid)
+            if not agent:
+                continue
+
+            if info.get("activity_type") == "council_meeting":
+                had_council_return = True
+
+            base = self._baseline_agents[aid]
+            old_room_id = agent.position.room_id
+            target_room_id = base["room_id"]
+
+            old_room = self.rooms.get(old_room_id)
+            if old_room and aid in old_room.current_occupants:
+                old_room.current_occupants.remove(aid)
+                self._reposition_room_occupants(old_room_id)
+
+            target_room = self.rooms[target_room_id]
+            if aid not in target_room.current_occupants:
+                target_room.current_occupants.append(aid)
+
+            agent.status = base["status"]
+            agent.current_task = base["task"]
+            agent.active_tool = base["tool"]
+            agent.memory_context = base["context"]
+            agent.updated_at = datetime.now(timezone.utc).isoformat()
+            self._reposition_room_occupants(target_room_id)
+
+            if info.get("log_on_return"):
+                self.add_activity(
+                    agent_id=aid,
+                    action="DEEP_WORK_RETURN",
+                    details=info["log_on_return"],
+                    severity="INFO",
+                    room_id=target_room_id,
+                )
+
+        if had_council_return:
+            still_in_council = any(
+                item.get("activity_type") == "council_meeting"
+                for item in self._temporary_assignments.values()
+            )
+            if not still_in_council:
+                self._council_active = False
+                leader_id = "dani" if self._council_leader_toggle else "daffa"
+                leader_name = "CEO Daniandra" if self._council_leader_toggle else "Daffa (CEO Office)"
+                self.add_activity(
+                    agent_id=leader_id,
+                    action="COUNCIL_CONCLUDED",
+                    details=f"War Room council meeting led by {leader_name} has concluded. All personnel returned to designated workstations for deep focus.",
+                    severity="INFO",
+                    room_id="room-war",
+                )
+
+        # 3. Schedule autonomous events when in NORMAL office mode
+        event_triggered = False
+        if self._office_mode == OfficeMode.NORMAL:
+            has_active_pingpong = any(item.get("activity_type") == "ping_pong" for item in self._temporary_assignments.values())
+            has_active_coffee = any(item.get("activity_type") == "coffee" for item in self._temporary_assignments.values())
+            has_active_pod = any(item.get("activity_type") == "pod_rest" for item in self._temporary_assignments.values())
+
+            is_council_tick = force_event == "council" or (force_event is None and self._sim_ticks % 20 == 18)
+            is_pingpong_tick = force_event == "ping_pong" or (force_event is None and self._sim_ticks % 20 == 9)
+            is_coffee_tick = force_event == "coffee" or (force_event is None and self._sim_ticks % 20 == 12)
+            is_pod_tick = force_event == "pod" or (force_event is None and self._sim_ticks % 20 == 15)
+
+            # A. Council Meeting in War Room
+            if is_council_tick and not self._council_active:
+                self._council_leader_toggle = not self._council_leader_toggle
+                if self._council_leader_toggle:
+                    leader_id = "dani"
+                    leader_name = "CEO Daniandra"
+                    leader_details = "CEO Daniandra is leading the meeting in the War Room."
                 else:
-                    self._broadcast_state()
+                    leader_id = "daffa"
+                    leader_name = "Daffa (CEO Office)"
+                    leader_details = "Daffa (CEO Office) is leading the meeting in the War Room."
 
-            except asyncio.CancelledError:
-                break
-            except Exception:
-                # Keep background simulation resilient
-                pass
+                self._council_active = True
+                war_room = self.rooms["room-war"]
+
+                for aid, ag in self.agents.items():
+                    old_room_id = ag.position.room_id
+                    if old_room_id != "room-war":
+                        old_room = self.rooms.get(old_room_id)
+                        if old_room and aid in old_room.current_occupants:
+                            old_room.current_occupants.remove(aid)
+                            self._reposition_room_occupants(old_room_id)
+
+                    if aid not in war_room.current_occupants:
+                        war_room.current_occupants.append(aid)
+
+                    ag.status = AgentStatus.MEETING
+                    ag.current_task = f"War Room Council Strategy Deliberation (Led by {leader_name})"
+                    ag.updated_at = datetime.now(timezone.utc).isoformat()
+                    self._temporary_assignments[aid] = {
+                        "return_tick": self._sim_ticks + 4,
+                        "activity_type": "council_meeting",
+                        "log_on_return": None,
+                    }
+
+                self._reposition_room_occupants("room-war")
+                self.add_activity(
+                    agent_id=leader_id,
+                    action="COUNCIL_CONVENED",
+                    details=leader_details,
+                    severity="ALERT",
+                    room_id="room-war",
+                )
+                event_triggered = True
+
+            # B. Ping-Pong Break in Lounge
+            elif is_pingpong_tick and not self._council_active and not has_active_pingpong:
+                pair_idx = (self._sim_ticks // 16) % 2
+                pairs = [("idris", "mika"), ("jovan", "viktor")]
+                pair = pairs[pair_idx]
+                if all(p not in self._temporary_assignments for p in pair):
+                    concierge = self.rooms["room-concierge"]
+                    for p in pair:
+                        ag = self.agents[p]
+                        old_room_id = ag.position.room_id
+                        old_room = self.rooms.get(old_room_id)
+                        if old_room and p in old_room.current_occupants:
+                            old_room.current_occupants.remove(p)
+                            self._reposition_room_occupants(old_room_id)
+                        if p not in concierge.current_occupants:
+                            concierge.current_occupants.append(p)
+                        ag.status = AgentStatus.RESTING
+                        ag.current_task = "Ping-pong table match in Lounge"
+                        ag.active_tool = "Ping-Pong Paddle"
+                        ag.updated_at = datetime.now(timezone.utc).isoformat()
+                        base = self._baseline_agents[p]
+                        self._temporary_assignments[p] = {
+                            "return_tick": self._sim_ticks + 3,
+                            "activity_type": "ping_pong",
+                            "log_on_return": f"{ag.name} concluded ping-pong match and returned to {self.rooms[base['room_id']].name} for deep focus.",
+                        }
+                    self._reposition_room_occupants("room-concierge")
+                    p1_name = self.agents[pair[0]].name
+                    p2_name = self.agents[pair[1]].name
+                    self.add_activity(
+                        agent_id=pair[0],
+                        action="PING_PONG_MATCH",
+                        details=f"{p1_name} and {p2_name} take a break to play ping-pong in room-concierge.",
+                        severity="INFO",
+                        room_id="room-concierge",
+                    )
+                    event_triggered = True
+
+            # C. Coffee / Lounge Chat
+            elif is_coffee_tick and not self._council_active and not has_active_coffee:
+                candidates = ["elara", "senna", "kael", "nara", "raziel"]
+                available = [c for c in candidates if c not in self._temporary_assignments]
+                if available:
+                    chosen_id = available[self._sim_ticks % len(available)]
+                    ag = self.agents[chosen_id]
+                    old_room_id = ag.position.room_id
+                    old_room = self.rooms.get(old_room_id)
+                    if old_room and chosen_id in old_room.current_occupants:
+                        old_room.current_occupants.remove(chosen_id)
+                        self._reposition_room_occupants(old_room_id)
+                    concierge = self.rooms["room-concierge"]
+                    if chosen_id not in concierge.current_occupants:
+                        concierge.current_occupants.append(chosen_id)
+                    ag.status = AgentStatus.RESTING
+                    ag.current_task = "Coffee break & casual executive chat"
+                    ag.active_tool = "Italian Espresso Bar"
+                    ag.updated_at = datetime.now(timezone.utc).isoformat()
+                    base = self._baseline_agents[chosen_id]
+                    self._temporary_assignments[chosen_id] = {
+                        "return_tick": self._sim_ticks + 2,
+                        "activity_type": "coffee",
+                        "log_on_return": f"{ag.name} finished coffee break and returned to {self.rooms[base['room_id']].name} for deep focus.",
+                    }
+                    self._reposition_room_occupants("room-concierge")
+                    self.add_activity(
+                        agent_id=chosen_id,
+                        action="COFFEE_BREAK",
+                        details=f"{ag.name} stepped into the lounge to get coffee and chat.",
+                        severity="INFO",
+                        room_id="room-concierge",
+                    )
+                    event_triggered = True
+
+            # D. Rest Pod Sleep/Recovery
+            elif is_pod_tick and not self._council_active and not has_active_pod:
+                candidates = ["viktor", "jovan", "nara", "kael", "idris"]
+                available = [c for c in candidates if c not in self._temporary_assignments]
+                if available:
+                    chosen_id = available[self._sim_ticks % len(available)]
+                    ag = self.agents[chosen_id]
+                    old_room_id = ag.position.room_id
+                    old_room = self.rooms.get(old_room_id)
+                    if old_room and chosen_id in old_room.current_occupants:
+                        old_room.current_occupants.remove(chosen_id)
+                        self._reposition_room_occupants(old_room_id)
+                    pods_room = self.rooms["room-pods"]
+                    if chosen_id not in pods_room.current_occupants:
+                        pods_room.current_occupants.append(chosen_id)
+                    ag.status = AgentStatus.RESTING
+                    ag.current_task = "Sensory deprivation pod rest & bio-rhythm recovery"
+                    ag.active_tool = "Biometric Rest Pod"
+                    ag.updated_at = datetime.now(timezone.utc).isoformat()
+                    base = self._baseline_agents[chosen_id]
+                    self._temporary_assignments[chosen_id] = {
+                        "return_tick": self._sim_ticks + 3,
+                        "activity_type": "pod_rest",
+                        "log_on_return": f"{ag.name} completed rest pod recovery and returned to {self.rooms[base['room_id']].name} recharged for deep focus.",
+                    }
+                    self._reposition_room_occupants("room-pods")
+                    self.add_activity(
+                        agent_id=chosen_id,
+                        action="POD_RECOVERY",
+                        details=f"{ag.name} entered room-pods for sleep and bio-rhythm recovery.",
+                        severity="INFO",
+                        room_id="room-pods",
+                    )
+                    event_triggered = True
+
+            # E. Ambient micro-action
+            if not event_triggered and self._sim_ticks % 3 == 0:
+                ambient_events = self._get_ambient_events()
+                aid, act, dtl, sev = random.choice(ambient_events)
+                self.add_activity(agent_id=aid, action=act, details=dtl, severity=sev)
+
+        # 4. Broadcast state on every tick via SSE
+        self._broadcast_state()
 
 
 # Global singleton instance
