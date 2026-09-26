@@ -69,7 +69,7 @@ async def test_health_endpoints(async_client: AsyncClient):
     assert res_root.status_code == 200
     data_root = res_root.json()
     assert data_root["status"] == "ok"
-    assert data_root["active_agents"] == 10
+    assert data_root["active_agents"] == 11
     assert data_root["total_rooms"] == 9
 
     # API v1 route
@@ -86,13 +86,13 @@ async def test_health_endpoints(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_get_office_state(async_client: AsyncClient):
-    """Verify full spatial state contains 10 agents, 9 rooms, and valid telemetry."""
+    """Verify full spatial state contains 11 agents, 9 rooms, and valid telemetry."""
     res = await async_client.get("/api/v1/office/state")
     assert res.status_code == 200
     data = res.json()
 
     assert data["office_mode"] == OfficeMode.NORMAL.value
-    assert len(data["agents"]) == 10
+    assert len(data["agents"]) == 11
     assert len(data["rooms"]) == 9
     assert "server_telemetry" in data
     assert "uptime_seconds" in data["server_telemetry"]
@@ -158,11 +158,11 @@ async def test_list_and_get_rooms(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_list_and_get_agents(async_client: AsyncClient):
-    """Verify listing all 10 personnel and checking their profiles against requirements."""
+    """Verify listing all 11 personnel and checking their profiles against requirements."""
     res = await async_client.get("/api/v1/agents")
     assert res.status_code == 200
     agents = res.json()
-    assert len(agents) == 10
+    assert len(agents) == 11
 
     agent_map = {a["id"]: a for a in agents}
     expected_agents = [
@@ -176,6 +176,7 @@ async def test_list_and_get_agents(async_client: AsyncClient):
         ("viktor", "Viktor Moreau", "Lead QA & Security Engineer", "QA & Sec", "room-server", "WORKING", "Automated E2E Suite & 4-Layer Defense Audit"),
         ("elara", "Elara Sinclair", "Personal Assistant CEO", "Executive Support", "room-concierge", "WORKING", "Daily Executive Schedule & Meal Logistics"),
         ("jovan", "Jovan Aritza", "Intelligence Officer", "Field Intelligence", "room-intel", "STANDBY", "Telkom University Campus Event Radar"),
+        ("daffa", "Daffa", "CEO Office", "Executive Office", "room-ceo", "WORKING", "Executive Operations & Strategic Alignment"),
     ]
 
     for aid, name, role, dept, expected_room, exp_status, exp_task in expected_agents:
@@ -272,7 +273,7 @@ async def test_rooms_initial_occupants_distribution(async_client: AsyncClient):
     assert res.status_code == 200
     rooms = {r["id"]: r["current_occupants"] for r in res.json()}
 
-    assert set(rooms["room-ceo"]) == {"dani", "raziel"}
+    assert set(rooms["room-ceo"]) == {"dani", "raziel", "daffa"}
     assert set(rooms["room-atelier"]) == {"kael", "nara"}
     assert set(rooms["room-dev"]) == {"idris", "mika"}
     assert set(rooms["room-creative"]) == {"senna"}
@@ -289,7 +290,7 @@ async def test_rooms_initial_occupants_distribution(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_gather_war_room_action(async_client: AsyncClient):
-    """Verify gather_war_room protocol moves all 10 agents to War Room."""
+    """Verify gather_war_room protocol moves all 11 agents to War Room."""
     res = await async_client.post(
         "/api/v1/office/action",
         json={"action": "gather_war_room"},
@@ -299,7 +300,7 @@ async def test_gather_war_room_action(async_client: AsyncClient):
 
     assert data["office_mode"] == OfficeMode.WAR_ROOM.value
     war_room = [r for r in data["rooms"] if r["id"] == "room-war"][0]
-    assert len(war_room["current_occupants"]) == 10
+    assert len(war_room["current_occupants"]) == 11
 
     # Ensure all agents have meeting status
     for agent in data["agents"]:
@@ -319,7 +320,7 @@ async def test_trigger_sleep_cycle_action(async_client: AsyncClient):
 
     assert data["office_mode"] == OfficeMode.REST_CYCLE.value
     pods_room = [r for r in data["rooms"] if r["id"] == "room-pods"][0]
-    assert len(pods_room["current_occupants"]) == 10
+    assert len(pods_room["current_occupants"]) == 11
 
     for agent in data["agents"]:
         assert agent["position"]["room_id"] == "room-pods"
@@ -369,7 +370,7 @@ async def test_trigger_recreation_action(async_client: AsyncClient):
     # Verify room occupants distribution
     room_occupants = {r["id"]: r["current_occupants"] for r in data["rooms"]}
     assert set(room_occupants["room-concierge"]) == {"idris", "mika", "elara", "senna", "jovan", "viktor"}
-    assert set(room_occupants["room-ceo"]) == {"dani", "raziel"}
+    assert set(room_occupants["room-ceo"]) == {"dani", "raziel", "daffa"}
     assert set(room_occupants["room-atelier"]) == {"kael", "nara"}
     assert len(room_occupants["room-war"]) == 0
     assert len(room_occupants["room-dev"]) == 0
@@ -440,7 +441,7 @@ async def test_all_mode_transitions(async_client: AsyncClient):
     res = await async_client.post("/api/v1/office/action", json={"action": "trigger_sleep_cycle"})
     data_sleep = res.json()
     assert data_sleep["office_mode"] == OfficeMode.REST_CYCLE.value
-    assert len([r for r in data_sleep["rooms"] if r["id"] == "room-pods"][0]["current_occupants"]) == 10
+    assert len([r for r in data_sleep["rooms"] if r["id"] == "room-pods"][0]["current_occupants"]) == 11
 
     # 5. REST_CYCLE -> NORMAL (resume deep work)
     res = await async_client.post("/api/v1/office/action", json={"action": "resume_deep_work"})
@@ -542,7 +543,7 @@ async def test_sse_stream_initialization(async_client: AsyncClient):
             payload_str = line[len("data:"):].strip()
             parsed = json.loads(payload_str)
             assert "agents" in parsed
-            assert len(parsed["agents"]) == 10
+            assert len(parsed["agents"]) == 11
             assert parsed["office_mode"] == "NORMAL"
             found_data = True
             break
@@ -575,7 +576,7 @@ def test_office_engine_direct_methods():
     """Direct unit testing of OfficeEngine helper methods."""
     engine = OfficeEngine()
     state = engine.get_state()
-    assert len(state.agents) == 10
+    assert len(state.agents) == 11
     assert len(state.rooms) == 9
 
     # Test seat position distribution
@@ -600,7 +601,7 @@ def test_office_engine_direct_methods():
     rec_state = engine.trigger_recreation()
     assert rec_state.office_mode == OfficeMode.RECREATION
     assert len([r for r in rec_state.rooms if r.id == "room-concierge"][0].current_occupants) == 6
-    assert len([r for r in rec_state.rooms if r.id == "room-ceo"][0].current_occupants) == 2
+    assert len([r for r in rec_state.rooms if r.id == "room-ceo"][0].current_occupants) == 3
     assert len([r for r in rec_state.rooms if r.id == "room-atelier"][0].current_occupants) == 2
 
 

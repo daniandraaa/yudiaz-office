@@ -74,6 +74,7 @@
 | **Viktor Moreau** | `QA-SEC-01` | Lead QA & Security Engineer | Server Vault | WORKING |
 | **Elara Sinclair** | `CONCIERGE-01` | Personal Assistant to CEO | Concierge Pantry | WORKING |
 | **Jovan Aritza** | `INTEL-01` | Intelligence Officer (Tel-U) | Radar NOC | STANDBY |
+| **Daffa** | `CEO-OFFICE-01` | CEO Office (Strategic Alignment) | CEO Suite | WORKING |
 
 ---
 

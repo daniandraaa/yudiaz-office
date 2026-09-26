@@ -291,6 +291,18 @@ class OfficeEngine:
                 "tool": "Campus Radar NOC Feeds",
                 "context": "Telkom University academic calendar, symposium alerts, student research feeds",
             },
+            {
+                "id": "daffa",
+                "name": "Daffa",
+                "role": "CEO Office",
+                "department": "Executive Office",
+                "room_id": "room-ceo",
+                "status": AgentStatus.WORKING,
+                "task": "Executive Operations & Strategic Alignment",
+                "avatar_color": "#38BDF8",
+                "tool": "Executive Dashboard & Notion",
+                "context": "CEO Office operations, cross-department coordination, strategic follow-ups",
+            },
         ]
 
         for cfg in agent_configs:
@@ -321,7 +333,7 @@ class OfficeEngine:
         self.add_activity(
             agent_id="raziel",
             action="SYSTEM_ONLINE",
-            details="Yudiaz Virtual HQ Spatial Engine booted. 10 autonomous agents deployed across 9 zones.",
+            details="Yudiaz Virtual HQ Spatial Engine booted. 11 autonomous agents deployed across 9 zones.",
             severity="SYSTEM",
         )
         self.add_activity(
@@ -495,7 +507,7 @@ class OfficeEngine:
         for agent_id, agent in self.agents.items():
             war_room.current_occupants.append(agent_id)
             agent.status = AgentStatus.MEETING
-            if agent_id in ("dani", "raziel"):
+            if agent_id in ("dani", "raziel", "daffa"):
                 agent.current_task = "Convening Studio Council & High-Priority Strategy Briefing"
             else:
                 agent.current_task = "All-Hands Strategic Alignment & Studio Directives"
@@ -506,7 +518,7 @@ class OfficeEngine:
         self.add_activity(
             agent_id="dani",
             action="WAR_ROOM_CONVENED",
-            details="Executive Command initiated War Room protocol. All 10 agents assembled in Strategy Amphitheater.",
+            details="Executive Command initiated War Room protocol. All 11 agents assembled in Strategy Amphitheater.",
             severity="ALERT",
             room_id="room-war",
         )
@@ -618,6 +630,11 @@ class OfficeEngine:
                 "room": "room-ceo",
                 "task": "Executive lounge sofa discussing vision",
                 "tool": "Vision Roadmap",
+            },
+            "daffa": {
+                "room": "room-ceo",
+                "task": "Executive lounge sofa discussing vision & strategy",
+                "tool": "Executive iPad",
             },
             "elara": {
                 "room": "room-concierge",
@@ -756,7 +773,13 @@ class OfficeEngine:
             (
                 "raziel",
                 "HEARTBEAT_ACKNOWLEDGED",
-                "Raziel Hendrix verified telemetry heartbeats across all 10 worker subagents.",
+                "Raziel Hendrix verified telemetry heartbeats across all 11 worker subagents.",
+                "INFO",
+            ),
+            (
+                "daffa",
+                "EXECUTIVE_ALIGNMENT",
+                "Daffa synchronized operational task queues between CEO Office and departmental leads.",
                 "INFO",
             ),
             (
