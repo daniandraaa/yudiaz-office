@@ -21,7 +21,7 @@ from httpx import ASGITransport, AsyncClient
 
 from backend.config import Settings, get_settings
 from backend.main import app
-from backend.models import AgentStatus, OfficeMode
+from backend.models import AgentStatus, MeetingMinutes, OfficeMode
 from backend.office_engine import OfficeEngine, office_engine
 
 
@@ -795,3 +795,137 @@ def test_autonomous_sse_stream_broadcast():
     assert data["server_telemetry"]["sim_ticks"] == 1
 
     engine.unsubscribe(q)
+
+
+# ============================================================================
+# 14. Meeting Minutes (MoM) & Deliberation Lifecycle Tests
+# ============================================================================
+
+@pytest.mark.asyncio
+async def test_get_latest_meeting_endpoint(async_client: AsyncClient):
+    """Verify GET /api/v1/meetings/latest returns rich Minutes of Meeting structure."""
+    res = await async_client.get("/api/v1/meetings/latest")
+    assert res.status_code == 200
+    mom = res.json()
+
+    # Core metadata
+    assert mom is not None
+    assert "meeting_id" in mom
+    assert mom["title"] == "Evaluasi Infrastruktur Studio, Skripsi Telkom University & Autonomous Virtual HQ"
+    assert mom["leader_name"] in ("Daniandra Prayudisty (CEO)", "Daffa (CEO Office)")
+    assert mom["status"] in ("IN_PROGRESS", "COMPLETED")
+    assert "started_at" in mom
+
+    # Attendees: all 11 studio agents present
+    assert len(mom["attendees"]) == 11
+    expected_agents = ["Daniandra", "Daffa", "Raziel", "Kael", "Nara", "Senna", "Idris", "Mika", "Viktor", "Elara", "Jovan"]
+    for agent_name in expected_agents:
+        assert any(agent_name in att for att in mom["attendees"]), f"Missing {agent_name} in attendees"
+
+    # Dialogues: rich sequenced statements from all divisions
+    dialogues = mom["dialogues"]
+    assert len(dialogues) >= 11
+    speaker_ids = {d["speaker_id"] for d in dialogues}
+    assert "dani" in speaker_ids
+    assert "daffa" in speaker_ids
+    assert "raziel" in speaker_ids
+    assert "kael" in speaker_ids
+    assert "nara" in speaker_ids
+    assert "senna" in speaker_ids
+    assert "idris" in speaker_ids
+    assert "mika" in speaker_ids
+    assert "viktor" in speaker_ids
+    assert "elara" in speaker_ids
+    assert "jovan" in speaker_ids
+
+    # Each dialogue has speaker_id, speaker_name, role, text
+    for d in dialogues:
+        assert d["speaker_id"]
+        assert d["speaker_name"]
+        assert d["role"]
+        assert len(d["text"]) > 10
+
+    # Key decisions: strategic consensus items
+    assert len(mom["key_decisions"]) >= 4
+    assert any("Telkom University" in dec for dec in mom["key_decisions"])
+    assert any("LaTeX" in dec or "Tectonic" in dec for dec in mom["key_decisions"])
+
+    # Action items: commitments with PIC, task, and due date
+    assert len(mom["action_items"]) >= 6
+    for item in mom["action_items"]:
+        assert item["pic"]
+        assert item["task"]
+        assert item["due"]
+
+
+@pytest.mark.asyncio
+async def test_meeting_minutes_in_office_state(async_client: AsyncClient):
+    """Verify full office state snapshot includes latest_meeting."""
+    res = await async_client.get("/api/v1/office/state")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert "latest_meeting" in data
+    assert data["latest_meeting"] is not None
+    assert data["latest_meeting"]["title"] == "Evaluasi Infrastruktur Studio, Skripsi Telkom University & Autonomous Virtual HQ"
+    assert len(data["latest_meeting"]["dialogues"]) >= 11
+
+
+@pytest.mark.asyncio
+async def test_meeting_minutes_lifecycle_transitions(async_client: AsyncClient):
+    """Verify meeting status transitions from IN_PROGRESS during War Room to COMPLETED on deep work return."""
+    # Convene War Room
+    res_war = await async_client.post("/api/v1/office/action", json={"action": "gather_war_room"})
+    assert res_war.status_code == 200
+    war_state = res_war.json()
+    assert war_state["latest_meeting"]["status"] == "IN_PROGRESS"
+
+    # Query latest meeting directly
+    res_mom = await async_client.get("/api/v1/meetings/latest")
+    assert res_mom.status_code == 200
+    assert res_mom.json()["status"] == "IN_PROGRESS"
+
+    # Resume Deep Work -> meeting marks as COMPLETED
+    res_resume = await async_client.post("/api/v1/office/action", json={"action": "resume_deep_work"})
+    assert res_resume.status_code == 200
+    resumed_state = res_resume.json()
+    assert resumed_state["latest_meeting"]["status"] == "COMPLETED"
+
+    # Query endpoint after completion
+    res_mom_after = await async_client.get("/api/v1/meetings/latest")
+    assert res_mom_after.status_code == 200
+    assert res_mom_after.json()["status"] == "COMPLETED"
+
+
+def test_autonomous_council_meeting_minutes_generation():
+    """Verify engine generates rich minutes for both CEO Daniandra and Daffa council sessions."""
+    engine = OfficeEngine()
+    engine.resume_deep_work()
+
+    # 1. Convene CEO Daniandra session
+    engine._simulate_tick(force_event="council")
+    assert engine._council_active is True
+    assert engine.latest_meeting is not None
+    assert engine.latest_meeting.leader_name == "Daniandra Prayudisty (CEO)"
+    assert engine.latest_meeting.status == "IN_PROGRESS"
+    assert len(engine.latest_meeting.dialogues) == 12
+
+    # Step through council deliberation
+    for _ in range(4):
+        engine._simulate_tick()
+
+    assert engine._council_active is False
+    assert engine.latest_meeting.status == "COMPLETED"
+
+    # 2. Convene Daffa (CEO Office) session
+    engine._simulate_tick(force_event="council")
+    assert engine._council_active is True
+    assert engine.latest_meeting.leader_name == "Daffa (CEO Office)"
+    assert engine.latest_meeting.status == "IN_PROGRESS"
+    assert len(engine.latest_meeting.dialogues) == 12
+
+    for _ in range(4):
+        engine._simulate_tick()
+
+    assert engine._council_active is False
+    assert engine.latest_meeting.status == "COMPLETED"

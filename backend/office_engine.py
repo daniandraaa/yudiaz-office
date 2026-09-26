@@ -10,16 +10,20 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timezone
 import random
+import secrets
 import time
 from typing import Any, Optional
 import uuid
 
 from backend.config import get_settings
 from backend.models import (
+    ActionItem,
     ActivityLog,
     AgentInfo,
     AgentPosition,
     AgentStatus,
+    MeetingDialogue,
+    MeetingMinutes,
     OfficeMode,
     OfficeStateResponse,
     RoomInfo,
@@ -50,10 +54,16 @@ class OfficeEngine:
         self._temporary_assignments: dict[str, dict[str, Any]] = {}
         self._council_active: bool = False
         self._council_leader_toggle: bool = False
+        self.latest_meeting: Optional[MeetingMinutes] = None
 
         self._initialize_rooms()
         self._initialize_agents()
         self._seed_initial_activity()
+        self.latest_meeting = self._generate_council_meeting(
+            leader_id="dani",
+            leader_name="Daniandra Prayudisty (CEO)",
+            status="COMPLETED",
+        )
 
     def _initialize_rooms(self) -> None:
         """Seed the 11 distinct physical architectural zones matching the 3D diorama building layout."""
@@ -370,6 +380,247 @@ class OfficeEngine:
             severity="INFO",
         )
 
+    def _generate_council_meeting(
+        self,
+        leader_id: str = "dani",
+        leader_name: Optional[str] = None,
+        status: str = "IN_PROGRESS",
+    ) -> MeetingMinutes:
+        """Construct realistic, rich Minutes of Meeting (MoM) record for War Room council."""
+        now_iso = datetime.now(timezone.utc).isoformat()
+        meeting_id = f"mom-council-{int(time.time())}-{secrets.token_hex(3)}"
+        title = "Evaluasi Infrastruktur Studio, Skripsi Telkom University & Autonomous Virtual HQ"
+
+        attendees = [
+            "Daniandra Prayudisty (Founder & CEO)",
+            "Daffa (CEO Office)",
+            "Raziel Hendrix (CTO & Lead Orchestrator)",
+            "Kael Ashford (Lead Architect)",
+            "Nara Vasquez (Lead Researcher)",
+            "Senna Louviere (Creative Director)",
+            "Idris Nakamura (Senior Developer)",
+            "Mika Stellan (Frontend Engineer)",
+            "Viktor Moreau (Lead QA & Security Engineer)",
+            "Elara Sinclair (Personal Assistant to CEO)",
+            "Jovan Aritza (Intelligence Officer)",
+        ]
+
+        if leader_id == "dani":
+            resolved_leader = leader_name or "Daniandra Prayudisty (CEO)"
+            dialogues = [
+                MeetingDialogue(
+                    speaker_id="dani",
+                    speaker_name="Daniandra Prayudisty",
+                    role="Founder & CEO",
+                    text="Selamat pagi rekan-rekan. Council hari ini kita fokuskan pada tiga prioritas strategis: stabilitas backend Virtual HQ, akselerasi naskah skripsi Telkom University, dan konsistensi visual 3D diorama. Raziel, silakan laporkan performa telemetry mesh dan event loop.",
+                ),
+                MeetingDialogue(
+                    speaker_id="raziel",
+                    speaker_name="Raziel Hendrix",
+                    role="CTO & Lead Orchestrator",
+                    text="Secara keseluruhan infrastructure core berjalan optimal di sub-millisecond latency. Pipeline SSE broadcast dan autonomous tick engine stabil tanpa memory leak. Kami juga telah memastikan endpoint meeting minutes tersinkronisasi realtime ke seluruh connected clients.",
+                ),
+                MeetingDialogue(
+                    speaker_id="kael",
+                    speaker_name="Kael Ashford",
+                    role="Lead Architect",
+                    text="Untuk skripsi Telkom University, spesifikasi arsitektur bab 1 hingga bab 4 sudah dipetakan dengan standar LaTeX akademik Tel-U. Pola event-driven autonomous coordination pada Virtual HQ menjadi novelty utama yang kita elaborasi dalam ADR dan sequence diagram.",
+                ),
+                MeetingDialogue(
+                    speaker_id="nara",
+                    speaker_name="Nara Vasquez",
+                    role="Lead Researcher",
+                    text="Saya telah mengompilasi 28 referensi terindeks IEEE dan arXiv terkait multi-agent emergent coordination. Format sitasi BibTeX dan penulisan naskah LaTeX Tectonic sudah terstruktur rapi untuk Bab Metodologi Penelitian dan perbandingan state-of-the-art.",
+                ),
+                MeetingDialogue(
+                    speaker_id="jovan",
+                    speaker_name="Jovan Aritza",
+                    role="Intelligence Officer",
+                    text="Monitoring radar kampus Telkom University: portal akademik telah membuka pendaftaran sidang pra-skripsi dan verifikasi dokumen. Kita masih memiliki window aman dua pekan sebelum submission deadline, radar NOC terus memantau pembaruan pengumuman.",
+                ),
+                MeetingDialogue(
+                    speaker_id="idris",
+                    speaker_name="Idris Nakamura",
+                    role="Senior Developer",
+                    text="Dari sisi backend engineering, skema data Pydantic v2 untuk Minutes of Meeting, dialogues, dan action items sudah clean dan strictly typed. Endpoint /api/v1/meetings/latest siap melayani query dengan latensi konsisten di bawah 5 milidetik.",
+                ),
+                MeetingDialogue(
+                    speaker_id="mika",
+                    speaker_name="Mika Stellan",
+                    role="Frontend Engineer",
+                    text="Viewport 3D diorama canvas 2.5D kini secara dinamis menampilkan status rapat di War Room Amphitheater. UI overlay modal untuk Minutes of Meeting sudah terhubung langsung ke state feed untuk render dialog yang halus.",
+                ),
+                MeetingDialogue(
+                    speaker_id="senna",
+                    speaker_name="Senna Louviere",
+                    role="Creative Director",
+                    text="Design token cyber-luxury dengan aksen gold-mesh (#FFD700), cyber emerald (#10B981), dan dark-glass obsidian telah disinkronkan. Tipografi, status pills, dan visual hierarki Minutes of Meeting terbukti kontras tinggi dan memenuhi standar WCAG AAA.",
+                ),
+                MeetingDialogue(
+                    speaker_id="viktor",
+                    speaker_name="Viktor Moreau",
+                    role="Lead QA & Security Engineer",
+                    text="Seluruh test suite pytest 100% passed tanpa celah regresi. Brute-force protection pada PIN auth dan validasi payload endpoint meeting minutes teruji kokoh terhadap skenario edge case dan concurrent load.",
+                ),
+                MeetingDialogue(
+                    speaker_id="elara",
+                    speaker_name="Elara Sinclair",
+                    role="Personal Assistant to CEO",
+                    text="Agenda bimbingan lanjutan dengan dosen pembimbing Tel-U sudah saya kunci di kalender Daniandra untuk hari Kamis pukul 14:00 WIB. Executive summary dan draf bab terbaru sudah siap diteruskan.",
+                ),
+                MeetingDialogue(
+                    speaker_id="daffa",
+                    speaker_name="Daffa",
+                    role="CEO Office",
+                    text="Dari CEO Office, koordinasi lintas divisi dan deliverables mingguan telah terkonsolidasi pada priority dashboard. Alignment antara engineering, riset skripsi, dan UI tokens berjalan terarah sesuai roadmap.",
+                ),
+                MeetingDialogue(
+                    speaker_id="dani",
+                    speaker_name="Daniandra Prayudisty",
+                    role="Founder & CEO",
+                    text="Luar biasa. Semua poin strategis dan action items sudah terdistribusi dengan PIC yang jelas. Mari kita eksekusi dengan presisi tinggi. Seluruh tim dipersilakan kembali ke workstation masing-masing dan melanjutkan deep work.",
+                ),
+            ]
+        else:
+            resolved_leader = leader_name or "Daffa (CEO Office)"
+            dialogues = [
+                MeetingDialogue(
+                    speaker_id="daffa",
+                    speaker_name="Daffa",
+                    role="CEO Office",
+                    text="Selamat pagi rekan-rekan studio Yudiaz. Saya mewakili CEO Office memimpin War Room council pagi ini. Agenda pokok kita: verifikasi kesiapan infrastruktur studio, sinkronisasi naskah skripsi Telkom University, serta akselerasi Autonomous Virtual HQ tanpa hambatan birokrasi.",
+                ),
+                MeetingDialogue(
+                    speaker_id="raziel",
+                    speaker_name="Raziel Hendrix",
+                    role="CTO & Lead Orchestrator",
+                    text="Engineering pipeline berjalan prima. Background autonomous tick engine dan SSE broadcast terus mengalirkan state sinkron ke client. Latensi sistem terjaga di baseline rendah dan siap mendukung penambahan agent baru.",
+                ),
+                MeetingDialogue(
+                    speaker_id="jovan",
+                    speaker_name="Jovan Aritza",
+                    role="Intelligence Officer",
+                    text="Radar intel Telkom University mengonfirmasi jadwal bimbingan dan timeline pengunggahan draft skripsi final. Informasi dari fakultas sudah kami verifikasi dan sinkronkan dengan kalender PA.",
+                ),
+                MeetingDialogue(
+                    speaker_id="nara",
+                    speaker_name="Nara Vasquez",
+                    role="Lead Researcher",
+                    text="Eksperimen komparasi koordinasi multi-agent untuk bab 3 skripsi Tel-U telah membuktikan efisiensi protokol event-driven kita. Hasil analisis data siap dimasukkan ke naskah LaTeX.",
+                ),
+                MeetingDialogue(
+                    speaker_id="kael",
+                    speaker_name="Kael Ashford",
+                    role="Lead Architect",
+                    text="Template skripsi Tel-U berbasis LaTeX dan compiler Tectonic siap menghasilkan dokumen terstandarisasi secara otomatis. Integrasi diagram sistem arsitektur Virtual HQ telah tuntas.",
+                ),
+                MeetingDialogue(
+                    speaker_id="idris",
+                    speaker_name="Idris Nakamura",
+                    role="Senior Developer",
+                    text="FastAPI backend telah menyediakan skema Meeting Minutes lengkap dengan dialogues dan action items. Endpoint /api/v1/meetings/latest telah diintegrasikan dengan state engine secara robust.",
+                ),
+                MeetingDialogue(
+                    speaker_id="mika",
+                    speaker_name="Mika Stellan",
+                    role="Frontend Engineer",
+                    text="Diorama 3D canvas di frontend memperbarui posisi dan status agen ke ruang War Room secara instan. Modal MoM siap memvisualisasikan diskusi dan daftar tugas ini ke pengguna.",
+                ),
+                MeetingDialogue(
+                    speaker_id="senna",
+                    speaker_name="Senna Louviere",
+                    role="Creative Director",
+                    text="Visual tokens cyber-luxury untuk status 'IN_PROGRESS' dan 'COMPLETED' telah diimplementasikan. Nuansa mewah gold-mesh dan dark-glass memberikan pengalaman visual profesional.",
+                ),
+                MeetingDialogue(
+                    speaker_id="viktor",
+                    speaker_name="Viktor Moreau",
+                    role="Lead QA & Security Engineer",
+                    text="Quality assurance memastikan 100% test coverage dan zero regression pada seluruh endpoint API. Rate limiter dan autentikasi command PIN berada dalam kondisi aman.",
+                ),
+                MeetingDialogue(
+                    speaker_id="elara",
+                    speaker_name="Elara Sinclair",
+                    role="Personal Assistant to CEO",
+                    text="Kalender eksekutif dan agenda bimbingan akademik Daniandra telah sinkron. Seluruh logistik dan dokumen pendukung siap tepat waktu.",
+                ),
+                MeetingDialogue(
+                    speaker_id="dani",
+                    speaker_name="Daniandra Prayudisty",
+                    role="Founder & CEO",
+                    text="Pengawalan dari Daffa dan CEO Office sangat terstruktur. Seluruh PIC harus memegang komitmen tenggat waktu pada action items yang disepakati.",
+                ),
+                MeetingDialogue(
+                    speaker_id="daffa",
+                    speaker_name="Daffa",
+                    role="CEO Office",
+                    text="Baik, terima kasih Mas Dani dan seluruh tim. Council meeting resmi kita tutup. Silakan rekan-rekan kembali ke workstation untuk melanjutkan tugas fokus masing-masing.",
+                ),
+            ]
+
+        key_decisions = [
+            "Standarisasi naskah skripsi Telkom University menggunakan format template LaTeX resmi dengan pipeline compiler Tectonic.",
+            "Implementasi endpoint REST /api/v1/meetings/latest dan sinkronisasi real-time SSE untuk Minutes of Meeting (MoM) di Virtual HQ.",
+            "Penyelarasan palet cyber-luxury design tokens (gold-mesh, cyber-emerald, obsidian dark glass) pada 3D diorama canvas dan meeting modal.",
+            "Penerapan automated testing gate 100% pass rate di pytest sebelum deployment pembaruan ke staging.",
+            "Sinkronisasi berkala timeline akademik dan pendaftaran sidang pra-skripsi Tel-U melalui koordinasi CEO Office dan PA.",
+        ]
+
+        action_items = [
+            ActionItem(
+                pic="Kael Ashford & Nara Vasquez",
+                task="Finalisasi draf Bab 3 & Bab 4 Skripsi Telkom University dalam format LaTeX Tectonic",
+                due="2026-10-02",
+            ),
+            ActionItem(
+                pic="Idris Nakamura",
+                task="Implementasi dan hardening endpoint /api/v1/meetings/latest beserta Pydantic validation",
+                due="2026-09-28",
+            ),
+            ActionItem(
+                pic="Mika Stellan",
+                task="Integrasi visual modal Minutes of Meeting ke dalam viewport 3D Diorama Canvas",
+                due="2026-09-29",
+            ),
+            ActionItem(
+                pic="Viktor Moreau",
+                task="Otomasi testing E2E untuk endpoint meeting minutes dan validasi 100% test coverage",
+                due="2026-09-28",
+            ),
+            ActionItem(
+                pic="Senna Louviere",
+                task="Finalisasi cyber-luxury design tokens dan typography styling untuk UI Minutes of Meeting",
+                due="2026-09-30",
+            ),
+            ActionItem(
+                pic="Elara Sinclair",
+                task="Sinkronisasi jadwal bimbingan skripsi Daniandra dengan dosen pembimbing Tel-U",
+                due="2026-10-01",
+            ),
+            ActionItem(
+                pic="Jovan Aritza",
+                task="Monitoring radar akademik Tel-U terkait jadwal pendaftaran sidang pra-skripsi",
+                due="2026-10-03",
+            ),
+            ActionItem(
+                pic="Daffa",
+                task="Supervisi eksekusi action items dan evaluasi deliverable lintas divisi CEO Office",
+                due="2026-10-05",
+            ),
+        ]
+
+        return MeetingMinutes(
+            meeting_id=meeting_id,
+            title=title,
+            leader_name=resolved_leader,
+            status=status,
+            started_at=now_iso,
+            attendees=attendees,
+            dialogues=dialogues,
+            key_decisions=key_decisions,
+            action_items=action_items,
+        )
+
     def _calculate_seat_position(self, room: RoomInfo, slot_index: int) -> AgentPosition:
         """Calculate spatial coordinates for occupants distributed inside a room."""
         cx, cy = room.center_coord
@@ -427,7 +678,12 @@ class OfficeEngine:
             rooms=list(self.rooms.values()),
             recent_activities=list(reversed(self.activities[-50:])),
             server_telemetry=telemetry,
+            latest_meeting=self.latest_meeting,
         )
+
+    def get_latest_meeting(self) -> Optional[MeetingMinutes]:
+        """Fetch latest War Room council meeting minutes."""
+        return self.latest_meeting
 
     def get_agent(self, agent_id: str) -> Optional[AgentInfo]:
         """Fetch single agent state by identifier."""
@@ -547,6 +803,12 @@ class OfficeEngine:
 
         self._reposition_room_occupants("room-war")
 
+        self.latest_meeting = self._generate_council_meeting(
+            leader_id="dani",
+            leader_name="Daniandra Prayudisty (CEO)",
+            status="IN_PROGRESS",
+        )
+
         self.add_activity(
             agent_id="dani",
             action="WAR_ROOM_CONVENED",
@@ -562,6 +824,9 @@ class OfficeEngine:
         self._office_mode = OfficeMode.NORMAL
         self._temporary_assignments.clear()
         self._council_active = False
+
+        if self.latest_meeting and self.latest_meeting.status == "IN_PROGRESS":
+            self.latest_meeting.status = "COMPLETED"
 
         # Clear occupants across all rooms
         for room in self.rooms.values():
@@ -597,6 +862,10 @@ class OfficeEngine:
         self._office_mode = OfficeMode.REST_CYCLE
         self._temporary_assignments.clear()
         self._council_active = False
+
+        if self.latest_meeting and self.latest_meeting.status == "IN_PROGRESS":
+            self.latest_meeting.status = "COMPLETED"
+
         rest_room = self.rooms["room-pods"]
 
         for room in self.rooms.values():
@@ -643,6 +912,9 @@ class OfficeEngine:
         self._office_mode = OfficeMode.RECREATION
         self._temporary_assignments.clear()
         self._council_active = False
+
+        if self.latest_meeting and self.latest_meeting.status == "IN_PROGRESS":
+            self.latest_meeting.status = "COMPLETED"
 
         # Clear occupants across all rooms
         for room in self.rooms.values():
@@ -942,6 +1214,8 @@ class OfficeEngine:
                 self._council_active = False
                 leader_id = "dani" if self._council_leader_toggle else "daffa"
                 leader_name = "CEO Daniandra" if self._council_leader_toggle else "Daffa (CEO Office)"
+                if self.latest_meeting and self.latest_meeting.status == "IN_PROGRESS":
+                    self.latest_meeting.status = "COMPLETED"
                 self.add_activity(
                     agent_id=leader_id,
                     action="COUNCIL_CONCLUDED",
@@ -949,6 +1223,28 @@ class OfficeEngine:
                     severity="INFO",
                     room_id="room-war",
                 )
+
+        # Natural deliberation progression if council is currently ongoing
+        if self._council_active:
+            council_items = [
+                info for info in self._temporary_assignments.values()
+                if info.get("activity_type") == "council_meeting"
+            ]
+            if council_items:
+                rem_ticks = council_items[0]["return_tick"] - self._sim_ticks
+                leader_display = "CEO Daniandra" if self._council_leader_toggle else "Daffa (CEO Office)"
+                if rem_ticks == 3:
+                    for ag in self.agents.values():
+                        if ag.position.room_id == "room-war":
+                            ag.current_task = f"War Room Council: Skripsi Telkom University & Thesis Architecture (Led by {leader_display})"
+                elif rem_ticks == 2:
+                    for ag in self.agents.values():
+                        if ag.position.room_id == "room-war":
+                            ag.current_task = f"War Room Council: Studio Infrastructure & 3D Diorama Review (Led by {leader_display})"
+                elif rem_ticks == 1:
+                    for ag in self.agents.values():
+                        if ag.position.room_id == "room-war":
+                            ag.current_task = f"War Room Council: Finalizing Action Items & Strategic MoM (Led by {leader_display})"
 
         # 3. Schedule autonomous events when in NORMAL office mode
         event_triggered = False
@@ -968,10 +1264,12 @@ class OfficeEngine:
                 if self._council_leader_toggle:
                     leader_id = "dani"
                     leader_name = "CEO Daniandra"
+                    leader_full = "Daniandra Prayudisty (CEO)"
                     leader_details = "CEO Daniandra is leading the meeting in the War Room."
                 else:
                     leader_id = "daffa"
                     leader_name = "Daffa (CEO Office)"
+                    leader_full = "Daffa (CEO Office)"
                     leader_details = "Daffa (CEO Office) is leading the meeting in the War Room."
 
                 self._council_active = True
@@ -998,6 +1296,11 @@ class OfficeEngine:
                     }
 
                 self._reposition_room_occupants("room-war")
+                self.latest_meeting = self._generate_council_meeting(
+                    leader_id=leader_id,
+                    leader_name=leader_full,
+                    status="IN_PROGRESS",
+                )
                 self.add_activity(
                     agent_id=leader_id,
                     action="COUNCIL_CONVENED",

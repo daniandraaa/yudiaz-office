@@ -162,6 +162,55 @@ class ServerTelemetry(BaseModel):
     active_stream_clients: int = Field(default=0)
 
 
+class MeetingDialogue(BaseModel):
+    """Dialogue exchange item within meeting minutes."""
+
+    speaker_id: str = Field(..., description="Agent identifier of the speaker")
+    speaker_name: str = Field(..., description="Full display name of the speaker")
+    role: str = Field(..., description="Role or organizational title of speaker")
+    text: str = Field(..., description="Spoken dialogue or statement")
+
+
+class ActionItem(BaseModel):
+    """Actionable commitment assigned during executive meeting."""
+
+    pic: str = Field(..., description="Person in charge / assignee name or identifier")
+    task: str = Field(..., description="Action item description")
+    due: str = Field(..., description="Target due date or milestone horizon")
+
+
+class MeetingMinutes(BaseModel):
+    """Official Minutes of Meeting (MoM) record for executive War Room sessions."""
+
+    meeting_id: str = Field(..., description="Unique meeting session identifier")
+    title: str = Field(..., description="Executive agenda / meeting title")
+    leader_name: str = Field(..., description="Leader convening the council session")
+    status: str = Field(
+        ...,
+        description="Meeting status ('IN_PROGRESS' | 'COMPLETED')",
+    )
+    started_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat(),
+        description="ISO 8601 start timestamp",
+    )
+    attendees: list[str] = Field(
+        default_factory=list,
+        description="List of participant names or IDs",
+    )
+    dialogues: list[MeetingDialogue] = Field(
+        default_factory=list,
+        description="Chronological dialogues during the session",
+    )
+    key_decisions: list[str] = Field(
+        default_factory=list,
+        description="Key decisions agreed upon during session",
+    )
+    action_items: list[ActionItem] = Field(
+        default_factory=list,
+        description="Assigned action items with PIC and due date",
+    )
+
+
 class OfficeStateResponse(BaseModel):
     """Complete snapshot of the virtual office state."""
 
@@ -177,6 +226,10 @@ class OfficeStateResponse(BaseModel):
     rooms: list[RoomInfo] = Field(default_factory=list)
     recent_activities: list[ActivityLog] = Field(default_factory=list)
     server_telemetry: dict[str, Any] = Field(default_factory=dict)
+    latest_meeting: Optional[MeetingMinutes] = Field(
+        default=None,
+        description="Latest War Room Council meeting minutes",
+    )
 
 
 class AuthVerifyRequest(BaseModel):

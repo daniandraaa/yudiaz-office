@@ -18,6 +18,7 @@ from backend.models import (
     AgentInfo,
     AuthVerifyRequest,
     AuthVerifyResponse,
+    MeetingMinutes,
     OfficeActionRequest,
     OfficeStateResponse,
     RoomInfo,
@@ -162,6 +163,16 @@ async def get_activities(
 ) -> list[ActivityLog]:
     """Retrieve chronological audit and event logs."""
     return office_engine.get_activities(limit=limit)
+
+
+@router.get(
+    "/meetings/latest",
+    response_model=Optional[MeetingMinutes],
+    summary="Get Latest War Room Council Meeting Minutes",
+)
+async def get_latest_meeting() -> Optional[MeetingMinutes]:
+    """Retrieve the latest War Room council meeting minutes, dialogues, and action items."""
+    return office_engine.get_latest_meeting()
 
 
 @router.get("/stream", summary="Server-Sent Events (SSE) Live Telemetry Stream")

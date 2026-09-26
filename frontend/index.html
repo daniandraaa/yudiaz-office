@@ -174,6 +174,28 @@
       box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
     }
 
+        /* 3D Pop-up Speech Bubble */
+    #speech-bubble {
+      will-change: transform, opacity;
+      filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.85));
+    }
+    .speech-bubble-tail {
+      position: absolute;
+      bottom: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-top: 8px solid rgba(0, 242, 254, 0.85);
+    }
+
+    /* Minutes of Meeting Slide-Over */
+    #mom-slideover {
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
       width: 5px;
@@ -300,6 +322,16 @@
       <!-- Divider -->
       <div class="w-px h-6 bg-slate-700/80 mx-1"></div>
 
+      <!-- Minutes of Meeting (MoM) Button -->
+      <button id="btn-mom-modal" onclick="window.YudiazHQ.toggleMomModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 shadow-[0_0_15px_rgba(0,0,0,0.5)] transition-all transform hover:scale-105 active:scale-95 group" title="Buka Notulensi Rapat Koordinasi Strategis (Minutes of Meeting)">
+        <span class="text-sm">📜</span>
+        <span class="text-xs font-mono font-bold tracking-wide">Notulensi Rapat</span>
+        <span id="mom-badge-status" class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">READY</span>
+      </button>
+
+      <!-- Divider -->
+      <div class="w-px h-6 bg-slate-700/80 mx-1"></div>
+
       <!-- Camera View Controls -->
       <div class="flex items-center gap-1">
         <button onclick="window.YudiazHQ.setCameraPreset('iso')" class="p-2 rounded-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800/80 transition-colors" title="Isometric Angle">
@@ -323,6 +355,230 @@
     </div>
 
   </footer>
+
+  <!-- 3D PROJECTED SPEECH BUBBLE (War Room Dialogues & Agent Thoughts) -->
+  <div id="speech-bubble" class="fixed pointer-events-none z-40 opacity-0 scale-90 transition-all duration-300 transform -translate-x-1/2 -translate-y-full w-max max-w-[340px]">
+    <div id="speech-bubble-inner" class="relative bg-slate-950/95 backdrop-blur-xl border border-cyan-400/70 p-3.5 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.85),0_0_25px_rgba(0,242,254,0.3)] text-slate-100 flex flex-col gap-1.5">
+      <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
+        <div class="flex items-center gap-1.5">
+          <span id="speech-emoji" class="text-base">👑</span>
+          <span id="speech-speaker" class="font-display font-bold text-xs text-white">Daniandra</span>
+          <span id="speech-role" class="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300">CEO</span>
+        </div>
+        <span class="flex items-center gap-1 text-[9px] font-mono text-emerald-400">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          SPEAKING
+        </span>
+      </div>
+      <p id="speech-content" class="text-[12px] leading-relaxed text-slate-200 font-sans"></p>
+      <div class="speech-bubble-tail"></div>
+    </div>
+  </div>
+
+  <!-- MINUTES OF MEETING (MoM) BACKDROP -->
+  <div id="mom-backdrop" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-300" onclick="window.YudiazHQ.toggleMomModal()"></div>
+
+  <!-- SLIDE-OVER NOTULENSI RAPAT (MoM) PANEL -->
+  <div id="mom-slideover" class="fixed inset-y-0 right-0 z-50 w-full max-w-2xl bg-obsidian-surface/98 backdrop-blur-2xl border-l border-slate-700/80 shadow-[-25px_0_60px_rgba(0,0,0,0.9)] transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col pointer-events-auto overflow-hidden">
+    
+    <!-- MoM Header -->
+    <div class="p-6 border-b border-slate-800 bg-slate-950/60 flex items-start justify-between gap-4">
+      <div class="flex items-start gap-3.5">
+        <div class="w-12 h-12 rounded-2xl bg-cyan-950/80 border border-cyan-500/40 flex items-center justify-center text-2xl shadow-lg shadow-cyan-500/20 flex-shrink-0">
+          📜
+        </div>
+        <div>
+          <div class="flex items-center gap-2 mb-1 flex-wrap">
+            <span class="text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 uppercase">OFFICIAL DOCUMENT</span>
+            <span id="mom-status-badge" class="text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 uppercase">FINAL RESOLUTION</span>
+          </div>
+          <h2 class="font-display font-extrabold text-lg text-white tracking-wide">NOTULENSI RAPAT KOORDINASI STRATEGIS</h2>
+          <p class="text-xs font-mono text-slate-400">War Room Strategy Amphitheater // Yudiaz Virtual HQ</p>
+        </div>
+      </div>
+      <button onclick="window.YudiazHQ.toggleMomModal()" class="text-slate-400 hover:text-white p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- MoM Scrollable Content -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6 text-sm">
+      
+      <!-- Meta Information Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <span class="block text-[10px] font-mono text-slate-400 uppercase">TANGGAL & WAKTU</span>
+          <span class="text-xs font-bold text-white" id="mom-timestamp">Sabtu, 26 Sept 2026 • 15:30 WIB</span>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <span class="block text-[10px] font-mono text-slate-400 uppercase">PEMIMPIN RAPAT</span>
+          <span class="text-xs font-bold text-cyan-400">CEO Daniandra / Daffa</span>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <span class="block text-[10px] font-mono text-slate-400 uppercase">NOTULIS</span>
+          <span class="text-xs font-bold text-purple-400">Elara Sinclair (PA)</span>
+        </div>
+        <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <span class="block text-[10px] font-mono text-slate-400 uppercase">KEHADIRAN</span>
+          <span class="text-xs font-bold text-emerald-400">11 / 11 Personel (100%)</span>
+        </div>
+      </div>
+
+      <!-- Agenda Ringkas -->
+      <div class="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-1">
+        <h3 class="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🎯</span> Agenda Utama Rapat
+        </h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          1. Sinkronisasi arsitektur skripsi Telkom University & integrasi literatur arXiv Bab 3.<br>
+          2. Evaluasi performa 3D Virtual HQ diorama (target rock-solid 60 FPS di WebGL).<br>
+          3. Validasi keamanan Sentinel 4-layer defense, UFW rate-limiting, dan PIN gate 2609.<br>
+          4. Finalisasi sprint timeline dan penetapan PIC tindak lanjut.
+        </p>
+      </div>
+
+      <!-- Daftar Kehadiran Personel (11/11) -->
+      <div>
+        <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+          <span>👥</span> Personel Hadir (11/11)
+        </h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>👑</span> <span class="font-medium text-slate-200">Daniandra (CEO)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>🎯</span> <span class="font-medium text-slate-200">Daffa (CEO Office)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>🧐</span> <span class="font-medium text-slate-200">Raziel Hendrix (CTO)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>📋</span> <span class="font-medium text-slate-200">Elara Sinclair (PA)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>📐</span> <span class="font-medium text-slate-200">Kael Ashford (Arch)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>📚</span> <span class="font-medium text-slate-200">Nara Vasquez (Rsch)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>🎧</span> <span class="font-medium text-slate-200">Idris Nakamura (Dev)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>⚡</span> <span class="font-medium text-slate-200">Mika Stellan (Frontend)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>🎨</span> <span class="font-medium text-slate-200">Senna Louviere (Creative)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>📡</span> <span class="font-medium text-slate-200">Jovan Aritza (Intel)</span>
+          </div>
+          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>🛡️</span> <span class="font-medium text-slate-200">Viktor Moreau (QA)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Keputusan Strategis Rapat -->
+      <div class="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
+        <h3 class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+          <span>✨</span> Keputusan Strategis yang Disahkan
+        </h3>
+        <ul class="text-xs text-slate-200 space-y-1.5 list-disc list-inside">
+          <li><strong>Pengesahan Bab 3 Arsitektur Skripsi Tel-U</strong>: Mengadopsi 18 paper arXiv terkini tentang distributed multi-agent systems.</li>
+          <li><strong>Standarisasi 60 FPS WebGL Engine</strong>: Tampilan diorama 3D dan sistem badge proyeksi Three.js diverifikasi tanpa penurunan frame rate.</li>
+          <li><strong>Hardening Keamanan Sentinel</strong>: 26 skenario automated test lulus 100%, sistem PIN gate 2609 aktif, dan port 9449 terlindungi UFW.</li>
+          <li><strong>Konektivitas Low-Latency</strong>: SSE streaming melalui Caddy reverse proxy TLS 1.3 stabil dengan latensi &lt; 10ms.</li>
+        </ul>
+      </div>
+
+      <!-- Transkrip Dialog Rapat (Live Dialogue Transcript) -->
+      <div>
+        <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span>💬</span> Transkrip Dialog Rapat</span>
+          <span class="text-[10px] text-cyan-400 font-mono">Tersinkronisasi Realtime</span>
+        </h3>
+        <div id="mom-transcript-list" class="space-y-2.5 font-sans">
+          <!-- Populated by renderMoMTranscript() -->
+        </div>
+      </div>
+
+      <!-- Tabel Action Items & PIC -->
+      <div>
+        <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+          <span>📌</span> Tabel Action Items & PIC (Tindak Lanjut)
+        </h3>
+        <div class="overflow-x-auto rounded-2xl border border-slate-800">
+          <table class="w-full text-left text-xs font-mono">
+            <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] border-b border-slate-800">
+              <tr>
+                <th class="p-3">PIC</th>
+                <th class="p-3">Tindakan Strategis</th>
+                <th class="p-3">Target</th>
+                <th class="p-3">Status</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800/60 text-slate-300">
+              <tr>
+                <td class="p-3 font-bold text-purple-400">Raziel Hendrix (CTO)</td>
+                <td class="p-3">Monitoring kestabilan SSE cluster port 9449 & Caddy TLS 1.3</td>
+                <td class="p-3 text-slate-400">H+1 (Besok)</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px]">IN PROGRESS</span></td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-cyan-400">Kael Ashford & Nara</td>
+                <td class="p-3">Finalisasi kompilasi Bab 3 skripsi LaTeX dengan sitasi 18 paper arXiv</td>
+                <td class="p-3 text-slate-400">H+3</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px]">IN PROGRESS</span></td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-emerald-400">Idris & Mika Stellan</td>
+                <td class="p-3">Fine-tuning rendering 60 FPS Three.js & asset texture loader</td>
+                <td class="p-3 text-slate-400">H+2</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px]">IN PROGRESS</span></td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-red-400">Viktor Moreau (QA)</td>
+                <td class="p-3">Pertahankan 100% pass rate 26 automated tests & security audit</td>
+                <td class="p-3 text-slate-400">Ongoing</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 text-[10px]">PASSED (26/26)</span></td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-sky-400">Daffa (CEO Office)</td>
+                <td class="p-3">Koordinasi timeline sprint dan review lintas divisi R&D</td>
+                <td class="p-3 text-slate-400">Mingguan</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px]">SCHEDULED</span></td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-purple-300">Elara Sinclair (PA)</td>
+                <td class="p-3">Distribusi notulensi resmi ke direksi & jadwalkan rapat evaluasi</td>
+                <td class="p-3 text-slate-400">Hari Ini</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 text-[10px]">COMPLETED</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MoM Footer Actions -->
+    <div class="p-4 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between gap-3">
+      <button onclick="window.YudiazHQ.copyMomMarkdown()" class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition-colors shadow-lg shadow-cyan-500/20 font-mono">
+        <span>📋</span> Salin Notulensi (Markdown)
+      </button>
+      <button onclick="window.YudiazHQ.toggleMomModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors font-mono">
+        Tutup
+      </button>
+    </div>
+
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast-notification" class="fixed bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 transition-all duration-300 bg-emerald-950/95 border border-emerald-500/70 text-emerald-300 px-5 py-2.5 rounded-full text-xs font-mono font-bold shadow-2xl flex items-center gap-2.5">
+    <span>✅</span>
+    <span id="toast-text">Notulensi tersalin ke clipboard!</span>
+  </div>
 
   <!-- EXECUTIVE PERSONNEL DOSSIER MODAL -->
   <div id="agent-dossier-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-obsidian-core/85 backdrop-blur-xl p-4 opacity-0 pointer-events-none transition-opacity duration-300">
@@ -848,17 +1104,17 @@
           stateSummary: "Focus Sprint — Deep Engineering & Executive Strategy",
           tickerMsg: "[ORCHESTRATOR] Autonomous Focus Sprint active • All agents at dedicated stations",
           positions: {
-            dani:    { x: -12.5, z: -8.0,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-ceo" },
-            daffa:   { x: -9.2,  z: -8.0,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-ceo" },
-            raziel:  { x: -3.0,  z: -1.5,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-cto" },
+            dani:    { x: -12.5, z: -9.1,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-ceo" },
+            daffa:   { x: -9.2,  z: -9.0,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-ceo" },
+            raziel:  { x: -3.0,  z: -1.45, y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-cto" },
             elara:   { x: -4.5,  z: -9.5,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-pa" },
-            kael:    { x: -13.0, z: 6.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-atelier" },
-            nara:    { x: -8.5,  z: 6.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-atelier" },
-            senna:   { x: -3.5,  z: 6.5,   y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-creative" },
-            idris:   { x: -13.0, z: 1.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-dev" },
-            mika:    { x: -8.5,  z: 1.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-dev" },
-            viktor:  { x: 10.5,  z: 5.5,   y: 0.0, rotY: -Math.PI / 2,   pose: "standing",    room: "room-server" },
-            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI / 2,    pose: "seated_desk", room: "room-server" }
+            kael:    { x: -13.0, z: 6.35,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-atelier" },
+            nara:    { x: -8.5,  z: 6.35,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-atelier" },
+            senna:   { x: -3.5,  z: 6.45,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-creative" },
+            idris:   { x: -13.0, z: 1.35,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-dev" },
+            mika:    { x: -8.5,  z: 1.35,  y: 0.0, rotY: 0,              pose: "seated_desk", room: "room-dev" },
+            viktor:  { x: 10.5,  z: 5.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-server" },
+            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk", room: "room-server" }
           }
         },
         {
@@ -879,7 +1135,7 @@
             mika:    { x: 8.8,   z: -3.8,  y: 0.0, rotY: 2.6,            pose: "seated_meeting", room: "room-war" },
             elara:   { x: 11.2,  z: -3.8,  y: 0.0, rotY: -2.6,           pose: "seated_meeting", room: "room-war" },
             viktor:  { x: 10.0,  z: -3.6,  y: 0.0, rotY: Math.PI,        pose: "seated_meeting", room: "room-war" },
-            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI / 2,    pose: "seated_desk",    room: "room-server" }
+            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk",    room: "room-server" }
           }
         },
         {
@@ -900,7 +1156,7 @@
             mika:    { x: 8.8,   z: -3.8,  y: 0.0, rotY: 2.6,            pose: "seated_meeting", room: "room-war" },
             elara:   { x: 11.2,  z: -3.8,  y: 0.0, rotY: -2.6,           pose: "seated_meeting", room: "room-war" },
             viktor:  { x: 10.0,  z: -3.6,  y: 0.0, rotY: Math.PI,        pose: "seated_meeting", room: "room-war" },
-            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI / 2,    pose: "seated_desk",    room: "room-server" }
+            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk",    room: "room-server" }
           }
         },
         {
@@ -939,13 +1195,296 @@
             nara:    { x: 3.8,   z: 8.2,   y: 0.0,  rotY: -Math.PI * 0.7,pose: "seated_chair",    room: "room-lounge" },
             senna:   { x: 2.2,   z: 8.8,   y: 0.0,  rotY: -Math.PI * 0.4,pose: "seated_chair",    room: "room-lounge" },
             elara:   { x: -4.5,  z: -9.5,  y: 0.0,  rotY: 0,             pose: "seated_desk",     room: "room-pa" },
-            idris:   { x: -13.0, z: 1.5,   y: 0.0,  rotY: Math.PI,       pose: "seated_desk",     room: "room-dev" },
-            mika:    { x: -8.5,  z: 1.5,   y: 0.0,  rotY: Math.PI,       pose: "seated_desk",     room: "room-dev" },
-            viktor:  { x: 10.5,  z: 5.5,   y: 0.0,  rotY: -Math.PI / 2,  pose: "standing",        room: "room-server" },
-            jovan:   { x: 14.5,  z: 5.5,   y: 0.0,  rotY: Math.PI / 2,   pose: "seated_desk",     room: "room-server" }
+            idris:   { x: -13.0, z: 1.35,  y: 0.0,  rotY: 0,             pose: "seated_desk",     room: "room-dev" },
+            mika:    { x: -8.5,  z: 1.35,  y: 0.0,  rotY: 0,             pose: "seated_desk",     room: "room-dev" },
+            viktor:  { x: 10.5,  z: 5.5,   y: 0.0,  rotY: Math.PI,       pose: "seated_desk",     room: "room-server" },
+            jovan:   { x: 14.5,  z: 5.5,   y: 0.0,  rotY: Math.PI,       pose: "seated_desk",     room: "room-server" }
           }
         }
       ];
+
+      // =========================================================================
+      // War Room Realistic Spoken Dialogues & MoM Data
+      // =========================================================================
+      const WAR_ROOM_DIALOGUES = [
+        {
+          speakerId: "dani",
+          speakerName: "Daniandra (CEO)",
+          role: "CEO",
+          emoji: "👑",
+          color: "#10B981",
+          timeStr: "15:30 WIB",
+          text: "Rekan-rekan, kita tinjau progres arsitektur skripsi Tel-U dan performa sistem studio minggu ini."
+        },
+        {
+          speakerId: "daffa",
+          speakerName: "Daffa (CEO Office)",
+          role: "CEO Office",
+          emoji: "🎯",
+          color: "#38BDF8",
+          timeStr: "15:32 WIB",
+          text: "Agenda hari ini: sinkronisasi arsitektur riset, validasi security Sentinel, dan timeline sprint."
+        },
+        {
+          speakerId: "raziel",
+          speakerName: "Raziel Hendrix (CTO)",
+          role: "CTO",
+          emoji: "🧐",
+          color: "#A855F7",
+          timeStr: "15:33 WIB",
+          text: "Infrastruktur cluster stabil di port 9449, Caddy TLS 1.3 lancar, latensi di bawah 10ms."
+        },
+        {
+          speakerId: "kael",
+          speakerName: "Kael Ashford",
+          role: "Lead Architect",
+          emoji: "📐",
+          color: "#38BDF8",
+          timeStr: "15:35 WIB",
+          text: "Draft Bab 3 dan kajian 18 paper arXiv sudah kami strukturkan di template LaTeX."
+        },
+        {
+          speakerId: "nara",
+          speakerName: "Nara Vasquez",
+          role: "Lead Researcher",
+          emoji: "📚",
+          color: "#00DFD8",
+          timeStr: "15:36 WIB",
+          text: "Literature review mencakup spatial computing dan autonomous multi-agent coordination."
+        },
+        {
+          speakerId: "idris",
+          speakerName: "Idris Nakamura",
+          role: "Senior Dev",
+          emoji: "🎧",
+          color: "#10B981",
+          timeStr: "15:38 WIB",
+          text: "Backend FastAPI SSE stream broadcast stabil, 11 agent state tersinkronisasi realtime."
+        },
+        {
+          speakerId: "mika",
+          speakerName: "Mika Stellan",
+          role: "Frontend",
+          emoji: "⚡",
+          color: "#F97316",
+          timeStr: "15:40 WIB",
+          text: "Engine 3D diorama dan live SSE stream beroperasi mulus di 60 FPS."
+        },
+        {
+          speakerId: "viktor",
+          speakerName: "Viktor Moreau",
+          role: "QA & Security",
+          emoji: "🛡️",
+          color: "#EF4444",
+          timeStr: "15:42 WIB",
+          text: "26 skenario automated tests lulus 100%, 4-layer security hardening aktif."
+        },
+        {
+          speakerId: "elara",
+          speakerName: "Elara Sinclair",
+          role: "PA to CEO",
+          emoji: "📋",
+          color: "#C084FC",
+          timeStr: "15:44 WIB",
+          text: "Notulensi rapat dan action items telah tercatat rapi. Jadwal tindak lanjut siap dieksekusi."
+        }
+      ];
+
+      let warRoomDialogueIdx = 0;
+      let warRoomDialogueTimer = null;
+      let currentSpeakerAvatarId = null;
+
+      function startWarRoomDialogues(leaderId = "dani") {
+        stopWarRoomDialogues();
+        warRoomDialogueIdx = 0;
+
+        const momBadge = document.getElementById("mom-badge-status");
+        if (momBadge) {
+          momBadge.textContent = "LIVE";
+          momBadge.className = "px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse";
+        }
+        const momModalBadge = document.getElementById("mom-status-badge");
+        if (momModalBadge) {
+          momModalBadge.textContent = "IN PROGRESS (LIVE)";
+          momModalBadge.className = "text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-400 uppercase animate-pulse";
+        }
+
+        showNextWarRoomDialogue();
+        warRoomDialogueTimer = setInterval(() => {
+          warRoomDialogueIdx = (warRoomDialogueIdx + 1) % WAR_ROOM_DIALOGUES.length;
+          showNextWarRoomDialogue();
+        }, 4500);
+      }
+
+      function stopWarRoomDialogues() {
+        if (warRoomDialogueTimer) {
+          clearInterval(warRoomDialogueTimer);
+          warRoomDialogueTimer = null;
+        }
+        hideSpeechBubble();
+
+        const momBadge = document.getElementById("mom-badge-status");
+        if (momBadge) {
+          momBadge.textContent = "READY";
+          momBadge.className = "px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+        }
+        const momModalBadge = document.getElementById("mom-status-badge");
+        if (momModalBadge) {
+          momModalBadge.textContent = "FINAL RESOLUTION";
+          momModalBadge.className = "text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 uppercase";
+        }
+      }
+
+      function showNextWarRoomDialogue() {
+        const dlg = WAR_ROOM_DIALOGUES[warRoomDialogueIdx];
+        if (!dlg) return;
+
+        showSpeechBubble(dlg.speakerId, dlg.speakerName, dlg.role, dlg.emoji, dlg.color, dlg.text);
+        highlightMoMTranscript(warRoomDialogueIdx);
+        playUiChime("dialogue");
+      }
+
+      function showSpeechBubble(speakerId, speakerName, role, emoji, color, text) {
+        const bubble = document.getElementById("speech-bubble");
+        if (!bubble) return;
+
+        currentSpeakerAvatarId = speakerId;
+        const emojiEl = document.getElementById("speech-emoji");
+        const speakerEl = document.getElementById("speech-speaker");
+        const roleEl = document.getElementById("speech-role");
+        const contentEl = document.getElementById("speech-content");
+        const inner = document.getElementById("speech-bubble-inner");
+
+        if (emojiEl) emojiEl.textContent = emoji || "👤";
+        if (speakerEl) speakerEl.textContent = speakerName || "Agent";
+        if (roleEl) roleEl.textContent = role || "Member";
+        if (contentEl) contentEl.textContent = text;
+
+        if (inner && color) {
+          inner.style.borderColor = color;
+          inner.style.boxShadow = `0 15px 40px rgba(0,0,0,0.85), 0 0 25px ${color}40`;
+        }
+
+        bubble.classList.add("active-bubble");
+        bubble.classList.remove("opacity-0", "scale-90");
+        bubble.classList.add("opacity-100", "scale-100");
+
+        updateProjectedBadges();
+      }
+
+      function hideSpeechBubble() {
+        const bubble = document.getElementById("speech-bubble");
+        if (!bubble) return;
+        bubble.classList.remove("active-bubble", "opacity-100", "scale-100");
+        bubble.classList.add("opacity-0", "scale-90");
+        currentSpeakerAvatarId = null;
+      }
+
+      function renderMoMTranscript() {
+        const container = document.getElementById("mom-transcript-list");
+        if (!container) return;
+        container.innerHTML = "";
+
+        WAR_ROOM_DIALOGUES.forEach((dlg, idx) => {
+          const card = document.createElement("div");
+          card.id = `mom-dlg-${idx}`;
+          card.className = "p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80 transition-all flex items-start gap-3";
+          card.innerHTML = `
+            <div class="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-sm flex-shrink-0 border border-slate-700/60" style="border-color: ${dlg.color}50">
+              ${dlg.emoji}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-2 mb-1">
+                <span class="font-display font-bold text-xs" style="color: ${dlg.color}">${dlg.speakerName}</span>
+                <span class="font-mono text-[9px] text-slate-500">${dlg.timeStr}</span>
+              </div>
+              <p class="text-xs text-slate-300 leading-relaxed">"${dlg.text}"</p>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      }
+
+      function highlightMoMTranscript(activeIdx) {
+        WAR_ROOM_DIALOGUES.forEach((_, idx) => {
+          const el = document.getElementById(`mom-dlg-${idx}`);
+          if (!el) return;
+          if (idx === activeIdx) {
+            el.classList.add("bg-cyan-950/40", "border-cyan-500/60", "shadow-[0_0_15px_rgba(0,242,254,0.15)]");
+            el.classList.remove("bg-slate-900/60", "border-slate-800/80");
+          } else {
+            el.classList.remove("bg-cyan-950/40", "border-cyan-500/60", "shadow-[0_0_15px_rgba(0,242,254,0.15)]");
+            el.classList.add("bg-slate-900/60", "border-slate-800/80");
+          }
+        });
+      }
+
+      function getMoMMarkdownText() {
+        return `# NOTULENSI RAPAT KOORDINASI STRATEGIS // YUDIAZ VIRTUAL HQ
+**Lokasi**: War Room Strategy Amphitheater (Virtual HQ)
+**Tanggal / Waktu**: Sabtu, 26 September 2026 • 15:30 WIB
+**Pemimpin Rapat**: CEO Daniandra P. / Daffa (CEO Office)
+**Notulis**: Elara Sinclair (Personal Assistant to CEO)
+**Kehadiran**: 11 / 11 Personel (100% Hadir)
+
+---
+
+## 1. Agenda Utama
+1. Sinkronisasi arsitektur skripsi Telkom University & integrasi literatur arXiv Bab 3.
+2. Evaluasi kestabilan engine 3D Virtual HQ diorama pada 60 FPS WebGL.
+3. Validasi keamanan Sentinel 4-layer defense, UFW rate-limiting, dan PIN gate 2609.
+4. Finalisasi sprint timeline dan penetapan PIC tindak lanjut.
+
+---
+
+## 2. Daftar Kehadiran Personel (11/11)
+- 👑 Daniandra (Chief Executive Officer)
+- 🎯 Daffa (CEO Office)
+- 🧐 Raziel Hendrix (CTO & Lead Orchestrator)
+- 📋 Elara Sinclair (Personal Assistant to CEO)
+- 📐 Kael Ashford (Lead Architect)
+- 📚 Nara Vasquez (Lead Researcher)
+- 🎧 Idris Nakamura (Senior Developer)
+- ⚡ Mika Stellan (Frontend Engineer)
+- 🎨 Senna Louviere (Creative Director)
+- 📡 Jovan Aritza (Intelligence Officer)
+- 🛡️ Viktor Moreau (Lead QA & Security Engineer)
+
+---
+
+## 3. Transkrip Dialog Rapat
+- [15:30 WIB] **Daniandra (CEO)**: "Rekan-rekan, kita tinjau progres arsitektur skripsi Tel-U dan performa sistem studio minggu ini."
+- [15:32 WIB] **Daffa (CEO Office)**: "Agenda hari ini: sinkronisasi arsitektur riset, validasi security Sentinel, dan timeline sprint."
+- [15:33 WIB] **Raziel Hendrix (CTO)**: "Infrastruktur cluster stabil di port 9449, Caddy TLS 1.3 lancar, latensi di bawah 10ms."
+- [15:35 WIB] **Kael Ashford (Lead Architect)**: "Draft Bab 3 dan kajian 18 paper arXiv sudah kami strukturkan di template LaTeX."
+- [15:36 WIB] **Nara Vasquez (Lead Researcher)**: "Literature review mencakup spatial computing dan autonomous multi-agent coordination."
+- [15:38 WIB] **Idris Nakamura (Senior Developer)**: "Backend FastAPI SSE stream broadcast stabil, 11 agent state tersinkronisasi realtime."
+- [15:40 WIB] **Mika Stellan (Frontend Engineer)**: "Engine 3D diorama dan live SSE stream beroperasi mulus di 60 FPS."
+- [15:42 WIB] **Viktor Moreau (Lead QA)**: "26 skenario automated tests lulus 100%, 4-layer security hardening aktif."
+- [15:44 WIB] **Elara Sinclair (PA to CEO)**: "Notulensi rapat dan action items telah tercatat rapi. Jadwal tindak lanjut siap dieksekusi."
+
+---
+
+## 4. Keputusan Strategis (Key Resolutions)
+1. **Pengesahan Bab 3 Arsitektur Skripsi Tel-U**: Mengadopsi 18 paper arXiv terkini mengenai distributed spatial multi-agent coordination.
+2. **Standarisasi Engine 3D Diorama pada 60 FPS**: Rendering Three.js r128 terverifikasi mulus tanpa degradasi performa.
+3. **Hardening Keamanan Sentinel Zero-Trust**: 26 skenario automated test lulus 100%, PIN 2609 aktif, dan port 9449 dilindungi UFW.
+4. **Deployment SSE Low-Latency Gateway**: Caddy reverse proxy TLS 1.3 melayani telemetry stream dengan latensi < 10ms.
+
+---
+
+## 5. Tabel Action Items & PIC (Tindak Lanjut)
+| PIC | Tindakan Strategis | Target | Status |
+|---|---|---|---|
+| Raziel Hendrix (CTO) | Monitoring kestabilan SSE cluster port 9449 & Caddy TLS 1.3 | H+1 (Besok) | IN PROGRESS |
+| Kael Ashford & Nara Vasquez | Finalisasi kompilasi Bab 3 skripsi LaTeX dengan sitasi 18 paper arXiv | H+3 | IN PROGRESS |
+| Idris Nakamura & Mika Stellan | Fine-tuning rendering 60 FPS Three.js & asset texture loader | H+2 | IN PROGRESS |
+| Viktor Moreau (QA) | Pertahankan 100% pass rate 26 automated tests & security audit | Ongoing | PASSED (26/26) |
+| Daffa (CEO Office) | Koordinasi timeline sprint dan review lintas divisi R&D | Mingguan | SCHEDULED |
+| Elara Sinclair (PA) | Distribusi notulensi resmi ke direksi & jadwalkan rapat evaluasi | Hari Ini | COMPLETED |
+`;
+      }
+
 
       // =========================================================================
       // 4. Procedural Audio Synthesizer (Web Audio API)
@@ -1035,12 +1574,20 @@
           osc.stop(now + 0.2);
         } else if (type === "voice") {
           osc.type = "sine";
-          osc.frequency.setValueAtTime(523.25, now);
-          osc.frequency.setValueAtTime(659.25, now + 0.08);
-          gain.gain.setValueAtTime(0.12, now);
-          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.exponentialRampToValueAtTime(640, now + 0.12);
+          gain.gain.setValueAtTime(0.08, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
           osc.start(now);
-          osc.stop(now + 0.25);
+          osc.stop(now + 0.18);
+        } else if (type === "dialogue") {
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(587.33, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.28);
         }
       }
 
@@ -1451,6 +1998,589 @@
         return new THREE.CanvasTexture(canvas);
       }
 
+      function createCeoDashboardTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#070c18";
+        ctx.fillRect(0, 0, 512, 320);
+
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(0, 0, 512, 32);
+        ctx.fillStyle = "#f59e0b";
+        ctx.font = "bold 13px 'JetBrains Mono', monospace";
+        ctx.fillText("CEO DASHBOARD // STUDIO MRR & STRATEGIC KPI", 14, 21);
+
+        // Revenue Growth Area Chart
+        ctx.strokeStyle = "#10b981";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        const pts = [230, 210, 200, 185, 170, 145, 130, 110, 95];
+        pts.forEach((y, i) => {
+          const x = 30 + i * 28;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(16, 185, 129, 0.15)";
+        ctx.fillRect(290, 48, 204, 70);
+        ctx.strokeStyle = "rgba(16, 185, 129, 0.5)";
+        ctx.strokeRect(290, 48, 204, 70);
+        ctx.fillStyle = "#34d399";
+        ctx.font = "bold 11px 'JetBrains Mono', monospace";
+        ctx.fillText("STUDIO MRR GROWTH", 302, 68);
+        ctx.font = "bold 22px 'JetBrains Mono', monospace";
+        ctx.fillText("+34.8% YoY", 302, 98);
+
+        ctx.fillStyle = "rgba(0, 242, 254, 0.15)";
+        ctx.fillRect(290, 128, 204, 70);
+        ctx.strokeStyle = "rgba(0, 242, 254, 0.5)";
+        ctx.strokeRect(290, 128, 204, 70);
+        ctx.fillStyle = "#38bdf8";
+        ctx.font = "bold 11px 'JetBrains Mono', monospace";
+        ctx.fillText("ACTIVE PROJECTS", 302, 148);
+        ctx.font = "bold 22px 'JetBrains Mono', monospace";
+        ctx.fillText("8 ACTIVE (100%)", 302, 178);
+
+        ctx.fillStyle = "rgba(30, 41, 59, 0.85)";
+        ctx.fillRect(16, 245, 480, 60);
+        ctx.fillStyle = "#f8fafc";
+        ctx.font = "bold 12px 'Plus Jakarta Sans', sans-serif";
+        ctx.fillText("TEL-U THESIS ROADMAP: Bab 3 Synthesis In Final Review (92%)", 28, 268);
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "10.5px 'JetBrains Mono', monospace";
+        ctx.fillText("Executive Sign-off: Daniandra P. • Next War Room: 15:30 WIB", 28, 288);
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createDaffaKanbanTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#080d1a";
+        ctx.fillRect(0, 0, 512, 320);
+
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(0, 0, 512, 30);
+        ctx.fillStyle = "#38bdf8";
+        ctx.font = "bold 12.5px 'JetBrains Mono', monospace";
+        ctx.fillText("NOTION STRATEGIC ROADMAP // DAFFA (CEO OFFICE)", 14, 20);
+
+        // 3 Kanban Columns
+        const cols = [
+          { title: "Q3 STRATEGY", color: "#a855f7", x: 14, cards: ["[RAZIEL] Port 9449 Caddy", "[STUDIO] Q3 Expansion"] },
+          { title: "IN PROGRESS", color: "#00f2fe", x: 178, cards: ["[KAEL/NARA] Bab 3 ArXiv", "[MIKA] 3D Diorama 60FPS"] },
+          { title: "VALIDATED", color: "#10b981", x: 342, cards: ["[VIKTOR] 26/26 Tests OK", "[SENTINEL] PIN Gate 2609"] }
+        ];
+
+        cols.forEach(c => {
+          ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
+          ctx.fillRect(c.x, 40, 156, 265);
+          ctx.strokeStyle = "rgba(51, 65, 85, 0.6)";
+          ctx.strokeRect(c.x, 40, 156, 265);
+
+          ctx.fillStyle = c.color;
+          ctx.font = "bold 11px 'JetBrains Mono', monospace";
+          ctx.fillText(c.title, c.x + 10, 58);
+
+          c.cards.forEach((card, ci) => {
+            const cy = 70 + ci * 80;
+            ctx.fillStyle = "rgba(30, 41, 59, 0.9)";
+            ctx.fillRect(c.x + 8, cy, 140, 68);
+            ctx.strokeStyle = c.color;
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(c.x + 8, cy, 140, 68);
+
+            ctx.fillStyle = "#f8fafc";
+            ctx.font = "bold 11px 'Plus Jakarta Sans', sans-serif";
+            ctx.fillText(card, c.x + 14, cy + 24);
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "10px 'JetBrains Mono', monospace";
+            ctx.fillText("Priority: High [P0]", c.x + 14, cy + 45);
+          });
+        });
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createElaraScheduleTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#0c0a1a";
+        ctx.fillRect(0, 0, 512, 320);
+
+        ctx.fillStyle = "#1e1338";
+        ctx.fillRect(0, 0, 512, 30);
+        ctx.fillStyle = "#e0aaff";
+        ctx.font = "bold 12px 'Plus Jakarta Sans', sans-serif";
+        ctx.fillText("EXECUTIVE AGENDA & VIP CALENDAR // ELARA SINCLAIR", 14, 20);
+
+        const timeblocks = [
+          { time: "09:00", label: "Executive Briefing (Dani & Daffa)", stat: "COMPLETED", col: "#10b981" },
+          { time: "12:00", label: "Executive Lunch & Studio Catering", stat: "CONFIRMED", col: "#f59e0b" },
+          { time: "15:00", label: "War Room Strategic Council", stat: "LIVE NOW", col: "#ef4444" },
+          { time: "17:00", label: "Tel-U Skripsi Roadmap Review", stat: "SCHEDULED", col: "#a855f7" }
+        ];
+
+        timeblocks.forEach((b, i) => {
+          const y = 42 + i * 65;
+          ctx.fillStyle = "rgba(24, 18, 48, 0.8)";
+          ctx.fillRect(14, y, 484, 55);
+          ctx.strokeStyle = b.col;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(14, y, 484, 55);
+
+          ctx.fillStyle = b.col;
+          ctx.font = "bold 13px 'JetBrains Mono', monospace";
+          ctx.fillText(b.time, 24, y + 26);
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 12px 'Plus Jakarta Sans', sans-serif";
+          ctx.fillText(b.label, 85, y + 26);
+
+          ctx.fillStyle = b.col;
+          ctx.font = "bold 10px 'JetBrains Mono', monospace";
+          ctx.fillText(`[${b.stat}]`, 85, y + 44);
+        });
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createRazielHudTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#050711";
+        ctx.fillRect(0, 0, 512, 320);
+
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(0, 0, 512, 28);
+        ctx.fillStyle = "#a855f7";
+        ctx.font = "bold 12px 'JetBrains Mono', monospace";
+        ctx.fillText("RAZIEL CTO // CLUSTER HUD TELEMETRY & NETWORK MESH", 12, 19);
+
+        // Circular Gauge for CPU
+        ctx.strokeStyle = "rgba(0, 242, 254, 0.25)";
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(80, 105, 45, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = "#00f2fe";
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(80, 105, 45, -Math.PI / 2, -Math.PI / 2 + (0.24 * Math.PI * 2));
+        ctx.stroke();
+
+        ctx.fillStyle = "#00f2fe";
+        ctx.font = "bold 16px 'JetBrains Mono', monospace";
+        ctx.textAlign = "center";
+        ctx.fillText("24%", 80, 105);
+        ctx.font = "10px 'JetBrains Mono', monospace";
+        ctx.fillText("CPU LOAD", 80, 122);
+        ctx.textAlign = "left";
+
+        // RAM & Net Bars
+        ctx.fillStyle = "#c084fc";
+        ctx.font = "bold 11px 'JetBrains Mono', monospace";
+        ctx.fillText("RAM ALLOC: 3.4 GB / 16.0 GB (NOMINAL)", 150, 75);
+        ctx.fillStyle = "rgba(168, 85, 247, 0.2)";
+        ctx.fillRect(150, 85, 340, 10);
+        ctx.fillStyle = "#a855f7";
+        ctx.fillRect(150, 85, 120, 10);
+
+        ctx.fillStyle = "#34d399";
+        ctx.fillText("CLUSTER STATUS: 11 AGENTS ONLINE • 0.38ms", 150, 120);
+        ctx.fillStyle = "rgba(16, 185, 129, 0.2)";
+        ctx.fillRect(150, 130, 340, 10);
+        ctx.fillStyle = "#10b981";
+        ctx.fillRect(150, 130, 320, 10);
+
+        // Network Topology Mini-Graph
+        ctx.fillStyle = "rgba(15, 23, 42, 0.9)";
+        ctx.fillRect(14, 170, 484, 135);
+        ctx.strokeStyle = "rgba(0, 242, 254, 0.4)";
+        ctx.strokeRect(14, 170, 484, 135);
+
+        ctx.fillStyle = "#00f2fe";
+        ctx.font = "bold 11px 'JetBrains Mono', monospace";
+        ctx.fillText("TOPOLOGY // HERMES AGENT HUB & CADDY TLS 1.3 (PORT 9449)", 24, 192);
+
+        const nodes = [
+          { x: 60, y: 245, l: "NODE 1001", col: "#f59e0b" },
+          { x: 170, y: 230, l: "HERMES CORE", col: "#a855f7" },
+          { x: 280, y: 260, l: "SSE GATEWAY", col: "#10b981" },
+          { x: 400, y: 235, l: "3D DIORAMA", col: "#00f2fe" }
+        ];
+
+        ctx.strokeStyle = "rgba(0, 242, 254, 0.5)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(60, 245); ctx.lineTo(170, 230);
+        ctx.lineTo(280, 260); ctx.lineTo(400, 235);
+        ctx.stroke();
+
+        nodes.forEach(n => {
+          ctx.fillStyle = n.col;
+          ctx.beginPath(); ctx.arc(n.x, n.y, 8, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "9.5px 'JetBrains Mono', monospace";
+          ctx.fillText(n.l, n.x - 25, n.y - 14);
+        });
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createVsCodeDevTexture(agentId) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#1e1e1e";
+        ctx.fillRect(0, 0, 512, 320);
+
+        // VS Code Tabs
+        ctx.fillStyle = "#252526";
+        ctx.fillRect(0, 0, 512, 28);
+
+        const fileName = agentId === "idris" ? "main.py" : "DioramaEngine.tsx";
+        ctx.fillStyle = "#1e1e1e";
+        ctx.fillRect(40, 0, 140, 28);
+        ctx.fillStyle = agentId === "idris" ? "#34d399" : "#38bdf8";
+        ctx.font = "bold 11px 'JetBrains Mono', monospace";
+        ctx.fillText(fileName, 55, 18);
+
+        const lines = agentId === "idris" ? [
+          "import asyncio",
+          "from yudiaz.engine import OfficeEngine",
+          "",
+          "@app.get('/api/v1/stream')",
+          "async def stream_telemetry():",
+          "    engine = OfficeEngine(nodes=11)",
+          "    return await engine.broadcast_sse()",
+          "",
+          "# Autonomous multi-agent coordination active"
+        ] : [
+          "import { Canvas, useFrame } from '@react-three/fiber';",
+          "import { DioramaMesh } from '@/components/Diorama';",
+          "",
+          "export function DioramaViewport() {",
+          "  const { fps, latency } = useStudioStore();",
+          "  // Rock-solid 60 FPS WebGL loop",
+          "  return <Canvas camera={{ position: [42, 36, 42] }} />;",
+          "}"
+        ];
+
+        ctx.fillStyle = "#6e7681";
+        ctx.font = "11px 'JetBrains Mono', monospace";
+        lines.forEach((l, i) => {
+          ctx.fillText(String(i + 1).padStart(2, " "), 10, 48 + i * 18);
+        });
+
+        ctx.fillStyle = "#d4d4d4";
+        lines.forEach((l, i) => {
+          if (l.startsWith("import") || l.startsWith("from") || l.startsWith("export") || l.startsWith("return")) {
+            ctx.fillStyle = "#c586c0";
+          } else if (l.startsWith("async") || l.startsWith("def") || l.startsWith("function")) {
+            ctx.fillStyle = "#569cd6";
+          } else if (l.startsWith("@") || l.startsWith("<")) {
+            ctx.fillStyle = "#4ec9b0";
+          } else if (l.startsWith("#") || l.startsWith("//")) {
+            ctx.fillStyle = "#6a9955";
+          } else {
+            ctx.fillStyle = "#d4d4d4";
+          }
+          ctx.fillText(l, 40, 48 + i * 18);
+        });
+
+        // Bottom Integrated Terminal
+        ctx.fillStyle = "#181818";
+        ctx.fillRect(0, 215, 512, 105);
+        ctx.fillStyle = "#333333";
+        ctx.fillRect(0, 215, 512, 22);
+
+        ctx.fillStyle = "#9cdcfe";
+        ctx.font = "bold 10.5px 'JetBrains Mono', monospace";
+        ctx.fillText("TERMINAL // (yudiaz-env)", 12, 230);
+
+        ctx.fillStyle = "#10b981";
+        ctx.font = "10.5px 'JetBrains Mono', monospace";
+        const termLines = agentId === "idris" ? [
+          "(yudiaz) $ python main.py",
+          "[INFO] Uvicorn running on http://0.0.0.0:9449",
+          "[OK] SSE broadcast engine active • 60 FPS diorama synced"
+        ] : [
+          "(yudiaz) $ npm run dev",
+          "ready - started server on 0.0.0.0:3000",
+          "[WebGL] Three.js r128 60 FPS • Draw calls: 42 • VRAM 184MB"
+        ];
+
+        termLines.forEach((t, i) => {
+          ctx.fillText(t, 12, 252 + i * 18);
+        });
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createFigmaCreativeTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#1e1e1e";
+        ctx.fillRect(0, 0, 512, 320);
+
+        ctx.fillStyle = "#2c2c2c";
+        ctx.fillRect(0, 0, 512, 28);
+        ctx.fillStyle = "#ff7262";
+        ctx.font = "bold 12px 'Plus Jakarta Sans', sans-serif";
+        ctx.fillText("Figma // Yudiaz Concept 2B Design Tokens & Wireframe", 14, 19);
+
+        // Swatches
+        const swatches = [
+          { c: "#07090E", l: "Obsidian" },
+          { c: "#00F2FE", l: "Cyan" },
+          { c: "#6366F1", l: "Iris" },
+          { c: "#EC4899", l: "Rose" },
+          { c: "#10B981", l: "Emerald" }
+        ];
+
+        swatches.forEach((s, i) => {
+          ctx.fillStyle = s.c;
+          ctx.fillRect(20 + i * 95, 42, 85, 38);
+          ctx.strokeStyle = "rgba(255,255,255,0.2)";
+          ctx.strokeRect(20 + i * 95, 42, 85, 38);
+
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 9.5px 'JetBrains Mono', monospace";
+          ctx.fillText(s.l, 25 + i * 95, 94);
+        });
+
+        // Isometric 3D Wireframe Preview Box
+        ctx.strokeStyle = "#00f2fe";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(40, 120, 200, 160);
+
+        ctx.fillStyle = "#00f2fe";
+        ctx.font = "bold 11px 'JetBrains Mono', monospace";
+        ctx.fillText("ISOMETRIC BUILDING BLUEPRINT", 50, 145);
+
+        ctx.strokeStyle = "rgba(236, 72, 153, 0.7)";
+        ctx.beginPath();
+        ctx.moveTo(80, 230); ctx.lineTo(140, 190); ctx.lineTo(200, 230); ctx.lineTo(140, 270); ctx.closePath();
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(44, 44, 44, 0.8)";
+        ctx.fillRect(260, 120, 230, 160);
+        ctx.fillStyle = "#ec4899";
+        ctx.font = "bold 11px 'JetBrains Mono', monospace";
+        ctx.fillText("TYPOGRAPHY TOKENS //", 275, 145);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 14px 'Plus Jakarta Sans', sans-serif";
+        ctx.fillText("Plus Jakarta Sans (Display)", 275, 175);
+        ctx.font = "12px 'JetBrains Mono', monospace";
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillText("JetBrains Mono (Data HUD)", 275, 205);
+        ctx.font = "10px 'JetBrains Mono', monospace";
+        ctx.fillStyle = "#94a3b8";
+        ctx.fillText("WCAG 2.1 AA Compliant (Ratio: 7:1)", 275, 235);
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createLatexResearchTexture(agentId) {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(0, 0, 512, 320);
+
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(0, 0, 512, 28);
+        ctx.fillStyle = "#00f2fe";
+        ctx.font = "bold 11.5px 'JetBrains Mono', monospace";
+        ctx.fillText(agentId === "kael" ? "TeXStudio // thesis_bab3_architecture.tex" : "Overleaf // arxiv_synthesis_18papers.tex", 14, 19);
+
+        // Left side: LaTeX Source
+        const codeLines = [
+          "\\documentclass[conference]{IEEEtran}",
+          "\\title{Distributed Multi-Agent Architecture}",
+          "\\begin{equation}",
+          "  \\nabla \\cdot \\vec{E} = \\frac{\\rho}{\\varepsilon_0}, \\quad \\oint \\vec{B} \\cdot d\\vec{\\ell} = \\mu_0 I",
+          "\\end{equation}",
+          "\\begin{equation}",
+          "  \\mathcal{L}_{opt} = \\int_{0}^{T} \\left( \\sum_{i=1}^{N} \\omega_i \\cdot \\xi_i(t) \\right) dt",
+          "\\end{equation}",
+          "\\cite{karpathy2024, nous2025, telu2026}"
+        ];
+
+        ctx.fillStyle = "#38bdf8";
+        ctx.font = "10.5px 'JetBrains Mono', monospace";
+        codeLines.forEach((l, i) => {
+          ctx.fillText(l, 14, 52 + i * 20);
+        });
+
+        // Right side: Document Preview Page
+        ctx.fillStyle = "#f8fafc";
+        ctx.fillRect(350, 38, 148, 268);
+        ctx.strokeStyle = "#94a3b8";
+        ctx.strokeRect(350, 38, 148, 268);
+
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 9px 'Plus Jakarta Sans', sans-serif";
+        ctx.fillText("IEEE TRANSACTIONS", 360, 54);
+        ctx.font = "bold 7.5px 'Plus Jakarta Sans', sans-serif";
+        ctx.fillText("Bab 3: System Modeling", 360, 68);
+
+        for (let row = 0; row < 12; row++) {
+          ctx.fillStyle = "#cbd5e1";
+          ctx.fillRect(360, 80 + row * 14, 58, 4);
+          ctx.fillRect(426, 80 + row * 14, 62, 4);
+        }
+
+        ctx.fillStyle = "#0284c7";
+        ctx.font = "bold 8px 'JetBrains Mono', monospace";
+        ctx.fillText("[18 arXiv Papers Cited]", 360, 280);
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createRadarIntelTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#030a08";
+        ctx.fillRect(0, 0, 512, 320);
+
+        ctx.fillStyle = "#06241a";
+        ctx.fillRect(0, 0, 512, 28);
+        ctx.fillStyle = "#39ff14";
+        ctx.font = "bold 12px 'JetBrains Mono', monospace";
+        ctx.fillText("TELKOM UNIVERSITY // CAMPUS RADAR & INTEL NOC", 14, 19);
+
+        // Concentric Semicircles
+        const cx = 256;
+        const cy = 230;
+        [40, 80, 120, 160].forEach(r => {
+          ctx.strokeStyle = "rgba(57, 255, 20, 0.3)";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, Math.PI, 0);
+          ctx.stroke();
+        });
+
+        // Rays
+        [-Math.PI * 0.8, -Math.PI * 0.6, -Math.PI * 0.5, -Math.PI * 0.4, -Math.PI * 0.2].forEach(angle => {
+          ctx.strokeStyle = "rgba(57, 255, 20, 0.2)";
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(angle) * 170, cy + Math.sin(angle) * 170);
+          ctx.stroke();
+        });
+
+        // Sweep Line
+        ctx.strokeStyle = "#39ff14";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(-Math.PI * 0.65) * 165, cy + Math.sin(-Math.PI * 0.65) * 165);
+        ctx.stroke();
+
+        // Ping Dots
+        const pings = [
+          { x: cx - 70, y: cy - 90, l: "SOC TEL-U" },
+          { x: cx + 80, y: cy - 110, l: "OPEN LIBRARY" },
+          { x: cx + 120, y: cy - 60, l: "FIT NODE" },
+          { x: cx - 110, y: cy - 50, l: "SENTINEL-BDG" }
+        ];
+
+        pings.forEach(p => {
+          ctx.fillStyle = "#39ff14";
+          ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.font = "bold 9.5px 'JetBrains Mono', monospace";
+          ctx.fillText(p.l, p.x + 8, p.y + 4);
+        });
+
+        // News Ticker
+        ctx.fillStyle = "rgba(6, 36, 26, 0.9)";
+        ctx.fillRect(10, 265, 492, 45);
+        ctx.fillStyle = "#39ff14";
+        ctx.font = "bold 10.5px 'JetBrains Mono', monospace";
+        ctx.fillText("CAMPUS RADAR: Sidang Skripsi Periode Genap Dibuka • 18 Papers Synced • Sentinel Active", 20, 292);
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      function createQaSecurityTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 512;
+        canvas.height = 320;
+        const ctx = canvas.getContext("2d");
+
+        ctx.fillStyle = "#080707";
+        ctx.fillRect(0, 0, 512, 320);
+
+        ctx.fillStyle = "#260d0d";
+        ctx.fillRect(0, 0, 512, 28);
+        ctx.fillStyle = "#ff3333";
+        ctx.font = "bold 12px 'JetBrains Mono', monospace";
+        ctx.fillText("VIKTOR QA // AUTOMATED TEST RUNNER & UFW DEFENSE", 14, 19);
+
+        const testLines = [
+          "$ pytest tests/test_office_api.py -v --tb=short",
+          "tests/test_office_api.py::test_office_state_endpoint      [PASS]",
+          "tests/test_office_api.py::test_war_room_action            [PASS]",
+          "tests/test_office_api.py::test_sse_stream_broadcast       [PASS]",
+          "tests/test_office_api.py::test_security_pin_auth_2609     [PASS]",
+          "tests/test_office_api.py::test_26_scenarios_100_percent   [PASS]",
+          "================== 26 passed in 0.64s [100%] =================="
+        ];
+
+        ctx.font = "11px 'JetBrains Mono', monospace";
+        testLines.forEach((tl, i) => {
+          if (tl.includes("[PASS]")) {
+            ctx.fillStyle = "#34d399";
+          } else if (tl.includes("26 passed")) {
+            ctx.fillStyle = "#10b981";
+          } else {
+            ctx.fillStyle = "#f87171";
+          }
+          ctx.fillText(tl, 14, 55 + i * 22);
+        });
+
+        // UFW Defense Card
+        ctx.fillStyle = "rgba(38, 13, 13, 0.85)";
+        ctx.fillRect(14, 215, 484, 90);
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.5)";
+        ctx.strokeRect(14, 215, 484, 90);
+
+        ctx.fillStyle = "#ff6666";
+        ctx.font = "bold 11px 'JetBrains Mono', monospace";
+        ctx.fillText("SENTINEL ZERO-TRUST AUDIT // 4-LAYER DEFENSE", 24, 238);
+        ctx.fillStyle = "#cbd5e1";
+        ctx.font = "10px 'JetBrains Mono', monospace";
+        ctx.fillText("[FIREWALL] UFW ACTIVE: Port 9449 ALLOW IN | Port 22 SSH RATE-LIMITED", 24, 260);
+        ctx.fillText("[AUTH GATE] Master PIN 2609 Armed • 0 bypass vectors detected • 100% SECURE", 24, 282);
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
       function createZzzTexture() {
         const canvas = document.createElement("canvas");
         canvas.width = 128;
@@ -1514,6 +2644,7 @@
         buildCtoSuite();
         buildWarRoom();
         buildWorkstations();
+        buildCreativeStudio();
         buildServerRoom();
         buildLoungeArea();
         buildPingPongArea();
@@ -1622,14 +2753,15 @@
         laptopBase.position.set(-12.5, 1.14, -8.0);
         ceoGroup.add(laptopBase);
 
+        const ceoDashTex = createCeoDashboardTexture();
         const laptopScreen = new THREE.Mesh(
           new THREE.BoxGeometry(0.65, 0.42, 0.03),
-          new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00f2fe, emissiveIntensity: 0.65 })
+          new THREE.MeshStandardMaterial({ map: ceoDashTex, emissive: 0x052e16, emissiveIntensity: 0.75, roughness: 0.2 })
         );
         laptopScreen.position.set(-12.5, 1.34, -8.2);
         laptopScreen.rotation.x = -0.2;
         ceoGroup.add(laptopScreen);
-        registerScreen(laptopScreen, 0.65, 3.5, 0.2);
+        registerScreen(laptopScreen, 0.75, 3.5, 0.2);
 
         // Brass Nameplate
         const nameplate = new THREE.Mesh(
@@ -1670,13 +2802,14 @@
         daffaChairBack.position.set(-9.2, 1.1, -9.5);
         ceoGroup.add(daffaChairBack);
 
+        const daffaKanbanTex = createDaffaKanbanTexture();
         const daffaMonitor = new THREE.Mesh(
           new THREE.BoxGeometry(0.85, 0.5, 0.04),
-          new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 0.55 })
+          new THREE.MeshStandardMaterial({ map: daffaKanbanTex, emissive: 0x071e3d, emissiveIntensity: 0.7, roughness: 0.2 })
         );
         daffaMonitor.position.set(-9.2, 1.35, -7.8);
         ceoGroup.add(daffaMonitor);
-        registerScreen(daffaMonitor, 0.55, 4.2, 1.1);
+        registerScreen(daffaMonitor, 0.7, 4.2, 1.1);
 
         // Bookshelf on left perimeter wall
         const shelfGroup = new THREE.Group();
@@ -1742,14 +2875,15 @@
         tabletStand.position.set(-4.2, 1.06, -8.5);
         paGroup.add(tabletStand);
 
+        const paScheduleTex = createElaraScheduleTexture();
         const tabletScreen = new THREE.Mesh(
           new THREE.BoxGeometry(0.55, 0.38, 0.02),
-          new THREE.MeshStandardMaterial({ color: 0xe0aaff, emissive: 0xc084fc, emissiveIntensity: 0.75 })
+          new THREE.MeshStandardMaterial({ map: paScheduleTex, emissive: 0x1e1533, emissiveIntensity: 0.8, roughness: 0.2 })
         );
         tabletScreen.position.set(-4.2, 1.22, -8.55);
         tabletScreen.rotation.x = -0.35;
         paGroup.add(tabletScreen);
-        registerScreen(tabletScreen, 0.75, 3.2, 2.5);
+        registerScreen(tabletScreen, 0.8, 3.2, 2.5);
 
         // Executive Schedule Board on wall
         const scheduleTex = createScheduleTexture();
@@ -1882,13 +3016,13 @@
         ctoGroup.add(chair);
 
         // Dual Ultrawide Curved Monitors
-        const termGreenTex = createTerminalTexture("green");
+        const razielHudTex = createRazielHudTexture();
         const termPurpleTex = createTerminalTexture("purple");
 
         const mon1Mat = new THREE.MeshStandardMaterial({
-          map: termGreenTex,
-          emissive: 0x052e16,
-          emissiveIntensity: 0.75,
+          map: razielHudTex,
+          emissive: 0x071e3d,
+          emissiveIntensity: 0.8,
           roughness: 0.2
         });
         const mon1 = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.8, 0.06), mon1Mat);
@@ -2025,13 +3159,12 @@
 
         const deskMat = new THREE.MeshStandardMaterial({ color: 0xddc9a8, roughness: 0.5 });
         const metalMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.3 });
-        const screenMat = new THREE.MeshStandardMaterial({ color: 0x00f2fe, emissive: 0x00b4d8, emissiveIntensity: 0.7 });
 
         const desks = [
-          { x: -13.0, z: 2.0 },
-          { x: -8.5,  z: 2.0 },
-          { x: -13.0, z: 7.0 },
-          { x: -8.5,  z: 7.0 }
+          { x: -13.0, z: 2.0, mon1Tex: createVsCodeDevTexture("idris"), mon2Tex: createTerminalTexture("green") },
+          { x: -8.5,  z: 2.0, mon1Tex: createVsCodeDevTexture("mika"),  mon2Tex: createTerminalTexture("purple") },
+          { x: -13.0, z: 7.0, mon1Tex: createLatexResearchTexture("kael"), mon2Tex: createBlueprintTexture() },
+          { x: -8.5,  z: 7.0, mon1Tex: createLatexResearchTexture("nara"), mon2Tex: createScheduleTexture() }
         ];
 
         desks.forEach((d, idx) => {
@@ -2048,17 +3181,29 @@
           leg2.position.set(d.x + 1.65, 0.475, d.z);
           devGroup.add(leg2);
 
-          const mon1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), screenMat);
+          const mon1Mat = new THREE.MeshStandardMaterial({
+            map: d.mon1Tex,
+            emissive: idx < 2 ? 0x052e16 : 0x071e3d,
+            emissiveIntensity: 0.75,
+            roughness: 0.2
+          });
+          const mon1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), mon1Mat);
           mon1.position.set(d.x - 0.65, 1.5, d.z + 0.6);
           mon1.rotation.y = 0.1;
           devGroup.add(mon1);
-          registerScreen(mon1, 0.65, 4.0 + idx * 0.5, idx * 0.7);
+          registerScreen(mon1, 0.75, 4.0 + idx * 0.5, idx * 0.7);
 
-          const mon2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), screenMat);
+          const mon2Mat = new THREE.MeshStandardMaterial({
+            map: d.mon2Tex,
+            emissive: 0x1e1533,
+            emissiveIntensity: 0.7,
+            roughness: 0.2
+          });
+          const mon2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.7, 0.05), mon2Mat);
           mon2.position.set(d.x + 0.65, 1.5, d.z + 0.6);
           mon2.rotation.y = -0.1;
           devGroup.add(mon2);
-          registerScreen(mon2, 0.6, 4.2 + idx * 0.4, idx * 0.8 + 1.0);
+          registerScreen(mon2, 0.7, 4.2 + idx * 0.4, idx * 0.8 + 1.0);
 
           const chair = new THREE.Group();
           chair.position.set(d.x, 0, d.z - 0.7);
@@ -2072,6 +3217,71 @@
         });
 
         scene.add(devGroup);
+      }
+
+      function buildCreativeStudio() {
+        const studioGroup = new THREE.Group();
+        studioGroup.userData = { roomId: "room-creative" };
+
+        const deskMat = new THREE.MeshStandardMaterial({ color: 0x221b2a, roughness: 0.4, metalness: 0.3 });
+        const frameMat = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.3, metalness: 0.5 });
+        const chairMat = new THREE.MeshStandardMaterial({ color: 0x831843, roughness: 0.5 });
+
+        // Creative Director Drafting Desk (x: -3.5, z: 7.2)
+        const top = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.1, 1.6), deskMat);
+        top.position.set(-3.5, 0.95, 7.2);
+        top.castShadow = true;
+        studioGroup.add(top);
+
+        const leg1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 1.4), frameMat);
+        leg1.position.set(-5.05, 0.475, 7.2);
+        studioGroup.add(leg1);
+
+        const leg2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.95, 1.4), frameMat);
+        leg2.position.set(-1.95, 0.475, 7.2);
+        studioGroup.add(leg2);
+
+        // Graphic Tablet on desk
+        const tablet = new THREE.Mesh(
+          new THREE.BoxGeometry(0.8, 0.02, 0.55),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.8 })
+        );
+        tablet.position.set(-3.5, 1.01, 6.9);
+        studioGroup.add(tablet);
+
+        // Dual Monitors for Senna (Figma UI & 3D wireframe)
+        const figmaTex = createFigmaCreativeTexture();
+        const monMat = new THREE.MeshStandardMaterial({
+          map: figmaTex,
+          emissive: 0x3d0725,
+          emissiveIntensity: 0.7,
+          roughness: 0.2
+        });
+
+        const mon1 = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.75, 0.05), monMat);
+        mon1.position.set(-4.15, 1.55, 7.8);
+        mon1.rotation.y = 0.12;
+        studioGroup.add(mon1);
+        registerScreen(mon1, 0.7, 4.5, 0.5);
+
+        const mon2 = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.75, 0.05), monMat);
+        mon2.position.set(-2.85, 1.55, 7.8);
+        mon2.rotation.y = -0.12;
+        studioGroup.add(mon2);
+        registerScreen(mon2, 0.65, 4.8, 1.2);
+
+        // Ergonomic Chair for Senna
+        const chair = new THREE.Group();
+        chair.position.set(-3.5, 0, 6.4);
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.1, 0.75), chairMat);
+        seat.position.y = 0.55;
+        chair.add(seat);
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.1), chairMat);
+        back.position.set(0, 0.95, -0.35);
+        chair.add(back);
+        studioGroup.add(chair);
+
+        scene.add(studioGroup);
       }
 
       function buildServerRoom() {
@@ -2101,7 +3311,7 @@
 
         rackPositions.forEach(x => {
           const rack = new THREE.Mesh(new THREE.BoxGeometry(1.2, 3.2, 1.2), rackMat);
-          rack.position.set(x, 1.6, 4.0);
+          rack.position.set(x, 1.6, 3.2);
           rack.castShadow = true;
           serverGroup.add(rack);
 
@@ -2112,12 +3322,66 @@
                 color: (row + col) % 3 === 0 ? 0x10b981 : (row % 2 === 0 ? 0x00f2fe : 0xf59e0b)
               });
               const ledMesh = new THREE.Mesh(ledGeo, ledMat);
-              ledMesh.position.set(x - 0.35 + col * 0.35, 0.8 + row * 0.4, 4.62);
+              ledMesh.position.set(x - 0.35 + col * 0.35, 0.8 + row * 0.4, 3.82);
               serverGroup.add(ledMesh);
               serverLeds.push({ mesh: ledMesh, baseColor: ledMat.color.getHex() });
             }
           }
         });
+
+        // Consoles for Viktor (QA) and Jovan (Intel)
+        const consoleDeskMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.4, metalness: 0.5 });
+        const chairMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.6 });
+
+        // Viktor QA Station at (10.5, 4.8)
+        const viktorDesk = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.1, 1.2), consoleDeskMat);
+        viktorDesk.position.set(10.5, 0.95, 4.8);
+        viktorDesk.castShadow = true;
+        serverGroup.add(viktorDesk);
+
+        const viktorChair = new THREE.Group();
+        viktorChair.position.set(10.5, 0, 5.5);
+        const vikSeat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.7), chairMat);
+        vikSeat.position.y = 0.55;
+        viktorChair.add(vikSeat);
+        const vikBack = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.1), chairMat);
+        vikBack.position.set(0, 0.95, 0.32);
+        viktorChair.add(vikBack);
+        serverGroup.add(viktorChair);
+
+        const qaTex = createQaSecurityTexture();
+        const qaMon = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.7, 0.05),
+          new THREE.MeshStandardMaterial({ map: qaTex, emissive: 0x2e0505, emissiveIntensity: 0.75, roughness: 0.2 })
+        );
+        qaMon.position.set(10.5, 1.45, 4.3);
+        serverGroup.add(qaMon);
+        registerScreen(qaMon, 0.75, 4.2, 0.8);
+
+        // Jovan Intel Station at (14.5, 4.8)
+        const jovanDesk = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.1, 1.2), consoleDeskMat);
+        jovanDesk.position.set(14.5, 0.95, 4.8);
+        jovanDesk.castShadow = true;
+        serverGroup.add(jovanDesk);
+
+        const jovanChair = new THREE.Group();
+        jovanChair.position.set(14.5, 0, 5.5);
+        const jovSeat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.1, 0.7), chairMat);
+        jovSeat.position.y = 0.55;
+        jovanChair.add(jovSeat);
+        const jovBack = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.1), chairMat);
+        jovBack.position.set(0, 0.95, 0.32);
+        jovanChair.add(jovBack);
+        serverGroup.add(jovanChair);
+
+        const radarTex = createRadarIntelTexture();
+        const radarMon = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.7, 0.05),
+          new THREE.MeshStandardMaterial({ map: radarTex, emissive: 0x052e16, emissiveIntensity: 0.75, roughness: 0.2 })
+        );
+        radarMon.position.set(14.5, 1.45, 4.3);
+        serverGroup.add(radarMon);
+        registerScreen(radarMon, 0.75, 4.0, 1.5);
 
         scene.add(serverGroup);
       }
@@ -2415,6 +3679,8 @@
         const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd1b3, roughness: 0.6 });
         const clothesMat = new THREE.MeshStandardMaterial({ color: agent.clothingColor, roughness: 0.5 });
         const hairMat = new THREE.MeshStandardMaterial({ color: agent.hairColor, roughness: 0.5 });
+        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
 
         // Torso
         const torso = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.85, 0.4), clothesMat);
@@ -2422,7 +3688,7 @@
         torso.castShadow = true;
         bodyGroup.add(torso);
 
-        // Head Group (for independent tilting down when typing, nodding, etc.)
+        // Head Group (pivot for tilting and nodding)
         const headGroup = new THREE.Group();
         headGroup.position.set(0, 1.72, 0);
         bodyGroup.add(headGroup);
@@ -2436,50 +3702,150 @@
         hair.castShadow = true;
         headGroup.add(hair);
 
-        // Arm Left (pivot at shoulder)
+        // Cyber-Headphones Accessory
+        const headphoneGroup = new THREE.Group();
+        const headphoneMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.7 });
+        const earcupMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+        const ledMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(agent.accent || agent.color) });
+
+        // Headband arch over hair
+        const bandTop = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.04, 0.08), headphoneMat);
+        bandTop.position.set(0, 0.36, 0);
+        headphoneGroup.add(bandTop);
+
+        const bandL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.08), headphoneMat);
+        bandL.position.set(-0.27, 0.22, 0);
+        headphoneGroup.add(bandL);
+
+        const bandR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.08), headphoneMat);
+        bandR.position.set(0.27, 0.22, 0);
+        headphoneGroup.add(bandR);
+
+        // Circular Earcups with glowing LED rings
+        const earcupGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.08, 16);
+        const earcupL = new THREE.Mesh(earcupGeo, earcupMat);
+        earcupL.rotation.z = Math.PI / 2;
+        earcupL.position.set(-0.27, 0.04, 0);
+        headphoneGroup.add(earcupL);
+
+        const ringGeo = new THREE.TorusGeometry(0.085, 0.018, 8, 20);
+        const ringL = new THREE.Mesh(ringGeo, ledMat);
+        ringL.rotation.y = Math.PI / 2;
+        ringL.position.set(-0.315, 0.04, 0);
+        headphoneGroup.add(ringL);
+
+        const earcupR = new THREE.Mesh(earcupGeo, earcupMat);
+        earcupR.rotation.z = Math.PI / 2;
+        earcupR.position.set(0.27, 0.04, 0);
+        headphoneGroup.add(earcupR);
+
+        const ringR = new THREE.Mesh(ringGeo, ledMat);
+        ringR.rotation.y = Math.PI / 2;
+        ringR.position.set(0.315, 0.04, 0);
+        headphoneGroup.add(ringR);
+
+        headGroup.add(headphoneGroup);
+        const focusAgents = ["idris", "mika", "senna", "kael"];
+        const hasHeadphones = focusAgents.includes(agent.id);
+        headphoneGroup.visible = hasHeadphones;
+
+        // Articulated Arm Left (Shoulder + Forearm)
         const armLGroup = new THREE.Group();
         armLGroup.position.set(-0.42, 1.35, 0);
-        const armLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), clothesMat);
-        armLMesh.position.set(0, -0.325, 0);
-        armLMesh.castShadow = true;
-        armLGroup.add(armLMesh);
+        const upperArmL = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 0.18), clothesMat);
+        upperArmL.position.set(0, -0.175, 0);
+        upperArmL.castShadow = true;
+        armLGroup.add(upperArmL);
+
+        const forearmLGroup = new THREE.Group();
+        forearmLGroup.position.set(0, -0.35, 0);
+        const forearmLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.30, 0.16), clothesMat);
+        forearmLMesh.position.set(0, -0.15, 0);
+        forearmLMesh.castShadow = true;
+        forearmLGroup.add(forearmLMesh);
+        const handLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.14), skinMat);
+        handLMesh.position.set(0, -0.32, 0);
+        forearmLGroup.add(handLMesh);
+        armLGroup.add(forearmLGroup);
         bodyGroup.add(armLGroup);
 
-        // Arm Right (pivot at shoulder)
+        // Articulated Arm Right (Shoulder + Forearm)
         const armRGroup = new THREE.Group();
         armRGroup.position.set(0.42, 1.35, 0);
-        const armRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18), clothesMat);
-        armRMesh.position.set(0, -0.325, 0);
-        armRMesh.castShadow = true;
-        armRGroup.add(armRMesh);
+        const upperArmR = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.35, 0.18), clothesMat);
+        upperArmR.position.set(0, -0.175, 0);
+        upperArmR.castShadow = true;
+        armRGroup.add(upperArmR);
+
+        const forearmRGroup = new THREE.Group();
+        forearmRGroup.position.set(0, -0.35, 0);
+        const forearmRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.30, 0.16), clothesMat);
+        forearmRMesh.position.set(0, -0.15, 0);
+        forearmRMesh.castShadow = true;
+        forearmRGroup.add(forearmRMesh);
+        const handRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.10, 0.14), skinMat);
+        handRMesh.position.set(0, -0.32, 0);
+        forearmRGroup.add(handRMesh);
+        armRGroup.add(forearmRGroup);
         bodyGroup.add(armRGroup);
 
-        // Leg Left (pivot at hip)
+        // Articulated Leg Left (Hip + Thigh + Knee + Shin + Shoe)
         const legLGroup = new THREE.Group();
         legLGroup.position.set(-0.18, 0.65, 0);
-        const legLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.22), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-        legLMesh.position.set(0, -0.325, 0);
-        legLMesh.castShadow = true;
-        legLGroup.add(legLMesh);
+        const thighLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.35, 0.20), pantsMat);
+        thighLMesh.position.set(0, -0.175, 0);
+        thighLMesh.castShadow = true;
+        legLGroup.add(thighLMesh);
+
+        const kneeLGroup = new THREE.Group();
+        kneeLGroup.position.set(0, -0.35, 0);
+        const shinLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.30, 0.18), pantsMat);
+        shinLMesh.position.set(0, -0.15, 0);
+        shinLMesh.castShadow = true;
+        kneeLGroup.add(shinLMesh);
+        const shoeLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.10, 0.24), shoeMat);
+        shoeLMesh.position.set(0, -0.31, 0.03);
+        shoeLMesh.castShadow = true;
+        kneeLGroup.add(shoeLMesh);
+        legLGroup.add(kneeLGroup);
         bodyGroup.add(legLGroup);
 
-        // Leg Right (pivot at hip)
+        // Articulated Leg Right (Hip + Thigh + Knee + Shin + Shoe)
         const legRGroup = new THREE.Group();
         legRGroup.position.set(0.18, 0.65, 0);
-        const legRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.65, 0.22), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-        legRMesh.position.set(0, -0.325, 0);
-        legRMesh.castShadow = true;
-        legRGroup.add(legRMesh);
+        const thighRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.35, 0.20), pantsMat);
+        thighRMesh.position.set(0, -0.175, 0);
+        thighRMesh.castShadow = true;
+        legRGroup.add(thighRMesh);
+
+        const kneeRGroup = new THREE.Group();
+        kneeRGroup.position.set(0, -0.35, 0);
+        const shinRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.30, 0.18), pantsMat);
+        shinRMesh.position.set(0, -0.15, 0);
+        shinRMesh.castShadow = true;
+        kneeRGroup.add(shinRMesh);
+        const shoeRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.10, 0.24), shoeMat);
+        shoeRMesh.position.set(0, -0.31, 0.03);
+        shoeRMesh.castShadow = true;
+        kneeRGroup.add(shoeRMesh);
+        legRGroup.add(kneeRGroup);
         bodyGroup.add(legRGroup);
 
         return {
           group: root,
           bodyGroup: bodyGroup,
+          torso: torso,
           headGroup: headGroup,
+          headphones: headphoneGroup,
+          hasHeadphones: hasHeadphones,
           armL: armLGroup,
+          forearmL: forearmLGroup,
           armR: armRGroup,
+          forearmR: forearmRGroup,
           legL: legLGroup,
+          kneeL: kneeLGroup,
           legR: legRGroup,
+          kneeR: kneeRGroup,
           agent: agent,
           targetPos: new THREE.Vector3(0, 0, 0),
           targetRotY: 0,
@@ -2493,8 +3859,22 @@
       }
 
       // =========================================================================
-      // 8. Floating Projected Name Badges
+      // 8. Floating Projected Name Badges & Dialogue Bubbles
       // =========================================================================
+      const AGENT_EMOJIS = {
+        dani: "👑",
+        daffa: "🎯",
+        raziel: "🧐",
+        elara: "📋",
+        idris: "🎧",
+        mika: "⚡",
+        senna: "🎨",
+        kael: "📐",
+        nara: "📚",
+        jovan: "📡",
+        viktor: "🛡️"
+      };
+
       function buildDomBadges() {
         const container = document.getElementById("badge-container");
         if (!container) return;
@@ -2504,10 +3884,14 @@
           const pill = document.createElement("div");
           pill.id = `badge-${agent.id}`;
           pill.className = "agent-pill-badge bg-slate-950/85 backdrop-blur-md border border-slate-700/80 px-2.5 py-1 rounded-full text-[11px] font-semibold text-slate-100 shadow-xl flex items-center gap-1.5 cursor-pointer hover:border-cyan-400 transition-colors";
+          const emoji = AGENT_EMOJIS[agent.id] || "👤";
+          const isFocusAgent = ["idris", "mika", "senna", "kael"].includes(agent.id);
           pill.innerHTML = `
             <span class="w-2 h-2 rounded-full bg-emerald-400 badge-dot" id="dot-${agent.id}"></span>
+            <span class="text-xs mr-0.5">${emoji}</span>
             <span class="font-display">${agent.name.split(" ")[0]}</span>
             <span class="font-mono text-[9px] text-slate-400">(${agent.role.split(" ")[0]})</span>
+            <span id="music-indicator-${agent.id}" class="text-[10px] text-cyan-400 animate-pulse ${isFocusAgent ? "" : "hidden"}" title="Listening to Focus Synth">🎵</span>
           `;
           pill.onclick = (e) => {
             e.stopPropagation();
@@ -2532,6 +3916,16 @@
           dot.className += "bg-amber-400";
         } else {
           dot.className += "bg-emerald-400";
+        }
+
+        const musicEl = document.getElementById(`music-indicator-${agent.id}`);
+        const av = avatarObjects[agent.id];
+        if (musicEl && av) {
+          if (av.hasHeadphones && av.headphones && av.headphones.visible && (pose === "seated_desk" || pose === "standing")) {
+            musicEl.classList.remove("hidden");
+          } else {
+            musicEl.classList.add("hidden");
+          }
         }
       }
 
@@ -2560,17 +3954,37 @@
             badge.style.opacity = "0";
           }
         });
+
+        // 3D Projected Speech Bubble Position Tracking
+        if (currentSpeakerAvatarId && avatarObjects[currentSpeakerAvatarId]) {
+          const spk = avatarObjects[currentSpeakerAvatarId];
+          const bubble = document.getElementById("speech-bubble");
+          if (bubble && bubble.classList.contains("active-bubble")) {
+            tempVec.copy(spk.group.position);
+            tempVec.y += 2.85;
+            tempVec.project(camera);
+
+            if (tempVec.z > -1 && tempVec.z < 1) {
+              const x = (tempVec.x * 0.5 + 0.5) * w;
+              const y = (-(tempVec.y * 0.5) + 0.5) * h;
+              bubble.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
+              bubble.style.opacity = "1";
+            } else {
+              bubble.style.opacity = "0";
+            }
+          }
+        }
       }
 
       // =========================================================================
-      // 9. Procedural 3D Animations & Render Loop
+      // 9. Procedural 3D Animations & Render Loop (100% Natural Humanoid Motion)
       // =========================================================================
       function animate() {
         requestAnimationFrame(animate);
         const delta = Math.min(clock.getDelta(), 0.1);
         const time = clock.getElapsedTime();
 
-        // 1. Smooth Lerping of Avatars & Walking Animations
+        // 1. Smooth Lerping of Avatars & Natural Walking Animations
         Object.keys(avatarObjects).forEach(id => {
           const avatar = avatarObjects[id];
           const dist = avatar.currentPos.distanceTo(avatar.targetPos);
@@ -2580,195 +3994,259 @@
             avatar.currentPos.lerp(avatar.targetPos, delta * 3.8);
             avatar.group.position.copy(avatar.currentPos);
 
-            const angleDiff = avatar.targetRotY - avatar.currentRotY;
-            avatar.currentRotY += angleDiff * delta * 5.0;
+            // Fix rotation glitch: normalize angle difference to [-PI, +PI]
+            let diff = (avatar.targetRotY - avatar.currentRotY) % (Math.PI * 2);
+            if (diff > Math.PI) diff -= Math.PI * 2;
+            if (diff < -Math.PI) diff += Math.PI * 2;
+            avatar.currentRotY += diff * delta * 5.0;
             avatar.group.rotation.y = avatar.currentRotY;
             avatar.group.rotation.x = 0;
 
-            // Walking: alternating leg swings and body bobbing
+            // Natural humanoid walking: alternating strides with knee articulation
             avatar.walkCycle += delta * 12;
             avatar.bodyGroup.position.y = Math.abs(Math.sin(avatar.walkCycle)) * 0.14;
-            avatar.legL.rotation.x = Math.sin(avatar.walkCycle) * 0.65;
-            avatar.legR.rotation.x = -Math.sin(avatar.walkCycle) * 0.65;
-            avatar.armL.rotation.x = -Math.sin(avatar.walkCycle) * 0.5;
-            avatar.armR.rotation.x = Math.sin(avatar.walkCycle) * 0.5;
+            avatar.legL.rotation.set(Math.sin(avatar.walkCycle) * 0.65, 0, 0);
+            avatar.kneeL.rotation.set(Math.max(0, -Math.sin(avatar.walkCycle) * 0.45), 0, 0);
+            avatar.legR.rotation.set(-Math.sin(avatar.walkCycle) * 0.65, 0, 0);
+            avatar.kneeR.rotation.set(Math.max(0, Math.sin(avatar.walkCycle) * 0.45), 0, 0);
+
+            // Natural arm swing
+            avatar.armL.rotation.set(-Math.sin(avatar.walkCycle) * 0.5, 0, 0);
+            avatar.forearmL.rotation.set(-0.2, 0, 0);
+            avatar.armR.rotation.set(Math.sin(avatar.walkCycle) * 0.5, 0, 0);
+            avatar.forearmR.rotation.set(-0.2, 0, 0);
+
             avatar.headGroup.rotation.set(0, 0, 0);
             avatar.bodyGroup.scale.set(1, 1, 1);
           } else {
             avatar.isMoving = false;
-            avatar.bodyGroup.position.y = 0;
-            avatar.legL.rotation.x = 0;
-            avatar.legR.rotation.x = 0;
+
+            // Rotation alignment when stopped: normalize angle delta
+            let stopDiff = (avatar.targetRotY - avatar.currentRotY) % (Math.PI * 2);
+            if (stopDiff > Math.PI) stopDiff -= Math.PI * 2;
+            if (stopDiff < -Math.PI) stopDiff += Math.PI * 2;
+            avatar.currentRotY += stopDiff * delta * 5.0;
+            avatar.group.rotation.y = avatar.currentRotY;
+
+            const idOffset = id.charCodeAt(0);
 
             // Pose-specific procedural limb animations
             if (avatar.currentPose === "seated_desk") {
               avatar.group.rotation.x = 0;
               avatar.group.position.y = avatar.targetPos.y;
-              avatar.bodyGroup.scale.set(1, 1, 1);
+              // Sit down squarely on chair cushion (height ~ 0.55 - 0.65)
+              avatar.bodyGroup.position.y = -0.08;
+              avatar.bodyGroup.rotation.set(0, 0, 0);
 
-              // Typing at desk: subtle tapping on keyboard (Math.sin(time * 8))
-              const typeOffset = id.charCodeAt(0);
-              avatar.armL.rotation.x = -Math.PI / 2.5 + Math.sin(time * 8 + typeOffset) * 0.08;
-              avatar.armL.rotation.y = 0.12;
-              avatar.armR.rotation.x = -Math.PI / 2.5 + Math.cos(time * 8 + typeOffset) * 0.08;
-              avatar.armR.rotation.y = -0.12;
+              // Thighs bend forward 90 degrees
+              avatar.legL.rotation.set(-Math.PI / 2, -0.06, 0);
+              avatar.legR.rotation.set(-Math.PI / 2, 0.06, 0);
+              // Lower legs / shins bend 90 degrees down towards floor (zero clipping!)
+              avatar.kneeL.rotation.set(Math.PI / 2, 0, 0);
+              avatar.kneeR.rotation.set(Math.PI / 2, 0, 0);
 
-              // Head slightly tilted down towards screen
-              avatar.headGroup.rotation.x = 0.16 + Math.sin(time * 2 + typeOffset) * 0.03;
+              // Upper arms point forward/down towards desk surface
+              avatar.armL.rotation.set(-0.7, 0.15, 0);
+              avatar.armR.rotation.set(-0.7, -0.15, 0);
+              // Forearms rest over keyboard at desk height (y=1.05) with gentle alternating key typing
+              avatar.forearmL.rotation.set(-0.75 + Math.sin(time * 8.5 + idOffset) * 0.06, 0, 0);
+              avatar.forearmR.rotation.set(-0.75 + Math.cos(time * 8.5 + idOffset) * 0.06, 0, 0);
+
+              // Head tilted down towards monitor
+              avatar.headGroup.rotation.x = 0.20 + Math.sin(time * 2.0 + idOffset) * 0.02;
               avatar.headGroup.rotation.y = 0;
+
+              // Headphone music rhythm bobbing for deep focus agents
+              if (avatar.hasHeadphones && avatar.headphones && avatar.headphones.visible) {
+                avatar.headGroup.rotation.x += Math.sin(time * 4.0 + idOffset) * 0.035;
+                avatar.headGroup.rotation.z = Math.sin(time * 2.0 + idOffset) * 0.015;
+              }
             } else if (avatar.currentPose === "speaking_lead") {
               // War Room meeting leader standing at head position gesturing
               avatar.group.rotation.x = 0;
               avatar.group.position.y = 0;
-              avatar.bodyGroup.scale.set(1, 1, 1);
+              avatar.bodyGroup.position.y = 0;
+              avatar.bodyGroup.rotation.set(0, 0, 0);
 
+              avatar.legL.rotation.set(0, 0, -0.05);
+              avatar.kneeL.rotation.set(0, 0, 0);
+              avatar.legR.rotation.set(0, 0, 0.05);
+              avatar.kneeR.rotation.set(0, 0, 0);
+
+              // Expressive right arm presentation gesture
               avatar.armR.rotation.x = -Math.PI / 3.2 + Math.sin(time * 3.2) * 0.35;
               avatar.armR.rotation.z = Math.cos(time * 2.5) * 0.22;
               avatar.armR.rotation.y = -0.15;
-              avatar.armL.rotation.x = -Math.PI / 6 + Math.sin(time * 2.0) * 0.15;
-              avatar.armL.rotation.z = -0.1;
+              avatar.forearmR.rotation.x = -0.6 + Math.sin(time * 3.0) * 0.25;
 
+              // Left arm resting comfortably on podium
+              avatar.armL.rotation.x = -Math.PI / 4 + Math.sin(time * 2.0) * 0.15;
+              avatar.armL.rotation.z = -0.1;
+              avatar.forearmL.rotation.x = -0.5;
+
+              // Head addressing council
               avatar.headGroup.rotation.y = Math.sin(time * 1.6) * 0.25;
               avatar.headGroup.rotation.x = Math.sin(time * 2.2) * 0.08;
             } else if (avatar.currentPose === "seated_meeting") {
               avatar.group.rotation.x = 0;
               avatar.group.position.y = avatar.targetPos.y;
-              avatar.bodyGroup.scale.set(1, 1, 1);
+              avatar.bodyGroup.position.y = -0.08;
+              avatar.bodyGroup.rotation.set(0, 0, 0);
 
-              // Turn towards speaker at head position (10.0, -9.4)
-              const speakerX = 10.0;
-              const speakerZ = -9.4;
-              const dx = speakerX - avatar.group.position.x;
-              const dz = speakerZ - avatar.group.position.z;
-              const targetFacing = Math.atan2(dx, dz);
-              avatar.group.rotation.y = targetFacing;
+              // Natural sitting pose in War Room chair
+              avatar.legL.rotation.set(-Math.PI / 2, -0.06, 0);
+              avatar.legR.rotation.set(-Math.PI / 2, 0.06, 0);
+              avatar.kneeL.rotation.set(Math.PI / 2, 0, 0);
+              avatar.kneeR.rotation.set(Math.PI / 2, 0, 0);
 
-              avatar.armL.rotation.set(-Math.PI / 3.0, 0.1, 0);
-              avatar.armR.rotation.set(-Math.PI / 3.0, -0.1, 0);
-              avatar.headGroup.rotation.x = -0.1 + Math.sin(time * 1.5 + id.charCodeAt(0)) * 0.04;
+              // Arms resting on table / lap
+              avatar.armL.rotation.set(-0.55, 0.1, 0);
+              avatar.forearmL.rotation.set(-0.65, 0, 0);
+              avatar.armR.rotation.set(-0.55, -0.1, 0);
+              avatar.forearmR.rotation.set(-0.65, 0, 0);
+
+              // Attentively turn towards current active speaker
+              let spkX = 10.0, spkZ = -9.4;
+              if (currentSpeakerAvatarId && avatarObjects[currentSpeakerAvatarId]) {
+                spkX = avatarObjects[currentSpeakerAvatarId].group.position.x;
+                spkZ = avatarObjects[currentSpeakerAvatarId].group.position.z;
+              }
+              const dx = spkX - avatar.group.position.x;
+              const dz = spkZ - avatar.group.position.z;
+              if (Math.abs(dx) > 0.1 || Math.abs(dz) > 0.1) {
+                const targetFacing = Math.atan2(dx, dz);
+                let sDiff = (targetFacing - avatar.group.rotation.y) % (Math.PI * 2);
+                if (sDiff > Math.PI) sDiff -= Math.PI * 2;
+                if (sDiff < -Math.PI) sDiff += Math.PI * 2;
+                avatar.group.rotation.y += sDiff * delta * 4.0;
+              }
+              avatar.headGroup.rotation.x = -0.06 + Math.sin(time * 1.5 + idOffset) * 0.03;
               avatar.headGroup.rotation.y = 0;
             } else if (avatar.currentPose === "pingpong_player") {
               avatar.group.rotation.x = 0;
               avatar.group.position.y = 0;
+              avatar.bodyGroup.position.y = 0;
               avatar.bodyGroup.scale.set(1, 1, 1);
+              avatar.legL.rotation.set(0, 0, -0.1);
+              avatar.kneeL.rotation.set(0.1, 0, 0);
+              avatar.legR.rotation.set(0, 0, 0.1);
+              avatar.kneeR.rotation.set(0.1, 0, 0);
               avatar.headGroup.rotation.set(0, 0, 0);
               avatar.armL.rotation.set(-Math.PI / 6, 0.2, 0);
+              avatar.forearmL.rotation.set(-0.3, 0, 0);
             } else if (avatar.currentPose === "sleeping_bed") {
-              // Lying horizontally on bed with slow breathing expansion
+              // Lying horizontally on bed with slow deep breathing
               avatar.group.rotation.x = -Math.PI / 2;
               avatar.group.position.y = 0.65;
+              avatar.bodyGroup.position.y = 0;
+              avatar.bodyGroup.rotation.set(0, 0, 0);
+
+              avatar.legL.rotation.set(0, 0, 0);
+              avatar.kneeL.rotation.set(0, 0, 0);
+              avatar.legR.rotation.set(0, 0, 0);
+              avatar.kneeR.rotation.set(0, 0, 0);
+
               avatar.armL.rotation.set(0, 0, 0);
+              avatar.forearmL.rotation.set(0, 0, 0);
               avatar.armR.rotation.set(0, 0, 0);
+              avatar.forearmR.rotation.set(0, 0, 0);
               avatar.headGroup.rotation.set(0, 0, 0);
 
-              // Breathing expansion (Math.sin(time * 2) * 0.05)
-              const breath = Math.sin(time * 2 + id.charCodeAt(0)) * 0.05;
-              avatar.bodyGroup.scale.set(1 + breath, 1 + breath * 1.5, 1);
+              // Slow rhythmic deep sleep breathing expansion
+              const deepBreath = Math.sin(time * 1.8 + idOffset) * 0.05;
+              avatar.bodyGroup.scale.set(1 + deepBreath, 1 + deepBreath * 1.5, 1);
             } else if (avatar.currentPose === "seated_couch" || avatar.currentPose === "seated_chair") {
+              // Relaxed lounge seating posture
               avatar.group.rotation.x = 0;
               avatar.group.position.y = 0;
-              avatar.bodyGroup.scale.set(1, 1, 1);
+              avatar.bodyGroup.position.y = -0.12;
+              avatar.bodyGroup.rotation.set(-0.08, 0, 0);
+
+              avatar.legL.rotation.set(-Math.PI / 2 + 0.12, -0.08, 0);
+              avatar.legR.rotation.set(-Math.PI / 2 + 0.12, 0.08, 0);
+              avatar.kneeL.rotation.set(Math.PI / 2 - 0.15, 0, 0);
+              avatar.kneeR.rotation.set(Math.PI / 2 - 0.15, 0, 0);
+
+              avatar.armL.rotation.set(-0.35, 0.15, -0.15);
+              avatar.forearmL.rotation.set(-0.5, 0, 0);
+              avatar.armR.rotation.set(-0.35, -0.15, 0.15);
+              avatar.forearmR.rotation.set(-0.5, 0, 0);
+
               avatar.headGroup.rotation.set(0, 0, 0);
-              avatar.armL.rotation.set(-Math.PI / 5, 0.1, 0);
-              avatar.armR.rotation.set(-Math.PI / 5, -0.1, 0);
             } else {
-              avatar.armL.rotation.set(0, 0, 0);
-              avatar.armR.rotation.set(0, 0, 0);
+              // Default standing
               avatar.group.rotation.x = 0;
+              avatar.group.position.y = 0;
+              avatar.bodyGroup.position.y = 0;
+              avatar.bodyGroup.rotation.set(0, 0, 0);
+
+              avatar.legL.rotation.set(0, 0, 0);
+              avatar.kneeL.rotation.set(0, 0, 0);
+              avatar.legR.rotation.set(0, 0, 0);
+              avatar.kneeR.rotation.set(0, 0, 0);
+
+              avatar.armL.rotation.set(0, 0, 0);
+              avatar.forearmL.rotation.set(0, 0, 0);
+              avatar.armR.rotation.set(0, 0, 0);
+              avatar.forearmR.rotation.set(0, 0, 0);
               avatar.headGroup.rotation.set(0, 0, 0);
+            }
+
+            // Natural idle breathing for all non-sleeping avatars
+            if (avatar.currentPose !== "sleeping_bed") {
+              const breath = Math.sin(time * 2.5 + idOffset) * 0.02;
+              if (avatar.torso) {
+                avatar.torso.scale.set(1.0 + breath, 1.0 + breath * 0.5, 1.0 + breath);
+              }
               avatar.bodyGroup.scale.set(1, 1, 1);
             }
           }
         });
 
-        // 2. Animated Screen Glow & Flicker
-        animatedScreens.forEach((scr, idx) => {
-          const pulse = Math.sin(time * scr.speed + scr.pulseOffset);
-          const flicker = (Math.sin(time * 20 + idx * 3) > 0.94) ? 0.14 : 0;
-          if (scr.mesh && scr.mesh.material && scr.mesh.material.emissiveIntensity !== undefined) {
-            scr.mesh.material.emissiveIntensity = scr.baseIntensity + pulse * 0.14 + flicker;
-          }
-        });
-
-        // 3. Ping-Pong Match Engine (Parabolic Arc & Paddle Swings)
-        const idrisAv = avatarObjects["idris"];
-        const mikaAv = avatarObjects["mika"];
-        const isPingPongPlaying = (idrisAv && idrisAv.currentPose === "pingpong_player") &&
-                                  (mikaAv && mikaAv.currentPose === "pingpong_player");
-
+        // 2. Ping Pong Ball Trajectory
         if (pingPongBall) {
-          if (isPingPongPlaying) {
-            pingPongTime += delta * 4.2;
-            const progress = (Math.sin(pingPongTime) + 1) / 2;
-            const ballMinX = 8.8;
-            const ballMaxX = 13.2;
-            const ballX = ballMinX + progress * (ballMaxX - ballMinX);
+          const isPingPong = AUTONOMOUS_CYCLES[currentAutonomousIdx].key === "recreation_break";
+          if (isPingPong) {
+            pingPongBall.visible = true;
+            pingPongTimer += delta * 2.8;
+            const progress = (Math.sin(pingPongTimer) + 1) * 0.5;
+            pingPongBall.position.x = 9.0 + progress * 4.0;
+            const arcY = Math.sin(progress * Math.PI) * 0.45;
+            pingPongBall.position.y = 1.05 + arcY;
+            pingPongBall.position.z = 10.5 + Math.sin(pingPongTimer * 2) * 0.3;
 
-            let bounceY;
-            if (progress < 0.5) {
-              const p = progress / 0.5;
-              bounceY = 1.03 + Math.abs(Math.sin(p * Math.PI)) * 0.38;
-            } else {
-              const p = (progress - 0.5) / 0.5;
-              bounceY = 1.03 + Math.abs(Math.sin(p * Math.PI)) * 0.38;
-            }
-            const ballZ = 10.5 + Math.sin(pingPongTime * 1.5) * 0.25;
-            pingPongBall.position.set(ballX, bounceY, ballZ);
-
-            if (progress < 0.2) {
-              const swing = Math.sin((1 - progress / 0.2) * Math.PI);
-              idrisAv.armR.rotation.x = -Math.PI / 3 - swing * 0.75;
-              idrisAv.bodyGroup.rotation.y = swing * 0.25;
-            } else {
-              idrisAv.armR.rotation.x = -Math.PI / 3;
-              idrisAv.bodyGroup.rotation.y = 0;
-            }
-
-            if (progress > 0.8) {
-              const swing = Math.sin(((progress - 0.8) / 0.2) * Math.PI);
-              mikaAv.armR.rotation.x = -Math.PI / 3 - swing * 0.75;
-              mikaAv.bodyGroup.rotation.y = -swing * 0.25;
-            } else {
-              mikaAv.armR.rotation.x = -Math.PI / 3;
-              mikaAv.bodyGroup.rotation.y = 0;
+            if (progress < 0.05 || progress > 0.95) {
+              if (Math.random() < 0.08) playPingPongSound();
             }
           } else {
-            pingPongBall.position.set(11.0, 1.05, 10.5);
+            pingPongBall.visible = false;
           }
         }
 
-        // 4. Floating 3D "Zzz" Particles for Bedroom
-        const isAnyoneSleeping = Object.values(avatarObjects).some(a => a.currentPose === "sleeping_bed");
-        zzzSprites.forEach(sp => {
-          if (isAnyoneSleeping) {
-            const cycle = (time * 0.65 + sp.userData.offset) % 2.4;
-            const progress = cycle / 2.4;
-            sp.position.x = sp.userData.bedX + Math.sin(time * 2.2 + sp.userData.offset) * 0.2;
-            sp.position.y = 1.05 + progress * 1.8;
-            sp.position.z = sp.userData.bedZ - 0.15;
-            sp.scale.setScalar(0.28 + progress * 0.32);
-            sp.material.opacity = Math.sin(progress * Math.PI) * 0.85;
-          } else {
-            sp.material.opacity = 0;
-          }
+        // 3. Flickering Screen Canvases & Emissives
+        animatedScreens.forEach(scr => {
+          scr.timer += delta * scr.speed;
+          const flicker = scr.baseEmissive + Math.sin(scr.timer) * 0.08;
+          scr.mesh.material.emissiveIntensity = THREE.MathUtils.clamp(flicker, 0.2, 0.95);
         });
 
-        // 5. Blinking Server LEDs
-        if (serverLeds.length > 0 && Math.random() < 0.15) {
+        // 4. Blinking Server LEDs
+        if (serverLeds.length > 0 && Math.random() < 0.35) {
           const randomIdx = Math.floor(Math.random() * serverLeds.length);
           const led = serverLeds[randomIdx];
           led.mesh.material.color.setHex(Math.random() > 0.5 ? 0x000000 : led.baseColor);
         }
 
-        // 6. Update OrbitControls & Project Badges
+        // 5. Update OrbitControls & Project Badges
         controls.update();
         updateProjectedBadges();
 
-        // 7. Render Scene
+        // 6. Render Scene
         renderer.render(scene, camera);
       }
 
-      function onWindowResize() {
+
+            function onWindowResize() {
         const width = window.innerWidth;
         const height = window.innerHeight;
         const aspect = width / height;
@@ -2847,6 +4325,13 @@
           const isMeeting = cycle.key.includes("meeting");
           presentationMesh.material.emissiveIntensity = isMeeting ? 0.85 : 0.35;
         }
+
+        // War Room Meeting Dialogues Progression
+        if (cycle.key === "council_meeting_ceo" || cycle.key === "council_meeting_daffa") {
+          startWarRoomDialogues(cycle.key === "council_meeting_ceo" ? "dani" : "daffa");
+        } else {
+          stopWarRoomDialogues();
+        }
       }
 
       function initSSEStream() {
@@ -2919,6 +4404,7 @@
           }
           if (curr && curr.userData.agentId) {
             playUiChime("click");
+            window.YudiazHQ.triggerAgentSpeech(curr.userData.agentId);
             window.YudiazHQ.openDossier(curr.userData.agentId);
             return;
           }
@@ -3139,6 +4625,62 @@
           localStorage.removeItem("yudiaz_auth_pin");
           const modal = document.getElementById("pin-gate-modal");
           modal.classList.remove("opacity-0", "pointer-events-none");
+        },
+
+        toggleMomModal: function() {
+          playUiChime("click");
+          const slide = document.getElementById("mom-slideover");
+          const back = document.getElementById("mom-backdrop");
+          if (!slide || !back) return;
+          const isOpen = !slide.classList.contains("translate-x-full");
+          if (isOpen) {
+            slide.classList.add("translate-x-full");
+            back.classList.add("opacity-0", "pointer-events-none");
+          } else {
+            renderMoMTranscript();
+            slide.classList.remove("translate-x-full");
+            back.classList.remove("opacity-0", "pointer-events-none");
+          }
+        },
+
+        copyMomMarkdown: function() {
+          const text = getMoMMarkdownText();
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(() => {
+              window.YudiazHQ.showToast("Notulensi Rapat (MoM) tersalin ke clipboard!");
+            }).catch(() => {
+              window.YudiazHQ.showToast("Notulensi tersalin!");
+            });
+          } else {
+            window.YudiazHQ.showToast("Notulensi tersalin!");
+          }
+        },
+
+        showToast: function(msg) {
+          const t = document.getElementById("toast-notification");
+          const txt = document.getElementById("toast-text");
+          if (t && txt) {
+            txt.textContent = msg;
+            t.classList.remove("opacity-0");
+            t.classList.add("opacity-100");
+            setTimeout(() => {
+              t.classList.remove("opacity-100");
+              t.classList.add("opacity-0");
+            }, 2500);
+          }
+        },
+
+        triggerAgentSpeech: function(agentId) {
+          const agent = AGENTS.find(a => a.id === agentId);
+          if (!agent) return;
+          const thought = (agent.thoughts && agent.thoughts.length > 0) ? agent.thoughts[0] : agent.task;
+          const emoji = AGENT_EMOJIS[agent.id] || "👤";
+          showSpeechBubble(agent.id, agent.name, agent.role.split(" ")[0], emoji, agent.accent || agent.color, thought);
+          setTimeout(() => {
+            if (currentSpeakerAvatarId === agent.id && !currentAutonomousIdx.toString().includes("meeting")) {
+              hideSpeechBubble();
+            }
+          }, 5000);
         }
       };
 
