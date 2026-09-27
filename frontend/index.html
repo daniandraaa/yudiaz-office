@@ -1795,6 +1795,27 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
 `;
       }
 
+      function showToast(msg, duration = 3000) {
+        let container = document.getElementById("toast-container");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "toast-container";
+          container.className = "fixed bottom-24 right-6 z-50 flex flex-col gap-2 pointer-events-none";
+          document.body.appendChild(container);
+        }
+        const toast = document.createElement("div");
+        toast.className = "px-4 py-2.5 rounded-xl bg-slate-900/95 border border-cyan-500/50 text-cyan-300 font-mono text-xs shadow-2xl backdrop-blur-md transform transition-all duration-300 translate-y-2 opacity-0 pointer-events-auto flex items-center gap-2";
+        toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span><span>${msg}</span>`;
+        container.appendChild(toast);
+        requestAnimationFrame(() => {
+          toast.classList.remove("translate-y-2", "opacity-0");
+        });
+        setTimeout(() => {
+          toast.classList.add("translate-y-2", "opacity-0");
+          setTimeout(() => toast.remove(), 350);
+        }, duration);
+      }
+
       function copyMomMarkdown() {
         playUiChime("click");
         const md = getMoMMarkdownText(ALL_STUDIO_MEETINGS[activeMeetingIndex]);
@@ -1821,7 +1842,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
           if (backdrop) backdrop.classList.remove("opacity-0", "pointer-events-none");
 
           // Try fetching latest meeting from backend API
-          fetch("/api/office/meetings")
+          fetch("/api/v1/meetings/history")
             .then(res => res.json())
             .then(data => {
               if (data && Array.isArray(data) && data.length > 0) {
@@ -1949,10 +1970,12 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
       let animatedScreens = [];
       let pingPongBall = null;
       let pingPongTime = 0;
+      let pingPongTimer = 0;
       let currentAutonomousIdx = 0;
       let presentationTexture, presentationMesh;
       let zzzSprites = [];
       let clock;
+      let currentSpeakerAvatarId = null;
 
       function registerScreen(mesh, baseIntensity = 0.6, speed = 4.0, pulseOffset = 0) {
         animatedScreens.push({
@@ -2010,12 +2033,6 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
 
         // HTML Pill Badges
         buildDomBadges();
-
-        // Start Autonomous Studio Engine
-        startAutonomousEngine();
-
-        // Listen to SSE Stream if available
-        initSSEStream();
 
         // Events
         window.addEventListener("resize", onWindowResize);
@@ -5150,7 +5167,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
         avatar.targetPos.set(x, y, z);
         avatar.targetRotY = rotY;
         avatar.pose = pose;
-        setAvatarPose(avatar, pose);
+        avatar.currentPose = pose;
         if (roomId) {
           avatar.group.userData.roomId = roomId;
           avatar.currentRoom = roomId;
@@ -5676,7 +5693,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
           const mm = String(wib.getMinutes()).padStart(2, "0");
           const ss = String(wib.getSeconds()).padStart(2, "0");
 
-          const clockEl = document.getElementById("header-clock");
+          const clockEl = document.getElementById("live-wib-clock") || document.getElementById("header-clock");
           if (clockEl) {
             clockEl.textContent = `${hh}:${mm}:${ss} WIB`;
           }
@@ -5689,7 +5706,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
       // =========================================================================
       function initSSEStream() {
         try {
-          const es = new EventSource("/api/office/state/stream");
+          const es = new EventSource("/api/v1/stream");
           es.onmessage = (e) => {
             try {
               const data = JSON.parse(e.data);
@@ -5734,6 +5751,33 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
       let isVoiceActive = false;
 
       window.YudiazHQ = {
+        submitPin: function(event) {
+          if (event) event.preventDefault();
+          const input = document.getElementById("pin-input");
+          const val = input ? input.value.trim() : "";
+          if (val === "2609") {
+            playUiChime("mode");
+            localStorage.setItem("yudiaz_auth_pin", "2609");
+            const modal = document.getElementById("pin-gate-modal");
+            if (modal) modal.classList.add("opacity-0", "pointer-events-none");
+            showToast("Otorisasi Berhasil. Selamat datang di Yudiaz Virtual HQ.");
+          } else {
+            playUiChime("alert");
+            const err = document.getElementById("pin-error-msg");
+            if (err) err.textContent = "PIN TIDAK VALID. AKSES DITOLAK.";
+            if (input) {
+              input.value = "";
+              input.focus();
+            }
+          }
+        },
+
+        autofillPin: function(code) {
+          const input = document.getElementById("pin-input");
+          if (input) input.value = code;
+          this.submitPin();
+        },
+
         setMode: function(cycleKey) {
           playUiChime("mode");
           showToast(`Mode dialihkan ke: ${cycleKey}`);
