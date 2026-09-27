@@ -178,6 +178,7 @@
     #speech-bubble {
       position: fixed;
       will-change: left, top, opacity;
+      /* NO transition on left/top/transform — these cause tracking lag during walking */
       transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.85));
       pointer-events: none;
@@ -192,7 +193,7 @@
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
       border-top: 8px solid rgba(0, 242, 254, 0.9);
-      transition: left 0.1s ease-out;
+      /* NO transition on tail left — instant clamping needed */
     }
 
     /* Floating Projected 3D Live Activity HUD Cards */
@@ -2981,6 +2982,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
         const groundMesh = new THREE.Mesh(slabGeo, slabMat);
         groundMesh.position.y = -0.5;
         groundMesh.receiveShadow = true;
+        groundMesh.renderOrder = 0; // Ground renders before avatars (avatars use renderOrder=1)
         scene.add(groundMesh);
 
         // Dark plinth foundation under slab
@@ -3300,10 +3302,11 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
         const glassMat = new THREE.MeshPhysicalMaterial({
           color: 0xa855f7,
           transparent: true,
-          opacity: 0.26,
+          opacity: 0.85,
           roughness: 0.08,
           metalness: 0.15,
-          transmission: 0.85
+          transmission: 0.85,
+          depthWrite: true
         });
         const frameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.8 });
 
@@ -3657,10 +3660,11 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
         const glassMat = new THREE.MeshPhysicalMaterial({
           color: 0x00f2fe,
           transparent: true,
-          opacity: 0.28,
+          opacity: 0.85,
           roughness: 0.1,
           metalness: 0.1,
-          transmission: 0.8
+          transmission: 0.8,
+          depthWrite: true
         });
         const frameMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, metalness: 0.8 });
 
@@ -4210,6 +4214,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
       function buildAllAvatars() {
         AGENTS.forEach(agent => {
           const avatar = createAvatar(agent);
+          avatar.group.renderOrder = 1; // Render avatars on top of floor/furniture (renderOrder=0)
           scene.add(avatar.group);
           avatarObjects[agent.id] = avatar;
         });
@@ -4230,11 +4235,11 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
         bodyGroup.position.y = 0.0;
         root.add(bodyGroup);
 
-        const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd1b3, roughness: 0.6 });
-        const clothesMat = new THREE.MeshStandardMaterial({ color: agent.clothingColor, roughness: 0.5 });
-        const hairMat = new THREE.MeshStandardMaterial({ color: agent.hairColor, roughness: 0.5 });
-        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
-        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd1b3, roughness: 0.6, depthTest: true, depthWrite: true });
+        const clothesMat = new THREE.MeshStandardMaterial({ color: agent.clothingColor, roughness: 0.5, depthTest: true, depthWrite: true });
+        const hairMat = new THREE.MeshStandardMaterial({ color: agent.hairColor, roughness: 0.5, depthTest: true, depthWrite: true });
+        const pantsMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, depthTest: true, depthWrite: true });
+        const shoeMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4, depthTest: true, depthWrite: true });
 
         // Torso
         const torso = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.85, 0.4), clothesMat);
@@ -4565,7 +4570,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
           const bubble = document.getElementById("speech-bubble");
           if (bubble && bubble.classList.contains("active-bubble")) {
             tempVec.copy(spk.group.position);
-            tempVec.y += 2.9;
+            tempVec.y += 3.2;
             tempVec.project(camera);
 
             if (tempVec.z > -1 && tempVec.z < 1) {
@@ -4652,11 +4657,11 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             glideCameraTo(new THREE.Vector3(-9.7, 5.5, 10.5), new THREE.Vector3(-9.7, 1.2, 5.0), 1400);
 
             setTimeout(() => {
-              showSpeechBubble("idris", "Idris Nakamura", "Senior Developer", "🎧", "#10B981", "Mika, SSE stream telemetry /api/v1/stream latensinya tembus 0.4ms! Sudah siap kita render di diorama 60 FPS.");
+              showSpeechBubble("idris", "Idris Nakamura", "Senior Developer", "🎧", "#10B981", "Mika, endpoint `/api/v1/stream` latency udah 0.4ms stabil di VPS Azure Seoul. Gue push branch `feat/sse-optimize` — review dulu dong sebelum merge ke main.");
               playUiChime("dialogue");
 
               peerInteractionTimeout = setTimeout(() => {
-                showSpeechBubble("mika", "Mika Stellan", "Frontend Engineer", "⚡", "#F97316", "Mantap Idris! Buffer render Three.js r128 sudah aku bind langsung ke SSE heartbeat. Zero drop frame!");
+                showSpeechBubble("mika", "Mika Stellan", "Frontend Engineer", "⚡", "#F97316", "Siap gue review sekarang Idris! Btw Three.js r128 canvas di office.daniandraaa.my.id juga udah locked 60 FPS — zero frame drop waktu SSE heartbeat masuk.");
                 playUiChime("dialogue");
 
                 peerInteractionTimeout = setTimeout(() => {
@@ -4683,11 +4688,11 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             glideCameraTo(new THREE.Vector3(-8.5, 5.5, 12.0), new THREE.Vector3(-8.5, 1.2, 7.0), 1400);
 
             setTimeout(() => {
-              showSpeechBubble("kael", "Kael Ashford", "Lead Architect", "📐", "#38BDF8", "Nara, 28 sitasi arXiv untuk metodologi multi-agent coordination sudah aku sinkronkan ke Bab 3 & 4 LaTeX.");
+              showSpeechBubble("kael", "Kael Ashford", "Lead Architect", "📐", "#38BDF8", "Nara, 28 sitasi arXiv untuk metodologi multi-agent coordination sudah gue sync ke Bab 3 & 4 LaTeX. Tectonic compile bersih di `/usr/local/bin/tectonic` VPS.");
               playUiChime("dialogue");
 
               peerInteractionTimeout = setTimeout(() => {
-                showSpeechBubble("nara", "Nara Vasquez", "Lead Researcher", "📚", "#00DFD8", "Sip Kael! Benchmark komunikasi peer-to-peer terbukti 4.2x lebih efisien dibanding centralized orchestrator.");
+                showSpeechBubble("nara", "Nara Vasquez", "Lead Researcher", "📚", "#00DFD8", "Mantap Kael! Benchmark peer-to-peer agent di paper terbaru arXiv buktiin 4.2x lebih efisien dari centralized orchestrator — persis argument novelti skripsi kita.");
                 playUiChime("dialogue");
 
                 peerInteractionTimeout = setTimeout(() => {
@@ -4718,11 +4723,11 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             glideCameraTo(new THREE.Vector3(-7.5, 4.8, -4.5), new THREE.Vector3(-9.2, 1.2, -8.5), 1400);
 
             setTimeout(() => {
-              showSpeechBubble("elara", "Elara Sinclair", "PA to CEO", "📋", "#C084FC", "Daffa, berkas evaluasi bisnis Micro-SaaS AI Automation QRIS dan executive agenda untuk Mas Dani sudah siap di tablet.");
+              showSpeechBubble("elara", "Elara Sinclair", "PA to CEO", "📋", "#C084FC", "Daffa, berkas QRIS merchant report dan executive agenda untuk Mas Dani sudah gue siapkan di tablet — termasuk rekonsiliasi kas Rp 0 dari finance.daniandraaa.my.id.");
               playUiChime("dialogue");
 
               peerInteractionTimeout = setTimeout(() => {
-                showSpeechBubble("daffa", "Daffa (CEO Office)", "CEO Office", "🎯", "#38BDF8", "Terima kasih Elara. Ini bahan krusial untuk saya bawa ke War Room bersama 9 divisi, lalu saya laporkan ke Mas Dani.");
+                showSpeechBubble("daffa", "Daffa (CEO Office)", "CEO Office", "🎯", "#38BDF8", "Makasih Elara! Data QRIS ini krusial buat War Room nanti. Gue juga mau konsolidasi progress `yudiaz-finance` repo sebelum laporkan ke Mas Dani.");
                 playUiChime("dialogue");
 
                 peerInteractionTimeout = setTimeout(() => {
@@ -4750,11 +4755,11 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             glideCameraTo(new THREE.Vector3(-11.0, 4.8, 15.5), new THREE.Vector3(-11.0, 1.2, 11.2), 1400);
 
             setTimeout(() => {
-              showSpeechBubble("viktor", "Viktor Moreau", "Lead QA", "🛡️", "#EF4444", "Jovan, ngopi dulu sejenak. Security audit HMAC-SHA256 untuk webhook QRIS lolos 100% tanpa celah.");
+              showSpeechBubble("viktor", "Viktor Moreau", "Lead QA", "🛡️", "#EF4444", "Jovan, ngopi dulu sejenak. Security audit HMAC-SHA256 webhook QRIS dari Tripay lolos 100% — IP 2.57.122.209 udah gue ban di Fail2ban kemarin.");
               playUiChime("dialogue");
 
               peerInteractionTimeout = setTimeout(() => {
-                showSpeechBubble("jovan", "Jovan Aritza", "Intelligence Officer", "📡", "#00DFD8", "Nice Viktor! Dari sisi intel, 480 merchant UMKM sudah menanti otomatisasi QRIS ini. Potensinya sangat besar.");
+                showSpeechBubble("jovan", "Jovan Aritza", "Intelligence Officer", "📡", "#00DFD8", "Aman Viktor! Dari intel lapangan, 480 merchant UMKM Bandung-Tel-U area udah siap adopsi QRIS Dynamic — timing-nya perfect buat launch Micro-SaaS kita.");
                 playUiChime("dialogue");
 
                 peerInteractionTimeout = setTimeout(() => {
@@ -4785,11 +4790,11 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             glideCameraTo(new THREE.Vector3(11.0, 5.5, 15.5), new THREE.Vector3(11.0, 1.2, 10.5), 1400);
 
             setTimeout(() => {
-              showSpeechBubble("idris", "Idris Nakamura", "Senior Developer", "🏓", "#10B981", "Smash forehand! Rally sengit nih Mika!");
+              showSpeechBubble("idris", "Idris Nakamura", "Senior Developer", "🏓", "#10B981", "Smash forehand! Sisa PR `feat/sse-optimize` 3 file lagi, habis ini merge langsung ke main Mika!");
               playPingPongSound();
 
               peerInteractionTimeout = setTimeout(() => {
-                showSpeechBubble("mika", "Mika Stellan", "Frontend Engineer", "🔥", "#F97316", "Backhand spin masuk pojok! 7 - 5 untuk frontend!");
+                showSpeechBubble("mika", "Mika Stellan", "Frontend Engineer", "🔥", "#F97316", "Backhand spin pojok kanan! Design token `concept-2b-tokens` gue update tadi — warna cyan-nya gue geser dikit. 7-5 untuk frontend, Idris!");
                 playPingPongSound();
 
                 peerInteractionTimeout = setTimeout(() => {
@@ -4829,7 +4834,16 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
 
           if (dist > 0.05) {
             avatar.isMoving = true;
-            avatar.currentPos.lerp(avatar.targetPos, delta * 3.8);
+
+            // Face direction of travel first (rotate to face movement direction)
+            const dir = new THREE.Vector3().subVectors(avatar.targetPos, avatar.currentPos).normalize();
+            if (dir.length() > 0.01) {
+              avatar.targetRotY = Math.atan2(dir.x, dir.z);
+            }
+
+            // Walking speed based on distance: slower for short hops, slightly faster for room-crossing
+            const walkSpeed = dist > 6 ? delta * 2.2 : delta * 1.8;
+            avatar.currentPos.lerp(avatar.targetPos, walkSpeed);
             avatar.group.position.copy(avatar.currentPos);
 
             // Fix rotation glitch: normalize angle difference to [-PI, +PI]
@@ -5194,7 +5208,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             const mikaAgent = AGENTS.find(a => a.id === "mika");
             if (idrisAgent) idrisAgent.task = "Recreation Break: Rally Tenis Meja Cepat (Bakar Penat Sprint)";
             if (mikaAgent) mikaAgent.task = "Recreation Break: Tanding Ping-Pong vs Idris (Break 14 Detik)";
-            showSpeechBubble("idris", "Idris Nakamura", "Lead Developer", "⚡", "#F5A623", "Smash topspin dulu Mik, habis ini PR kita merge!", 3800);
+            showSpeechBubble("idris", "Idris Nakamura", "Lead Developer", "⚡", "#F5A623", "Mik, smash topspin dulu — abis ini kita review PR feat/sse-optimize bareng sebelum merge ke main!", 3800);
             
             setTimeout(() => {
               moveAgentTo("idris", -13.0, 1.35, 0.0, 0, "seated_desk", "room-dev", false);
@@ -5211,7 +5225,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             moveAgentTo("viktor", 1.2, 8.8, 0.0, -Math.PI * 0.4, "standing", "room-lounge", false);
             const viktorAgent = AGENTS.find(a => a.id === "viktor");
             if (viktorAgent) viktorAgent.task = "Pantry Break: Menyeduh Espresso & Cek Log Sentinel";
-            showSpeechBubble("viktor", "Viktor Moreau", "Lead QA & Security", "🛡️", "#10B981", "Kopi kedua hari ini. 0 payload mencurigakan di port 443 Sentinel.", 3800);
+            showSpeechBubble("viktor", "Viktor Moreau", "Lead QA & Security", "🛡️", "#10B981", "Fail2ban nangkep 3 IP baru nyoba brute-force SSH port 22 — gue ban permanen. Log Sentinel bersih.", 3800);
 
             setTimeout(() => {
               moveAgentTo("viktor", 10.5, 5.5, 0.0, Math.PI, "seated_desk", "room-server", false);
@@ -5226,7 +5240,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             moveAgentTo("jovan", -0.5, 6.8, 0.0, Math.PI, "seated_couch", "room-lounge", false);
             const jovanAgent = AGENTS.find(a => a.id === "jovan");
             if (jovanAgent) jovanAgent.task = "Lounge Recon: Pantau Traffic Node & Intel Telkom University";
-            showSpeechBubble("jovan", "Jovan Aritza", "Lead Intel Officer", "📡", "#EC4899", "Feed radar Tel-U stabil, latency cluster 0.4ms.", 3800);
+            showSpeechBubble("jovan", "Jovan Aritza", "Lead Intel Officer", "📡", "#EC4899", "Raz, seminar informatika Tel-U tanggal 15 Oktober — judulnya event-driven architecture. Relevan banget sama topik skripsi Mas Dani.", 3800);
 
             setTimeout(() => {
               moveAgentTo("jovan", 14.5, 5.5, 0.0, Math.PI, "seated_desk", "room-server", false);
@@ -5247,11 +5261,11 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             if (isCeoApproved) {
               if (kaelAgent) kaelAgent.task = "Diskusi Meja Cetak Biru: Validasi Diagram Event-Loop Bab 3 Skripsi (Disahkan CEO)";
               if (naraAgent) naraAgent.task = "Diskusi Meja Cetak Biru: Penyelarasan 30 Sitasi IEEE Skripsi Tel-U (Disahkan CEO)";
-              showSpeechBubble("kael", "Kael Ashford", "Lead Architect", "🏛️", "#38BDF8", "Diagram Bab 3 sudah sesuai arahan Mas Dani, siap kompilasi Tectonic.", 3800);
+              showSpeechBubble("kael", "Kael Ashford", "Lead Architect", "🏛️", "#38BDF8", "Nara, arsitektur multi-agent di Bab 3 perlu diagram sequence lebih detail. Tectonic udah compile Bab 1-2 bersih — 1.4 detik build time.", 3800);
             } else {
               if (kaelAgent) kaelAgent.task = "Diskusi Meja Cetak Biru: Eksplorasi Arsitektur Internal (Standby Menunggu Arahan Riset CEO)";
               if (naraAgent) naraAgent.task = "Diskusi Meja Cetak Biru: Kurasi Spesifikasi Teknis (Standby Menunggu Arahan Riset CEO)";
-              showSpeechBubble("kael", "Kael Ashford", "Lead Architect", "🏛️", "#38BDF8", "Kita siapkan spesifikasi internal dulu di Atelier sambil menunggu arahan riset dari CEO Daniandra.", 3800);
+              showSpeechBubble("kael", "Kael Ashford", "Lead Architect", "🏛️", "#38BDF8", "Nara, kita siapkan spesifikasi sistem multi-agent dulu sambil nunggu arahan riset dari Mas Dani. Branch `feat/architecture-draft` sudah gue buat.", 3800);
             }
 
             setTimeout(() => {
@@ -5269,7 +5283,7 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             moveAgentTo("elara", -8.2, -8.6, 0.0, -Math.PI * 0.3, "standing", "room-ceo", false);
             const elaraAgent = AGENTS.find(a => a.id === "elara");
             if (elaraAgent) elaraAgent.task = "Penyerahan Berkas Eksekutif & Kas Yudiaz Finance ke Meja CEO Office";
-            showSpeechBubble("elara", "Elara Sinclair", "Executive PA", "📋", "#F472B6", "Daf, berkas jadwal eksekutif dan buku kas bersih Rp 0 sudah siap untuk Mas Dani.", 3800);
+            showSpeechBubble("elara", "Elara Sinclair", "Executive PA", "📋", "#F472B6", "Daf, jadwal Mas Dani hari ini: pagi review finance.daniandraaa.my.id, siang brief desain sama Senna, malam review PR dari Idris.", 3800);
 
             setTimeout(() => {
               moveAgentTo("elara", -4.5, -9.5, 0.0, 0, "seated_desk", "room-pa", false);
@@ -5284,10 +5298,10 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
             moveAgentTo("daffa", -10.8, -8.2, 0.0, -Math.PI * 0.4, "standing", "room-ceo", false);
             const daffaAgent = AGENTS.find(a => a.id === "daffa");
             if (daffaAgent) daffaAgent.task = "Koordinasi Operasional Langsung di Meja Kerja CEO Daniandra";
-            showSpeechBubble("daffa", "Daffa (CEO Office)", "CEO Office", "🎯", "#38BDF8", "Mas Dani, seluruh 10 personel online di workstation masing-masing dan telemetry lancar.", 3800);
+            showSpeechBubble("daffa", "Daffa (CEO Office)", "CEO Office", "🎯", "#38BDF8", "Mas Dani, laporan minggu ini: Sentinel 51 test hijau semua, Finance clean Rp 0, office.daniandraaa.my.id live. Tinggal polish QRIS integration dan skripsi Bab 3-4.", 3800);
 
             setTimeout(() => {
-              showSpeechBubble("dani", "Daniandra Prayudisty", "CEO & Founder", "👑", "#F5A623", "Bagus Daffa. Jaga ritme kerja tim dan pastikan arsitektur tetap lean.", 3800);
+              showSpeechBubble("dani", "Daniandra Prayudisty", "CEO & Founder", "👑", "#F5A623", "Bagus Daffa. Push sprint QRIS webhook ke staging dulu, gue review malam ini. Skripsi Bab 3 diagram-nya kasih ke Kael besok pagi.", 3800);
             }, 4000);
 
             setTimeout(() => {
