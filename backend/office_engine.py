@@ -9,11 +9,15 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timezone
+import json
+import os
 import random
+import re
 import secrets
 import time
 from typing import Any, Optional
 import uuid
+import httpx
 
 from backend.config import get_settings
 from backend.models import (
@@ -22,6 +26,8 @@ from backend.models import (
     AgentInfo,
     AgentPosition,
     AgentStatus,
+    CEOCommandResponse,
+    DialogueTurn,
     MeetingDialogue,
     MeetingMinutes,
     OfficeMode,
@@ -56,6 +62,7 @@ class OfficeEngine:
         self._need_cycle_index: int = 0
         self.latest_meeting: Optional[MeetingMinutes] = None
         self.meetings_history: list[MeetingMinutes] = []
+        self.active_event: Optional[dict[str, Any]] = None
 
         self._initialize_rooms()
         self._initialize_agents()
@@ -818,6 +825,7 @@ class OfficeEngine:
             server_telemetry=telemetry,
             latest_meeting=self.latest_meeting,
             meetings_history=list(self.meetings_history),
+            active_event=self.active_event,
         )
 
     def get_latest_meeting(self) -> Optional[MeetingMinutes]:
@@ -836,6 +844,319 @@ class OfficeEngine:
         if self.latest_meeting and self.latest_meeting.meeting_id == meeting_id:
             return self.latest_meeting
         return None
+
+    async def dispatch_ceo_command(self, command: str) -> CEOCommandResponse:
+        """Process an executive command from CEO Daniandra via AI reasoning (9Router).
+        Dispatches hierarchical dialogue cascade: CEO -> Daffa -> Target Agent -> Report back.
+        """
+        now_str = datetime.now(timezone.utc).strftime("%d %b %Y // %H:%M:%S WIB")
+
+        roster = {
+            "dani": {"name": "Daniandra Prayudisty", "role": "Founder & CEO", "emoji": "👑", "color": "#F5A623"},
+            "daffa": {"name": "Daffa (CEO Office)", "role": "CEO Office", "emoji": "🎯", "color": "#38BDF8"},
+            "raziel": {"name": "Raziel Hendrix", "role": "CTO & Lead Orchestrator", "emoji": "🧐", "color": "#A855F7"},
+            "kael": {"name": "Kael Ashford", "role": "Lead Architect", "emoji": "🏛️", "color": "#38BDF8"},
+            "nara": {"name": "Nara Vasquez", "role": "Lead Researcher", "emoji": "🔬", "color": "#00DFD8"},
+            "idris": {"name": "Idris Nakamura", "role": "Senior Developer", "emoji": "⚡", "color": "#F5A623"},
+            "mika": {"name": "Mika Stellan", "role": "Frontend Engineer", "emoji": "🎨", "color": "#EC4899"},
+            "senna": {"name": "Senna Louviere", "role": "Creative Director", "emoji": "✨", "color": "#F43F5E"},
+            "viktor": {"name": "Viktor Moreau", "role": "Lead QA & Security", "emoji": "🛡️", "color": "#10B981"},
+            "elara": {"name": "Elara Sinclair", "role": "Executive PA", "emoji": "📋", "color": "#F472B6"},
+            "jovan": {"name": "Jovan Aritza", "role": "Intelligence Officer", "emoji": "📡", "color": "#6366F1"},
+        }
+
+        ai_data = await self._call_ai_engine(command)
+
+        target_id = ai_data.get("assigned_agent_id", "idris")
+        if target_id not in roster or target_id in ["dani", "daffa"]:
+            target_id = "idris"
+
+        target_info = roster.get(target_id, roster["idris"])
+        assigned_task = ai_data.get("assigned_task", f"Eksekusi mandat CEO: {command}")
+        thought = ai_data.get("thought", "Memprioritaskan eksekusi teknis sesuai instruksi Mas Dani.")
+
+        raw_dialogues = ai_data.get("dialogues", [])
+        dialogues: list[DialogueTurn] = []
+        for d in raw_dialogues:
+            spk_id = d.get("speaker_id", "dani")
+            spk_info = roster.get(spk_id, roster.get("dani"))
+            dialogues.append(
+                DialogueTurn(
+                    speaker_id=spk_id,
+                    speaker_name=spk_info["name"],
+                    role=spk_info["role"],
+                    emoji=spk_info["emoji"],
+                    color=spk_info["color"],
+                    text=d.get("text", ""),
+                    target_id=d.get("target_id", None),
+                )
+            )
+
+        # Update target agent state
+        target_agent = self.agents.get(target_id)
+        if target_agent:
+            target_agent.current_task = assigned_task
+            target_agent.status = AgentStatus.WORKING
+            target_agent.memory_context = thought
+
+        # If academic research / skripsi command, update both kael and nara
+        if target_id in ["kael", "nara"] or any(k in command.lower() for k in ["skripsi", "latex", "paper", "arxiv", "tectonic"]):
+            for r_id in ["kael", "nara"]:
+                r_agent = self.agents.get(r_id)
+                if r_agent:
+                    r_agent.status = AgentStatus.RESEARCHING
+                    if r_id == "kael":
+                        r_agent.current_task = f"Arsitektur & Diagram Skripsi Tel-U (Mandat CEO): {command}"
+                    else:
+                        r_agent.current_task = f"Sintesis Paper & Kompilasi LaTeX Tectonic (Mandat CEO): {command}"
+
+        # Record activity log
+        self.add_activity(
+            agent_id="dani",
+            action="CEO_DISPATCH",
+            details=f"CEO menginstruksikan {target_info['name']}: {assigned_task}",
+            severity="WARNING",
+            room_id="room-ceo",
+        )
+
+        event_payload = {
+            "type": "CEO_BUREAUCRACY_CASCADE",
+            "event_id": f"evt-{uuid.uuid4().hex[:8]}",
+            "command": command,
+            "assigned_agent_id": target_id,
+            "assigned_agent_name": target_info["name"],
+            "assigned_task": assigned_task,
+            "thought": thought,
+            "dialogues": [d.model_dump() for d in dialogues],
+            "timestamp": now_str,
+            "requires_war_room": any(k in command.lower() for k in ["rapat", "meeting", "presentasi", "evaluasi", "war room", "strategi"]),
+        }
+        self.active_event = event_payload
+        self._broadcast_state()
+
+        return CEOCommandResponse(
+            status="ok",
+            command=command,
+            assigned_agent_id=target_id,
+            assigned_agent_name=target_info["name"],
+            assigned_task=assigned_task,
+            thought=thought,
+            dialogues=dialogues,
+            timestamp=now_str,
+        )
+
+    async def dispatch_pa_notification(
+        self,
+        title: str,
+        message: str,
+        source: str = "cron",
+        telegram_sent: bool = True,
+    ) -> dict:
+        """Dispatches an executive reminder or cron event via PA Elara Sinclair."""
+        now_str = datetime.now(timezone.utc).strftime("%d %b %Y // %H:%M:%S WIB")
+
+        dialogues = [
+            {
+                "speaker_id": "elara",
+                "speaker_name": "Elara Sinclair",
+                "role": "Executive PA",
+                "emoji": "📋",
+                "color": "#F472B6",
+                "text": f"Pak Dani, pengingat eksekutif: {title}. {message}. Notifikasi Telegram telah dikirim.",
+                "target_id": "dani",
+            },
+            {
+                "speaker_id": "dani",
+                "speaker_name": "Daniandra Prayudisty",
+                "role": "Founder & CEO",
+                "emoji": "👑",
+                "color": "#F5A623",
+                "text": f"Terima kasih Elara. Saya monitor dan tindak lanjuti agenda {title} dari suite.",
+                "target_id": "elara",
+            },
+        ]
+
+        event_payload = {
+            "type": "PA_CRON_REMINDER",
+            "event_id": f"evt-{uuid.uuid4().hex[:8]}",
+            "title": title,
+            "message": message,
+            "source": source,
+            "telegram_sent": telegram_sent,
+            "dialogues": dialogues,
+            "timestamp": now_str,
+        }
+
+        self.active_event = event_payload
+        self.add_activity(
+            agent_id="elara",
+            action="PA_REMINDER",
+            details=f"Elara menyampaikan reminder eksekutif: {title}",
+            severity="INFO",
+            room_id="room-ceo",
+        )
+        self._broadcast_state()
+
+        return {
+            "status": "ok",
+            "title": title,
+            "message": message,
+            "dialogues": dialogues,
+            "timestamp": now_str,
+        }
+
+    async def _call_ai_engine(self, command: str) -> dict:
+        """Call 9Router API (ag/gemini-3.8-flash) or fallback to heuristic."""
+        key = os.getenv("HERMES_9ROUTER_API_KEY", "")
+        if not key:
+            try:
+                with open("/home/daniilham/.hermes/.env") as f:
+                    for line in f:
+                        if "HERMES_9ROUTER_API_KEY" in line:
+                            key = line.split("=")[1].strip('"\'\n ')
+            except Exception:
+                pass
+
+        if key:
+            system_prompt = (
+                "Kamu adalah Engine Penalaran Orkestrasi Yudiaz Creative Studio.\n"
+                "Struktur Tim:\n"
+                "- Daniandra Prayudisty (Founder & CEO, id: dani)\n"
+                "- Daffa (CEO Office & Strategic Alignment, id: daffa - berkantor di CEO Suite bersama CEO)\n"
+                "- Raziel Hendrix (CTO & Lead Orchestrator, id: raziel)\n"
+                "- Kael Ashford (Lead Architect, id: kael)\n"
+                "- Nara Vasquez (Lead Researcher, id: nara)\n"
+                "- Idris Nakamura (Senior Developer - backend, FastAPI, QRIS webhook, id: idris)\n"
+                "- Mika Stellan (Frontend Engineer - Three.js, React, UI, id: mika)\n"
+                "- Senna Louviere (Creative Director - Figma, tokens, Concept 2B, id: senna)\n"
+                "- Viktor Moreau (Lead QA & Security - UFW, Fail2ban, pytest, id: viktor)\n"
+                "- Elara Sinclair (Executive PA - jadwal CEO, finance portal, id: elara)\n"
+                "- Jovan Aritza (Intelligence Officer - Tel-U radar, id: jovan)\n\n"
+                "Konteks riil studio: VPS Azure Seoul 54GB RAM Intel Xeon, 4 subdomains (office, vps, api, finance), "
+                "Tectonic LaTeX compiler Skripsi Tel-U, Micro-SaaS QRIS Dynamic Tripay payment gateway, Fail2ban IP 2.57.122.209 banned.\n\n"
+                "TUGAS: Ketika CEO memberikan perintah, analisis siapa yang harus mengerjakan, rancang tugasnya, dan hasilkan dialog berjenjang:\n"
+                "1. CEO Daniandra bicara ke Daffa (CEO Office)\n"
+                "2. Daffa merespons CEO dan memberi arahan ke agent terkait\n"
+                "3. Agent terkait merespons teknis dan menyanggupi\n"
+                "4. Daffa melapor balik ke CEO bahwa instruksi sudah berjalan\n"
+                "5. CEO Daniandra memberikan penutupan / disposisi approval\n\n"
+                "Hasilkan HANYA JSON MURNI tanpa markdown:\n"
+                "{\n"
+                '  "assigned_agent_id": "idris",\n'
+                '  "assigned_task": "Tugas teknis spesifik untuk agent",\n'
+                '  "thought": "Pikiran teknis mendalam internal agent",\n'
+                '  "dialogues": [\n'
+                '    {"speaker_id": "dani", "text": "..."},\n'
+                '    {"speaker_id": "daffa", "text": "..."},\n'
+                '    {"speaker_id": "target_id", "text": "..."},\n'
+                '    {"speaker_id": "daffa", "text": "..."},\n'
+                '    {"speaker_id": "dani", "text": "..."}\n'
+                "  ]\n"
+                "}"
+            )
+            try:
+                headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
+                payload = {
+                    "model": "ag/gemini-3.8-flash",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": f"Perintah CEO: {command}"},
+                    ],
+                    "stream": False,
+                    "temperature": 0.7,
+                    "max_tokens": 700,
+                }
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    resp = await client.post("http://127.0.0.1:20128/v1/chat/completions", headers=headers, json=payload)
+                    if resp.status_code == 200:
+                        raw = resp.json()["choices"][0]["message"]["content"].strip()
+                        raw = re.sub(r"^```(?:json)?\s*", "", raw)
+                        raw = re.sub(r"\s*```$", "", raw)
+                        return json.loads(raw)
+            except Exception as e:
+                print(f"[OfficeEngine] AI 9Router dispatch error, fallback to heuristic: {e}")
+
+        return self._generate_heuristic_cascade(command)
+
+    def _generate_heuristic_cascade(self, command: str) -> dict:
+        """Fallback dynamic heuristic generator matching actual Yudiaz ecosystem."""
+        cmd = command.lower()
+        if any(k in cmd for k in ["qris", "payment", "fastapi", "webhook", "tripay", "backend", "db", "endpoint"]):
+            target_id = "idris"
+            task = f"Implementasi & audit endpoint QRIS Dynamic di FastAPI: {command}"
+            thought = "Memastikan validasi raw body HMAC-SHA256 compare_digest dan lock idempotensi transaksi aktif."
+            d1 = f"Daf, instruksikan Idris segera eksekusi teknis: {command}."
+            d2 = f"Siap Mas Dani. Idris, prioritaskan request CEO: {command}. Pastikan endpoint dan signature HMAC terisolasi aman."
+            d3 = f"Siap Mas Daffa! Endpoint sedang saya siapkan di router FastAPI. Verifikasi HMAC-SHA256 dan idempotent state lock berjalan lancar."
+            d4 = f"Mas Dani, Idris sudah mengunci task di Workstations dan implementasi webhook sedang berlangsung."
+            d5 = f"Bagus. Pastikan lolos integrasi sebelum kita sync ke Caddy gateway."
+        elif any(k in cmd for k in ["skripsi", "latex", "tectonic", "bab 1", "bab 2", "bab 3", "bab 4", "bab 5", "paper", "arxiv", "tel-u", "telkom"]):
+            target_id = "kael"
+            task = f"Kompilasi & Pemodelan Naskah Skripsi Tel-U via Tectonic: {command}"
+            thought = "Menyelaraskan struktur modular naskah Bab 1-5 dengan template resmi Telkom University dan build Tectonic 1.4s."
+            d1 = f"Daf, arahkan Kael dan Nara di Atelier: {command}. Mandat riset skripsi resmi saya buka."
+            d2 = f"Dimengerti Mas Dani. Kael & Nara, Mas Dani memberikan mandat riset: {command}. Sinkronkan diagram dan kompilasi Tectonic sekarang."
+            d3 = f"Siap Mas Daffa! Mandat CEO diterima. Saya dan Nara langsung menyusun spesifikasi formal dan build via compiler Tectonic."
+            d4 = f"Mas Dani, Kael dan Nara sudah aktif di meja Atelier. Naskah skripsi sedang dikurasi dan dikompilasi."
+            d5 = f"Mantap. Pantau agar zero warning dan sitasi IEEE rapi."
+        elif any(k in cmd for k in ["security", "fail2ban", "ufw", "firewall", "audit", "test", "pytest", "bug", "hardening", "banned"]):
+            target_id = "viktor"
+            task = f"Audit 4-layer defense & pengujian stabilitas: {command}"
+            thought = "Memeriksa UFW rate limiting, status jail fail2ban, dan memastikan 35 test suite hijau 100%."
+            d1 = f"Daf, minta Viktor di Server Room untuk audit: {command}."
+            d2 = f"Siap Mas Dani. Viktor, lakukan pengecekan menyeluruh terhadap {command} sekarang."
+            d3 = f"Siap Mas Daffa. Server Room aman, UFW dan jail fail2ban sedang saya scan mendalam. Log serangan IP penyerang terkendali."
+            d4 = f"Mas Dani, Viktor melaporkan cluster server dalam kondisi optimum dan perimeter keamanan aman."
+            d5 = f"Bagus Viktor. Tetap siaga di Server Room."
+        elif any(k in cmd for k in ["desain", "design", "figma", "token", "logo", "brand", "warna", "concept"]):
+            target_id = "senna"
+            task = f"Penyempurnaan Design System Concept 2B: {command}"
+            thought = "Mematangkan token obsidian-glass, palet cyan aksen, dan visual balance di seluruh antarmuka."
+            d1 = f"Daf, koordinasikan dengan Senna di Creative Studio: {command}."
+            d2 = f"Siap Mas Dani. Senna, Mas Dani ingin design token diselaraskan: {command}."
+            d3 = f"Siap Mas Daffa! Figma workspace dan token obsidian Concept 2B sedang saya polish agar proporsi visualnya presisi."
+            d4 = f"Mas Dani, Senna sedang mematangkan aset visual di Creative Studio."
+            d5 = f"Oke Senna, jaga estetika cyber-luxury tetap bersih."
+        elif any(k in cmd for k in ["jadwal", "agenda", "finance", "kas", "pembukuan", "uang", "saldo"]):
+            target_id = "elara"
+            task = f"Rekonsiliasi eksekutif & catatan keuangan: {command}"
+            thought = "Memastikan kalender terjadwal rapi dan buku kas Yudiaz Finance tersinkronisasi presisi."
+            d1 = f"Daf, beri tahu Elara untuk tangani: {command}."
+            d2 = f"Elara, tolong akomodir arahan Mas Dani terkait: {command}."
+            d3 = f"Siap Mas Daffa dan Mas Dani! Kalender eksekutif dan buku kas Yudiaz Finance sudah saya mutakhirkan sekarang."
+            d4 = f"Mas Dani, Elara sudah menyelesaikan pencatatan dan berkas siap di meja CEO."
+            d5 = f"Terima kasih Elara, kerja bagus."
+        elif any(k in cmd for k in ["three.js", "frontend", "diorama", "ui", "animasi", "webgl"]):
+            target_id = "mika"
+            task = f"Optimasi frontend Three.js & render loop 60 FPS: {command}"
+            thought = "Memastikan WebGL buffer efisien, zero lag, dan interaktivitas responsif di desktop maupun mobile."
+            d1 = f"Daf, minta Mika optimasi tampilan: {command}."
+            d2 = f"Mika, fokuskan ke frontend Three.js sesuai instruksi Mas Dani: {command}."
+            d3 = f"Siap Mas Daffa! Shader, render loop 60 FPS, dan interaktivitas 3D langsung saya optimize."
+            d4 = f"Mas Dani, Mika sudah mengeksekusi penyesuaian frontend dan performa stabil 60 FPS."
+            d5 = f"Mantap Mika, pastikan lancar di HP juga."
+        else:
+            target_id = "idris"
+            task = f"Penanganan tugas operasional teknis: {command}"
+            thought = "Menganalisis dependensi arsitektur dan mengeksekusi instruksi CEO secara terstruktur."
+            d1 = f"Daf, instruksikan tim untuk segera eksekusi: {command}."
+            d2 = f"Siap Mas Dani. Idris dan tim lead, mohon atensi untuk instruksi CEO: {command}."
+            d3 = f"Siap Mas Daffa! Task sudah saya ambil dan langsung saya breakdown pengerjaannya di workstation."
+            d4 = f"Mas Dani, instruksi sudah didelegasikan dan progress teknis sedang berjalan."
+            d5 = f"Bagus, lanjutkan dan laporkan perkembangannya."
+
+        return {
+            "assigned_agent_id": target_id,
+            "assigned_task": task,
+            "thought": thought,
+            "dialogues": [
+                {"speaker_id": "dani", "text": d1},
+                {"speaker_id": "daffa", "text": d2},
+                {"speaker_id": target_id, "text": d3},
+                {"speaker_id": "daffa", "text": d4},
+                {"speaker_id": "dani", "text": d5},
+            ],
+        }
 
     def get_agent(self, agent_id: str) -> Optional[AgentInfo]:
         """Fetch single agent state by identifier."""

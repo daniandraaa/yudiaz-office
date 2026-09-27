@@ -1134,3 +1134,49 @@ def test_meeting_history_archiving_and_deduplication():
 
     capped_history = engine.get_meetings_history()
     assert len(capped_history) == 20
+
+
+@pytest.mark.asyncio
+async def test_ceo_command_dispatch(async_client: AsyncClient):
+    """Verify CEO command dispatch generates AI hierarchical cascade and updates agent state."""
+    res = await async_client.post(
+        "/api/v1/ceo/command",
+        json={"command": "Idris, siapkan endpoint QRIS webhook dan validasi HMAC Tripay"},
+    )
+    assert res.status_code == 200
+    data = res.json()
+
+    assert data["status"] == "ok"
+    assert data["assigned_agent_id"] == "idris"
+    assert len(data["dialogues"]) >= 3
+    assert any(d["speaker_id"] == "dani" for d in data["dialogues"])
+    assert any(d["speaker_id"] == "daffa" for d in data["dialogues"])
+    assert any(d["speaker_id"] == "idris" for d in data["dialogues"])
+
+    # Verify agent state in engine was updated
+    agent_res = await async_client.get("/api/v1/agents/idris")
+    assert agent_res.status_code == 200
+    idris_data = agent_res.json()
+    assert idris_data["status"] == "WORKING"
+    assert "QRIS" in idris_data["current_task"] or "endpoint" in idris_data["current_task"].lower() or "tripay" in idris_data["current_task"].lower()
+
+
+@pytest.mark.asyncio
+async def test_pa_notification_dispatch(async_client: AsyncClient):
+    """Verify PA Elara notification triggers reminder dialogues and broadcasts event."""
+    res = await async_client.post(
+        "/api/v1/pa/notify",
+        json={
+            "title": "Evaluasi Mingguan Q4",
+            "message": "Jadwal briefing studio pukul 16:00 WIB",
+            "source": "cron",
+            "telegram_sent": True,
+        },
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "ok"
+    assert data["title"] == "Evaluasi Mingguan Q4"
+    assert len(data["dialogues"]) == 2
+    assert data["dialogues"][0]["speaker_id"] == "elara"
+    assert data["dialogues"][1]["speaker_id"] == "dani"

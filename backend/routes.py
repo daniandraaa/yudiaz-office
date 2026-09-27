@@ -18,9 +18,13 @@ from backend.models import (
     AgentInfo,
     AuthVerifyRequest,
     AuthVerifyResponse,
+    CEOCommandRequest,
+    CEOCommandResponse,
     MeetingMinutes,
     OfficeActionRequest,
     OfficeStateResponse,
+    PANotificationRequest,
+    PANotificationResponse,
     RoomInfo,
 )
 from backend.office_engine import office_engine
@@ -155,6 +159,41 @@ async def office_action(payload: OfficeActionRequest) -> OfficeStateResponse:
                 "Supported: 'gather_war_room', 'resume_deep_work', 'trigger_sleep_cycle', 'trigger_recreation'."
             ),
         )
+
+
+@router.post(
+    "/ceo/command",
+    response_model=CEOCommandResponse,
+    summary="Dispatch AI-Reasoned Executive Directive from CEO",
+)
+async def dispatch_ceo_command(payload: CEOCommandRequest) -> CEOCommandResponse:
+    """Execute an executive instruction from Founder & CEO Daniandra.
+    Processes the directive via AI reasoning (9Router), triggers hierarchical execution cascade,
+    and returns dialogues and telemetry updates.
+    """
+    cmd = payload.command.strip()
+    if not cmd:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Command cannot be empty.",
+        )
+    return await office_engine.dispatch_ceo_command(cmd)
+
+
+@router.post(
+    "/pa/notify",
+    response_model=PANotificationResponse,
+    summary="Trigger PA Elara Physical Reminder to CEO and Telegram Broadcast",
+)
+async def dispatch_pa_notification(payload: PANotificationRequest) -> PANotificationResponse:
+    """Dispatches a cron or reminder event. PA Elara walks to CEO Suite and verbally delivers reminder."""
+    res = await office_engine.dispatch_pa_notification(
+        title=payload.title,
+        message=payload.message,
+        source=payload.source,
+        telegram_sent=payload.telegram_sent,
+    )
+    return PANotificationResponse(**res)
 
 
 @router.get("/activities", response_model=list[ActivityLog], summary="List Audit Activity Logs")

@@ -344,6 +344,14 @@
 
   <!-- BOTTOM FLOATING PILL DOCK (Autonomous Multi-Agent Engine) -->
   <footer class="fixed bottom-6 left-0 right-0 z-30 flex flex-col items-center pointer-events-none px-4 gap-2.5">
+
+    <!-- TELEGRAM COMMAND BRIDGE INDICATOR (Single Input Source via Telegram) -->
+    <div id="telegram-bridge-pill" class="pointer-events-auto flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-950/80 border border-cyan-500/30 text-[10px] font-mono text-cyan-300 shadow-lg backdrop-blur-md">
+      <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+      <span class="font-bold tracking-wider uppercase">TELEGRAM COMMAND BRIDGE: ACTIVE</span>
+      <span class="text-slate-500 hidden sm:inline">•</span>
+      <span class="text-slate-400 hidden sm:inline">Perintah, birokrasi & status dipicu dari chat Telegram CEO (@razielctobot)</span>
+    </div>
     
     <!-- Center Floating Pill Dock (Autonomous AI Engine HUD) -->
     <div class="pointer-events-auto glass-dock rounded-full p-2 flex items-center gap-1.5 sm:gap-2.5 shadow-2xl max-w-full overflow-x-auto border border-slate-700/60">
@@ -579,7 +587,7 @@
   </div>
 
   <!-- 3D PROJECTED SPEECH BUBBLE (Instant Tracking, Clamped Tail to prevent clipping, Dismissible) -->
-  <div id="speech-bubble" class="fixed pointer-events-none z-50 opacity-0 w-max max-w-[340px] transition-opacity duration-200">
+  <div id="speech-bubble" class="fixed pointer-events-none z-50 opacity-0 w-max max-w-[340px] transition-opacity duration-200" style="display: none;">
     <div id="speech-bubble-inner" class="relative bg-slate-950/95 backdrop-blur-xl border border-cyan-400/70 p-3.5 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.85),0_0_25px_rgba(0,242,254,0.3)] text-slate-100 flex flex-col gap-1.5 pointer-events-auto">
       <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
         <div class="flex items-center gap-1.5 min-w-0">
@@ -592,8 +600,11 @@
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
             SPEAKING
           </span>
-          <button onclick="hideSpeechBubble()" class="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 transition-colors" title="Tutup Balon Ucapan">
-            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+          <button id="speech-close-btn" type="button" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer pointer-events-auto min-w-[28px] min-h-[28px] flex items-center justify-center flex-shrink-0" title="Tutup Balon Ucapan">
+            <svg class="w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
         </div>
       </div>
@@ -1623,6 +1634,8 @@
           inner.style.boxShadow = `0 15px 40px rgba(0,0,0,0.85), 0 0 25px ${color}40`;
         }
 
+        bubble.style.display = "block";
+        bubble.style.pointerEvents = "auto";
         bubble.classList.add("active-bubble");
         bubble.classList.remove("opacity-0");
         bubble.classList.add("opacity-100");
@@ -1638,13 +1651,20 @@
       }
 
       function hideSpeechBubble() {
-        if (speechBubbleTimer) clearTimeout(speechBubbleTimer);
+        if (speechBubbleTimer) {
+          clearTimeout(speechBubbleTimer);
+          speechBubbleTimer = null;
+        }
         const bubble = document.getElementById("speech-bubble");
         if (!bubble) return;
         bubble.classList.remove("active-bubble", "opacity-100");
         bubble.classList.add("opacity-0");
+        bubble.style.display = "none";
+        bubble.style.opacity = "0";
+        bubble.style.pointerEvents = "none";
         currentSpeakerAvatarId = null;
       }
+      window.hideSpeechBubble = hideSpeechBubble;
 
       function renderMoMHistoryTabs() {
         const tabsContainer = document.getElementById("mom-history-tabs");
@@ -1960,6 +1980,26 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
           osc.start(now);
           osc.stop(now + 0.28);
         }
+      }
+
+      function playPingPongSound() {
+        initAudio();
+        if (!audioCtx) return;
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          const now = audioCtx.currentTime;
+          osc.type = "sine";
+          const freq = 680 + Math.random() * 140;
+          osc.frequency.setValueAtTime(freq, now);
+          osc.frequency.exponentialRampToValueAtTime(freq * 0.65, now + 0.045);
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+          osc.start(now);
+          osc.stop(now + 0.045);
+        } catch (e) {}
       }
 
       // =========================================================================
@@ -4565,40 +4605,46 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
         });
 
         // 3D Projected Speech Bubble Position Tracking (Instant, Clamped Tail to prevent clipping)
-        if (currentSpeakerAvatarId && avatarObjects[currentSpeakerAvatarId]) {
+        const bubble = document.getElementById("speech-bubble");
+        if (currentSpeakerAvatarId && avatarObjects[currentSpeakerAvatarId] && bubble && bubble.classList.contains("active-bubble")) {
           const spk = avatarObjects[currentSpeakerAvatarId];
-          const bubble = document.getElementById("speech-bubble");
-          if (bubble && bubble.classList.contains("active-bubble")) {
-            tempVec.copy(spk.group.position);
-            tempVec.y += 3.2;
-            tempVec.project(camera);
+          tempVec.copy(spk.group.position);
+          tempVec.y += 3.2;
+          tempVec.project(camera);
 
-            if (tempVec.z > -1 && tempVec.z < 1) {
-              const rawX = (tempVec.x * 0.5 + 0.5) * w;
-              const rawY = (-(tempVec.y * 0.5) + 0.5) * h;
+          if (tempVec.z > -1 && tempVec.z < 1) {
+            const rawX = (tempVec.x * 0.5 + 0.5) * w;
+            const rawY = (-(tempVec.y * 0.5) + 0.5) * h;
 
-              const bubbleW = bubble.offsetWidth || 280;
-              const halfW = bubbleW / 2;
-              const clampedX = Math.max(halfW + 15, Math.min(w - halfW - 15, rawX));
-              const clampedY = Math.max(100, Math.min(h - 100, rawY));
+            const bubbleW = bubble.offsetWidth || 280;
+            const halfW = bubbleW / 2;
+            const clampedX = Math.max(halfW + 15, Math.min(w - halfW - 15, rawX));
+            const clampedY = Math.max(100, Math.min(h - 100, rawY));
 
-              bubble.style.left = `${clampedX}px`;
-              bubble.style.top = `${clampedY}px`;
-              bubble.style.transform = "translate(-50%, -100%)";
-              bubble.style.opacity = "1";
+            bubble.style.left = `${clampedX}px`;
+            bubble.style.top = `${clampedY}px`;
+            bubble.style.transform = "translate(-50%, -100%)";
+            bubble.style.opacity = "1";
+            bubble.style.display = "block";
+            bubble.style.pointerEvents = "auto";
 
-              // Dynamically clamp the pointer tail within the speech bubble body
-              const tailEl = bubble.querySelector(".speech-bubble-tail");
-              if (tailEl) {
-                const offsetFromCenter = rawX - clampedX;
-                const maxTailOffset = halfW - 22;
-                const clampedOffset = Math.max(-maxTailOffset, Math.min(maxTailOffset, offsetFromCenter));
-                tailEl.style.left = `calc(50% + ${clampedOffset}px)`;
-              }
-            } else {
-              bubble.style.opacity = "0";
+            // Dynamically clamp the pointer tail within the speech bubble body
+            const tailEl = bubble.querySelector(".speech-bubble-tail");
+            if (tailEl) {
+              const offsetFromCenter = rawX - clampedX;
+              const maxTailOffset = halfW - 22;
+              const clampedOffset = Math.max(-maxTailOffset, Math.min(maxTailOffset, offsetFromCenter));
+              tailEl.style.left = `calc(50% + ${clampedOffset}px)`;
             }
+          } else {
+            bubble.style.opacity = "0";
+            bubble.style.display = "none";
+            bubble.style.pointerEvents = "none";
           }
+        } else if (bubble && !bubble.classList.contains("active-bubble")) {
+          bubble.style.opacity = "0";
+          bubble.style.display = "none";
+          bubble.style.pointerEvents = "none";
         }
       }
 
@@ -5112,18 +5158,52 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
 
         // 2. Ping Pong Ball Trajectory
         if (pingPongBall) {
-          const isPingPong = AUTONOMOUS_CYCLES[currentAutonomousIdx].key === "recreation_break";
+          const isPingPong = (avatarObjects["idris"] && avatarObjects["idris"].currentPose === "pingpong_player") || (AUTONOMOUS_CYCLES && AUTONOMOUS_CYCLES[currentAutonomousIdx] && AUTONOMOUS_CYCLES[currentAutonomousIdx].key === "recreation_break");
           if (isPingPong) {
             pingPongBall.visible = true;
-            pingPongTimer += delta * 2.8;
+            pingPongTimer += delta * 3.4;
             const progress = (Math.sin(pingPongTimer) + 1) * 0.5;
             pingPongBall.position.x = 9.0 + progress * 4.0;
-            const arcY = Math.sin(progress * Math.PI) * 0.45;
+            const arcY = Math.sin(progress * Math.PI) * 0.48;
             pingPongBall.position.y = 1.05 + arcY;
-            pingPongBall.position.z = 10.5 + Math.sin(pingPongTimer * 2) * 0.3;
+            pingPongBall.position.z = 10.5 + Math.sin(pingPongTimer * 1.8) * 0.35;
 
-            if (progress < 0.05 || progress > 0.95) {
-              if (Math.random() < 0.08) playPingPongSound();
+            // Animate ping-pong players
+            const idrisAv = avatarObjects["idris"];
+            const mikaAv = avatarObjects["mika"];
+
+            if (idrisAv && idrisAv.currentPose === "pingpong_player") {
+              if (progress < 0.25) {
+                // Idris forehand strike
+                const strikeProg = (0.25 - progress) / 0.25;
+                idrisAv.armR.rotation.set(-Math.PI * 0.42 + strikeProg * 0.85, 0.35, 0.2);
+                idrisAv.forearmR.rotation.set(0.6, 0, 0);
+                idrisAv.bodyGroup.position.y = strikeProg * 0.08;
+              } else {
+                idrisAv.armR.rotation.set(-Math.PI * 0.28, 0.2, 0.1);
+                idrisAv.forearmR.rotation.set(0.3, 0, 0);
+                idrisAv.bodyGroup.position.y = 0;
+              }
+              idrisAv.group.position.z = 10.5 + Math.sin(pingPongTimer * 1.2) * 0.35;
+            }
+
+            if (mikaAv && mikaAv.currentPose === "pingpong_player") {
+              if (progress > 0.75) {
+                // Mika backhand strike
+                const strikeProg = (progress - 0.75) / 0.25;
+                mikaAv.armR.rotation.set(-Math.PI * 0.42 - strikeProg * 0.85, -0.35, -0.2);
+                mikaAv.forearmR.rotation.set(0.6, 0, 0);
+                mikaAv.bodyGroup.position.y = strikeProg * 0.08;
+              } else {
+                mikaAv.armR.rotation.set(-Math.PI * 0.28, -0.2, -0.1);
+                mikaAv.forearmR.rotation.set(0.3, 0, 0);
+                mikaAv.bodyGroup.position.y = 0;
+              }
+              mikaAv.group.position.z = 10.5 + Math.sin(pingPongTimer * 1.2) * 0.35;
+            }
+
+            if (progress < 0.06 || progress > 0.94) {
+              if (Math.random() < 0.25) playPingPongSound();
             }
           } else {
             pingPongBall.visible = false;
@@ -5716,34 +5796,181 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
         setInterval(updateClock, 1000);
       }
 
-      // 15. SSE Stream Realtime Updates
+      // 15. SSE Stream Realtime Updates & Hierarchical Bureaucracy Execution
       // =========================================================================
+      let lastHandledEventId = null;
+      let isBureaucracyRunning = false;
+
+      function executeBureaucracyCascade(evt) {
+        if (!evt || !evt.dialogues || evt.dialogues.length === 0) return;
+        isBureaucracyRunning = true;
+
+        const dialogues = evt.dialogues;
+        const targetId = evt.assigned_agent_id || "idris";
+
+        const targetStandCoords = {
+          idris:  { x: -12.2, z: 0.5, rotY: Math.PI, room: "room-dev" },
+          mika:   { x: -8.2,  z: 0.5, rotY: Math.PI, room: "room-dev" },
+          kael:   { x: -12.2, z: 5.5, rotY: Math.PI, room: "room-atelier" },
+          nara:   { x: -8.2,  z: 5.5, rotY: Math.PI, room: "room-atelier" },
+          senna:  { x: -3.5,  z: 5.5, rotY: Math.PI, room: "room-creative" },
+          raziel: { x: -3.0,  z: -0.2, rotY: Math.PI, room: "room-cto" },
+          viktor: { x: 10.5,  z: 6.8, rotY: 0, room: "room-server" },
+          jovan:  { x: 14.5,  z: 6.8, rotY: 0, room: "room-server" },
+          elara:  { x: -4.5,  z: -8.2, rotY: Math.PI, room: "room-pa" }
+        };
+
+        const targetCoord = targetStandCoords[targetId] || { x: -10.0, z: 1.0, rotY: Math.PI, room: "room-dev" };
+
+        playUiChime("alert");
+        showToast(`📱 PERINTAH TELEGRAM CEO DITERIMA: "${evt.command}"`, "info");
+
+        // Step 1: Daniandra speaks to Daffa in CEO Suite
+        const d0 = dialogues[0];
+        if (d0) {
+          showSpeechBubble(d0.speaker_id, d0.speaker_name, d0.role, d0.emoji, d0.color, d0.text, 5000);
+        }
+
+        // Step 2: Daffa stands up and walks towards target agent room
+        setTimeout(() => {
+          moveAgentTo("daffa", -9.2, -9.0, 0.0, 0, "standing", "room-ceo", false);
+          setTimeout(() => {
+            moveAgentTo("daffa", targetCoord.x, targetCoord.z, 0.0, targetCoord.rotY, "standing", targetCoord.room, false);
+          }, 500);
+        }, 3500);
+
+        // Step 3: Daffa arrives in front of target agent and delegates task
+        setTimeout(() => {
+          const d1 = dialogues[1];
+          if (d1) {
+            showSpeechBubble(d1.speaker_id, d1.speaker_name, d1.role, d1.emoji, d1.color, d1.text, 5500);
+          }
+        }, 9500);
+
+        // Step 4: Target agent responds with technical plan and starts working
+        setTimeout(() => {
+          const d2 = dialogues[2];
+          if (d2) {
+            showSpeechBubble(d2.speaker_id, d2.speaker_name, d2.role, d2.emoji, d2.color, d2.text, 6500);
+          }
+          const targetAgent = AGENTS.find(a => a.id === targetId);
+          if (targetAgent) {
+            targetAgent.task = evt.assigned_task;
+            targetAgent.status = "WORKING";
+            updateAgentBadge(targetAgent, "seated_desk");
+          }
+        }, 16000);
+
+        // Step 5: Daffa walks back towards CEO Suite
+        setTimeout(() => {
+          moveAgentTo("daffa", -11.0, -8.6, 0.0, -Math.PI * 0.4, "standing", "room-ceo", false);
+        }, 23500);
+
+        // Step 6: Daffa reports to Daniandra in CEO Suite
+        setTimeout(() => {
+          const d3 = dialogues[3];
+          if (d3) {
+            showSpeechBubble(d3.speaker_id, d3.speaker_name, d3.role, d3.emoji, d3.color, d3.text, 5500);
+          }
+        }, 29500);
+
+        // Step 7: Daniandra gives final disposition
+        setTimeout(() => {
+          const d4 = dialogues[4];
+          if (d4) {
+            showSpeechBubble(d4.speaker_id, d4.speaker_name, d4.role, d4.emoji, d4.color, d4.text, 5000);
+          }
+        }, 36000);
+
+        // Step 8: Daffa returns to desk and sits down
+        setTimeout(() => {
+          moveAgentTo("daffa", -9.2, -9.0, 0.0, 0, "seated_desk", "room-ceo", false);
+          isBureaucracyRunning = false;
+
+          // If the task requires high-level meeting in War Room:
+          if (evt.requires_war_room) {
+            setTimeout(() => {
+              showToast("🏛️ Daffa mengundang perwakilan tim ke War Room untuk presentasi strategi.", "info");
+              moveAgentTo("daffa", -1.0, -4.5, 0.0, Math.PI, "standing", "room-war", false);
+              moveAgentTo("kael", -2.5, -4.5, 0.0, Math.PI / 2, "seated_desk", "room-war", false);
+              moveAgentTo("nara", 0.5, -4.5, 0.0, -Math.PI / 2, "seated_desk", "room-war", false);
+              showSpeechBubble("daffa", "Daffa (CEO Office)", "CEO Office", "🎯", "#38BDF8", "Pak Dani, tim telah merangkum analisis strategi di War Room sesuai instruksi Telegram.", 6000);
+            }, 3000);
+          }
+        }, 42000);
+      }
+
+      function executePaCronReminder(evt) {
+        if (!evt || !evt.dialogues || evt.dialogues.length === 0) return;
+        playUiChime("speech");
+        showToast(`⏰ CRON / REMINDER EKSEKUTIF: ${evt.title}`, "info");
+
+        // Elara stands up and walks from PA station to CEO Suite
+        moveAgentTo("elara", -4.5, -9.5, 0.0, 0, "standing", "room-pa", false);
+        setTimeout(() => {
+          moveAgentTo("elara", -11.0, -8.6, 0.0, -Math.PI * 0.4, "standing", "room-ceo", false);
+        }, 500);
+
+        // Elara arrives and verbally speaks reminder
+        setTimeout(() => {
+          const d0 = evt.dialogues[0];
+          if (d0) {
+            showSpeechBubble(d0.speaker_id, d0.speaker_name, d0.role, d0.emoji, d0.color, d0.text, 6500);
+          }
+        }, 4500);
+
+        // Daniandra acknowledges
+        setTimeout(() => {
+          const d1 = evt.dialogues[1];
+          if (d1) {
+            showSpeechBubble(d1.speaker_id, d1.speaker_name, d1.role, d1.emoji, d1.color, d1.text, 5000);
+          }
+        }, 11500);
+
+        // Elara walks back to PA station
+        setTimeout(() => {
+          moveAgentTo("elara", -4.5, -9.5, 0.0, 0, "seated_desk", "room-pa", false);
+        }, 17000);
+      }
+
       function initSSEStream() {
         try {
           const es = new EventSource("/api/v1/stream");
           es.onmessage = (e) => {
             try {
               const data = JSON.parse(e.data);
-              if (data && data.agents) {
-                data.agents.forEach(serverAgent => {
-                  const localAgent = AGENTS.find(a => a.id === serverAgent.id);
-                  if (localAgent) {
-                    if (serverAgent.current_task) localAgent.task = serverAgent.current_task;
-                    if (serverAgent.tool) localAgent.tool = serverAgent.tool;
-                    if (serverAgent.cpu_usage !== undefined) localAgent.cpu = serverAgent.cpu_usage;
-                    if (serverAgent.memory_mb !== undefined) localAgent.ram = (serverAgent.memory_mb / 1024).toFixed(1);
+              if (data) {
+                // Check for real-time active bureaucratic or PA events
+                if (data.active_event && data.active_event.event_id && data.active_event.event_id !== lastHandledEventId) {
+                  lastHandledEventId = data.active_event.event_id;
+                  if (data.active_event.type === "CEO_BUREAUCRACY_CASCADE") {
+                    executeBureaucracyCascade(data.active_event);
+                  } else if (data.active_event.type === "PA_CRON_REMINDER") {
+                    executePaCronReminder(data.active_event);
                   }
-                });
-
-                const card = document.getElementById("live-inspector-card");
-                if (card && card.classList.contains("translate-y-0")) {
-                  openLiveInspector(selectedAgentId);
                 }
 
-                const roster = document.getElementById("roster-slideover");
-                if (roster && !roster.classList.contains("translate-x-full")) {
-                  const input = document.getElementById("roster-search-input");
-                  renderRosterCards(input ? input.value : "");
+                if (data.agents) {
+                  data.agents.forEach(serverAgent => {
+                    const localAgent = AGENTS.find(a => a.id === serverAgent.id);
+                    if (localAgent) {
+                      if (serverAgent.current_task) localAgent.task = serverAgent.current_task;
+                      if (serverAgent.tool) localAgent.tool = serverAgent.tool;
+                      if (serverAgent.cpu_usage !== undefined) localAgent.cpu = serverAgent.cpu_usage;
+                      if (serverAgent.memory_mb !== undefined) localAgent.ram = (serverAgent.memory_mb / 1024).toFixed(1);
+                    }
+                  });
+
+                  const card = document.getElementById("live-inspector-card");
+                  if (card && card.classList.contains("translate-y-0")) {
+                    openLiveInspector(selectedAgentId);
+                  }
+
+                  const roster = document.getElementById("roster-slideover");
+                  if (roster && !roster.classList.contains("translate-x-full")) {
+                    const input = document.getElementById("roster-search-input");
+                    renderRosterCards(input ? input.value : "");
+                  }
                 }
               }
             } catch (err) {
@@ -5953,6 +6180,14 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
           } else {
             showToast("Aksi kolaborasi tim dieksekusi secara otonom.");
           }
+        },
+
+        hideSpeechBubble: function() {
+          hideSpeechBubble();
+        },
+
+        showSpeechBubble: function(speakerId, speakerName, role, emoji, color, text, durationMs) {
+          showSpeechBubble(speakerId, speakerName, role, emoji, color, text, durationMs);
         }
       };
 
@@ -5961,6 +6196,21 @@ ${m.dialogues.map(d => `- **${d.speakerName}** (${d.timeStr}): "${d.text}"`).joi
         if (localStorage.getItem("yudiaz_auth_pin") === "2609") {
           const pinModal = document.getElementById("pin-gate-modal");
           if (pinModal) pinModal.classList.add("opacity-0", "pointer-events-none");
+        }
+
+        const closeBtn = document.getElementById("speech-close-btn");
+        if (closeBtn) {
+          const doClose = (e) => {
+            if (e) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+            hideSpeechBubble();
+          };
+          closeBtn.onclick = doClose;
+          closeBtn.addEventListener("click", doClose);
+          closeBtn.addEventListener("pointerdown", doClose);
+          closeBtn.addEventListener("touchstart", doClose, { passive: false });
         }
 
         initThreeScene();

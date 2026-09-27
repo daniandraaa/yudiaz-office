@@ -242,6 +242,41 @@ class OfficeStateResponse(BaseModel):
         default_factory=list,
         description="Historical archive of past and current meeting minutes",
     )
+    active_event: Optional[dict[str, Any]] = Field(
+        default=None,
+        description="Active real-time bureaucratic or PA event broadcast for 3D visualization",
+    )
+
+
+class DialogueTurn(BaseModel):
+    """A single dialogue utterance in the hierarchical command chain."""
+
+    speaker_id: str = Field(..., description="ID of speaker agent (e.g. dani, daffa, idris)")
+    speaker_name: str = Field(..., description="Full display name of speaker")
+    role: str = Field(..., description="Role / title")
+    emoji: str = Field(..., description="Avatar emoji badge")
+    color: str = Field(..., description="Accent color hex")
+    text: str = Field(..., description="Dialogue utterance")
+    target_id: Optional[str] = Field(default=None, description="Addressee agent ID if any")
+
+
+class PANotificationRequest(BaseModel):
+    """Cron or reminder event notification dispatched by PA Elara Sinclair."""
+
+    title: str = Field(..., description="Cron job or reminder title")
+    message: str = Field(..., description="Details of scheduled task or reminder")
+    source: str = Field(default="cron", description="Source ('cron', 'schedule', 'system')")
+    telegram_sent: bool = Field(default=True, description="Whether Telegram alert was sent")
+
+
+class PANotificationResponse(BaseModel):
+    """PA notification dispatch status."""
+
+    status: str = Field(default="ok")
+    title: str = Field(...)
+    message: str = Field(...)
+    dialogues: list[DialogueTurn] = Field(default_factory=list)
+    timestamp: str = Field(...)
 
 
 class AuthVerifyRequest(BaseModel):
@@ -279,3 +314,23 @@ class OfficeActionRequest(BaseModel):
         description="Office action ('gather_war_room', 'resume_deep_work', 'trigger_sleep_cycle', 'trigger_recreation')",
     )
     details: Optional[str] = Field(default=None, description="Optional command context")
+
+
+class CEOCommandRequest(BaseModel):
+    """Executive instruction from Founder & CEO Daniandra."""
+
+    command: str = Field(..., description="Executive directive from CEO")
+    pin: Optional[str] = Field(default=None, description="Optional authorization PIN")
+
+
+class CEOCommandResponse(BaseModel):
+    """Response containing AI-reasoned hierarchical execution plan and dialogues."""
+
+    status: str = Field(default="ok")
+    command: str = Field(..., description="Original CEO command")
+    assigned_agent_id: str = Field(..., description="Target agent ID")
+    assigned_agent_name: str = Field(..., description="Target agent name")
+    assigned_task: str = Field(..., description="Generated specific task")
+    thought: str = Field(..., description="Internal engineering/planning thought")
+    dialogues: list[DialogueTurn] = Field(default_factory=list, description="Ordered dialogue cascade")
+    timestamp: str = Field(..., description="Execution timestamp")
