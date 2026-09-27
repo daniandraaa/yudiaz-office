@@ -176,8 +176,11 @@
 
         /* 3D Pop-up Speech Bubble */
     #speech-bubble {
-      will-change: transform, opacity;
+      position: fixed;
+      will-change: left, top, opacity;
+      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       filter: drop-shadow(0 15px 35px rgba(0, 0, 0, 0.85));
+      pointer-events: none;
     }
     .speech-bubble-tail {
       position: absolute;
@@ -188,7 +191,25 @@
       height: 0;
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
-      border-top: 8px solid rgba(0, 242, 254, 0.85);
+      border-top: 8px solid rgba(0, 242, 254, 0.9);
+      transition: left 0.1s ease-out;
+    }
+
+    /* Floating Projected 3D Live Activity HUD Cards */
+    .agent-hud-card {
+      position: fixed;
+      will-change: left, top, opacity;
+      transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: 50% 100%;
+    }
+    .hud-expanded {
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      transition: transform 0.18s ease, border-color 0.18s ease;
+    }
+    .hud-expanded:hover {
+      border-color: rgba(0, 242, 254, 0.7);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.9), 0 0 25px rgba(0, 242, 254, 0.25);
     }
 
     /* Minutes of Meeting Slide-Over */
@@ -249,13 +270,21 @@
       </div>
     </div>
 
-    <!-- Center Status Indicator -->
-    <div class="hidden md:flex items-center gap-2 pointer-events-auto bg-slate-950/80 backdrop-blur-xl border border-slate-800/80 px-4 py-2 rounded-2xl shadow-xl text-xs font-mono">
-      <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-      <span class="text-slate-300">AGENTS SYNCHRONIZED:</span>
-      <span class="text-emerald-400 font-bold" id="header-agents-count">11/11 ONLINE</span>
-      <span class="text-slate-600">|</span>
-      <span class="text-cyan-400 font-semibold" id="header-mode-text">DEEP WORK</span>
+    <!-- Center Status Indicator & Executive Activity HUD Toggle -->
+    <div class="hidden lg:flex items-center gap-3">
+      <div class="flex items-center gap-2 pointer-events-auto bg-slate-950/80 backdrop-blur-xl border border-slate-800/80 px-4 py-2 rounded-2xl shadow-xl text-xs font-mono">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span class="text-slate-300">AGENTS:</span>
+        <span class="text-emerald-400 font-bold" id="header-agents-count">11/11 ONLINE</span>
+        <span class="text-slate-600">|</span>
+        <span class="text-cyan-400 font-semibold" id="header-mode-text">DEEP WORK</span>
+      </div>
+
+      <!-- Executive Activity HUD Toggle (Active by default) -->
+      <button id="btn-toggle-hud" onclick="window.YudiazHQ.toggleActivityHUD()" class="pointer-events-auto flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-cyan-950/80 border border-cyan-500/50 text-cyan-300 text-xs font-mono font-bold hover:bg-cyan-900/80 transition-all shadow-[0_0_20px_rgba(0,242,254,0.3)] hover:scale-105 active:scale-95" title="Mode Pantau Aktivitas Karyawan (Live HUD)">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="hud-toggle-dot"></span>
+        <span id="hud-toggle-text">👁️ Mode Pantau Aktivitas (Live HUD)</span>
+      </button>
     </div>
 
     <!-- Right Controls: Audio + Camera + Clock -->
@@ -332,6 +361,16 @@
       <!-- Divider -->
       <div class="w-px h-6 bg-slate-700/80 mx-1"></div>
 
+      <!-- Peer Interaction (Collab 3D) Button -->
+      <button id="btn-peer-collab" onclick="window.YudiazHQ.togglePeerCollabMenu()" class="flex items-center gap-2 px-3.5 py-2 rounded-full bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-500/40 shadow-[0_0_15px_rgba(0,242,254,0.2)] transition-all transform hover:scale-105 active:scale-95 group" title="Picu Animasi Interaksi 3D Antar Karyawan">
+        <span class="text-sm">🤝</span>
+        <span class="text-xs font-mono font-bold tracking-wide">Interaksi Tim</span>
+        <span class="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">5 AKSI</span>
+      </button>
+
+      <!-- Divider -->
+      <div class="w-px h-6 bg-slate-700/80 mx-1"></div>
+
       <!-- Camera View Controls -->
       <div class="flex items-center gap-1">
         <button onclick="window.YudiazHQ.setCameraPreset('iso')" class="p-2 rounded-full text-slate-400 hover:text-cyan-400 hover:bg-slate-800/80 transition-colors" title="Isometric Angle">
@@ -356,8 +395,121 @@
 
   </footer>
 
-  <!-- 3D PROJECTED SPEECH BUBBLE (War Room Dialogues & Agent Thoughts) -->
-  <div id="speech-bubble" class="fixed pointer-events-none z-40 opacity-0 scale-90 transition-all duration-300 transform -translate-x-1/2 -translate-y-full w-max max-w-[340px]">
+  <!-- PEER COLLAB INTERACTION MENU MODAL/POPUP -->
+  <div id="peer-collab-menu" class="fixed bottom-24 left-1/2 transform -translate-x-1/2 z-40 hidden bg-slate-950/95 backdrop-blur-2xl border border-cyan-500/50 rounded-2xl p-4 shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_25px_rgba(0,242,254,0.25)] max-w-md w-full pointer-events-auto select-none">
+    <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+      <div class="flex items-center gap-2">
+        <span class="text-lg">🤝</span>
+        <h4 class="font-display font-bold text-xs text-white uppercase tracking-wider">Animasi Interaksi 3D Antar Karyawan</h4>
+      </div>
+      <button onclick="window.YudiazHQ.togglePeerCollabMenu()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+    <div class="grid grid-cols-1 gap-2 text-xs font-mono">
+      <button onclick="window.YudiazHQ.triggerPeerInteraction('idris_mika_dev')" class="p-2.5 rounded-xl bg-slate-900/80 hover:bg-cyan-950/60 border border-slate-800 hover:border-cyan-500/50 flex items-center justify-between transition-all group">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">🎧⚡</span>
+          <div class="text-left font-sans">
+            <div class="font-bold text-slate-100 group-hover:text-cyan-300 text-xs">Idris & Mika (Dev Core)</div>
+            <div class="text-[10px] text-slate-400">Putar kursi saling hadap, gestur tangan & dialog kode SSE 60 FPS</div>
+          </div>
+        </div>
+        <span class="text-cyan-400 text-[10px]">MULAI ➔</span>
+      </button>
+      <button onclick="window.YudiazHQ.triggerPeerInteraction('kael_nara_research')" class="p-2.5 rounded-xl bg-slate-900/80 hover:bg-cyan-950/60 border border-slate-800 hover:border-cyan-500/50 flex items-center justify-between transition-all group">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">📐📚</span>
+          <div class="text-left font-sans">
+            <div class="font-bold text-slate-100 group-hover:text-cyan-300 text-xs">Kael & Nara (Research Atelier)</div>
+            <div class="text-[10px] text-slate-400">Kumpul di meja blueprint, bedah 28 paper arXiv & naskah LaTeX Tel-U</div>
+          </div>
+        </div>
+        <span class="text-cyan-400 text-[10px]">MULAI ➔</span>
+      </button>
+      <button onclick="window.YudiazHQ.triggerPeerInteraction('daffa_elara_briefing')" class="p-2.5 rounded-xl bg-slate-900/80 hover:bg-cyan-950/60 border border-slate-800 hover:border-cyan-500/50 flex items-center justify-between transition-all group">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">🎯📋</span>
+          <div class="text-left font-sans">
+            <div class="font-bold text-slate-100 group-hover:text-cyan-300 text-xs">Daffa & Elara (CEO Office)</div>
+            <div class="text-[10px] text-slate-400">Konsultasi agenda eksekutif tablet & persiapan bahan War Room</div>
+          </div>
+        </div>
+        <span class="text-cyan-400 text-[10px]">MULAI ➔</span>
+      </button>
+      <button onclick="window.YudiazHQ.triggerPeerInteraction('viktor_jovan_coffee')" class="p-2.5 rounded-xl bg-slate-900/80 hover:bg-cyan-950/60 border border-slate-800 hover:border-cyan-500/50 flex items-center justify-between transition-all group">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">🛡️📡</span>
+          <div class="text-left font-sans">
+            <div class="font-bold text-slate-100 group-hover:text-cyan-300 text-xs">Viktor & Jovan (Lounge Pantry)</div>
+            <div class="text-[10px] text-slate-400">Ngopi santai di mesin kopi, animasi minum cangkir & obrolan radar intel</div>
+          </div>
+        </div>
+        <span class="text-cyan-400 text-[10px]">MULAI ➔</span>
+      </button>
+      <button onclick="window.YudiazHQ.triggerPeerInteraction('pingpong_showdown')" class="p-2.5 rounded-xl bg-slate-900/80 hover:bg-cyan-950/60 border border-slate-800 hover:border-cyan-500/50 flex items-center justify-between transition-all group">
+        <div class="flex items-center gap-2.5">
+          <span class="text-base">🏓🔥</span>
+          <div class="text-left font-sans">
+            <div class="font-bold text-slate-100 group-hover:text-cyan-300 text-xs">Idris & Mika (Ping-Pong Match)</div>
+            <div class="text-[10px] text-slate-400">Ayunan bet sinkron, pantulan bola, suara rally & skor 3D live</div>
+          </div>
+        </div>
+        <span class="text-cyan-400 text-[10px]">MULAI ➔</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- INTERACTIVE LIVE INSPECTOR CARD (Anchored Next to Agent, No Screen Blackout!) -->
+  <div id="live-inspector-card" class="fixed bottom-24 right-8 z-40 hidden max-w-sm w-full bg-slate-950/95 backdrop-blur-2xl border border-cyan-500/50 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9),0_0_30px_rgba(0,242,254,0.25)] p-4 flex flex-col gap-3 text-slate-100 pointer-events-auto select-none">
+    <div class="flex items-start justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-400/40 flex items-center justify-center text-xl" id="insp-emoji">👤</div>
+        <div>
+          <h4 class="font-display font-bold text-sm text-white" id="insp-name">Agent Name</h4>
+          <span class="text-[10px] font-mono text-cyan-300" id="insp-role">Role</span>
+        </div>
+      </div>
+      <button onclick="window.YudiazHQ.closeLiveInspector()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+    </div>
+
+    <!-- Task & Details -->
+    <div class="bg-slate-900/70 border border-slate-800 rounded-xl p-2.5 flex flex-col gap-1.5 text-xs">
+      <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+        <span>AKTIVITAS SAAT INI</span>
+        <span class="text-emerald-400 font-bold" id="insp-status">● SEDANG BEKERJA</span>
+      </div>
+      <p class="text-slate-200 text-xs font-sans leading-relaxed" id="insp-task">Sedang menganalisis kode...</p>
+      <div class="flex items-center justify-between text-[10.5px] font-mono text-slate-400 pt-1 border-t border-slate-800/80">
+        <span>Tool: <strong class="text-slate-200" id="insp-tool">VS Code</strong></span>
+        <span>Resource: <strong class="text-cyan-300" id="insp-res">14% CPU | 380MB</strong></span>
+      </div>
+    </div>
+
+    <!-- Live Thought Log -->
+    <div class="bg-slate-900/40 border border-slate-800/80 rounded-xl p-2 text-[11px] font-mono text-slate-300">
+      <span class="text-[9.5px] text-slate-500 uppercase block mb-0.5">THOUGHT STREAM:</span>
+      <p class="italic text-slate-300" id="insp-thought">"Memverifikasi konsistensi state SSE stream..."</p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="grid grid-cols-3 gap-2 pt-1">
+      <button onclick="window.YudiazHQ.triggerInspectorSpeech()" class="px-2.5 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 text-xs font-semibold flex items-center justify-center gap-1 transition-all">
+        <span>🔊 Dengar</span>
+      </button>
+      <button onclick="window.YudiazHQ.focusInspectorAgent()" class="px-2.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1 transition-all">
+        <span>🎯 Fokus</span>
+      </button>
+      <button onclick="window.YudiazHQ.openInspectorDossier()" class="px-2.5 py-2 rounded-xl bg-purple-950/80 hover:bg-purple-900 border border-purple-500/40 text-purple-300 text-xs font-semibold flex items-center justify-center gap-1 transition-all">
+        <span>📋 Profil</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3D PROJECTED SPEECH BUBBLE (Instant Tracking, Clamped Tail to prevent clipping) -->
+  <div id="speech-bubble" class="fixed pointer-events-none z-50 opacity-0 w-max max-w-[340px]">
     <div id="speech-bubble-inner" class="relative bg-slate-950/95 backdrop-blur-xl border border-cyan-400/70 p-3.5 rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.85),0_0_25px_rgba(0,242,254,0.3)] text-slate-100 flex flex-col gap-1.5">
       <div class="flex items-center justify-between gap-2 border-b border-slate-800 pb-1.5">
         <div class="flex items-center gap-1.5">
@@ -408,46 +560,60 @@
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
           <span class="block text-[10px] font-mono text-slate-400 uppercase">TANGGAL & WAKTU</span>
-          <span class="text-xs font-bold text-white" id="mom-timestamp">Sabtu, 26 Sept 2026 • 15:30 WIB</span>
+          <span class="text-xs font-bold text-white" id="mom-timestamp">Minggu, 27 Sept 2026 • 15:30 WIB</span>
         </div>
         <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
           <span class="block text-[10px] font-mono text-slate-400 uppercase">PEMIMPIN RAPAT</span>
-          <span class="text-xs font-bold text-cyan-400">CEO Daniandra / Daffa</span>
+          <span class="text-xs font-bold text-cyan-400">Daffa (CEO Office)</span>
         </div>
         <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <span class="block text-[10px] font-mono text-slate-400 uppercase">NOTULIS</span>
-          <span class="text-xs font-bold text-purple-400">Elara Sinclair (PA)</span>
+          <span class="block text-[10px] font-mono text-slate-400 uppercase">LAPORAN DISERAHKAN KE</span>
+          <span class="text-xs font-bold text-emerald-400">Daniandra (CEO)</span>
         </div>
         <div class="p-3 rounded-2xl bg-slate-900/60 border border-slate-800">
-          <span class="block text-[10px] font-mono text-slate-400 uppercase">KEHADIRAN</span>
-          <span class="text-xs font-bold text-emerald-400">11 / 11 Personel (100%)</span>
+          <span class="block text-[10px] font-mono text-slate-400 uppercase">NOTULIS & STATUS</span>
+          <span class="text-xs font-bold text-purple-400">Elara (PA) • APPROVED</span>
         </div>
       </div>
 
-      <!-- Agenda Ringkas -->
-      <div class="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-1">
-        <h3 class="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-          <span>🎯</span> Agenda Utama Rapat
-        </h3>
-        <p class="text-xs text-slate-300 leading-relaxed">
-          1. Sinkronisasi arsitektur skripsi Telkom University & integrasi literatur arXiv Bab 3.<br>
-          2. Evaluasi performa 3D Virtual HQ diorama (target rock-solid 60 FPS di WebGL).<br>
-          3. Validasi keamanan Sentinel 4-layer defense, UFW rate-limiting, dan PIN gate 2609.<br>
-          4. Finalisasi sprint timeline dan penetapan PIC tindak lanjut.
+      <!-- Executive Handover & Report Card -->
+      <div class="p-4 rounded-2xl bg-emerald-950/30 border border-emerald-500/40 space-y-1.5 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-mono font-bold text-emerald-300 uppercase tracking-wider flex items-center gap-1.5">
+            <span>👑</span> Status Laporan Eksekutif CEO Office
+          </span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">DISAHKAN (APPROVED)</span>
+        </div>
+        <p class="text-xs text-slate-200 leading-relaxed">
+          Rapat War Room dipimpin langsung oleh <strong>Daffa (CEO Office)</strong> bersama 9 kepala divisi operasional tanpa kehadiran CEO di War Room. Setelah notulensi dan analisis bisnis rampung, Daffa menuju ke <strong>CEO Executive Suite</strong> untuk menyerahkan Executive Briefing & Rekomendasi Bisnis kepada <strong>Daniandra Prayudisty (Founder & CEO)</strong>. CEO telah memberikan persetujuan penuh <em>(Executive Approval Granted)</em> untuk eksekusi sprint MVP.
         </p>
       </div>
 
-      <!-- Daftar Kehadiran Personel (11/11) -->
+      <!-- Agenda Ringkas -->
+      <div class="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-1.5">
+        <h3 class="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+          <span>🎯</span> Agenda Utama Rapat & Rekomendasi Bisnis
+        </h3>
+        <p class="text-xs text-slate-300 leading-relaxed">
+          1. <strong>Analisis Peluang Bisnis Micro-SaaS AI Automation via Dynamic QRIS & API 9Router</strong>: Menjawab kendala 480+ merchant UMKM dan kampus yang membutuhkan rekonsiliasi instan mutasi perbankan & settlement QRIS berbiaya terjangkau.<br>
+          2. <strong>Integrasi Riset Skripsi Telkom University Bab 3 & 4</strong>: Validasi empiris model arsitektur event-driven autonomous multi-agent systems pada naskah LaTeX Tectonic.<br>
+          3. <strong>Audit Keamanan Transaksi Finansial</strong>: Enkripsi TLS 1.3, validasi signature HMAC-SHA256 pada payload webhook payment, dan kesiapan PCI-DSS.<br>
+          4. <strong>Protokol Pelaporan Eksekutif</strong>: Penyerahan rekomendasi bisnis dan notulensi resmi dari CEO Office ke meja CEO untuk approval final.
+        </p>
+      </div>
+
+      <!-- Daftar Kehadiran Personel (10 di War Room + 1 di CEO Suite) -->
       <div>
-        <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-          <span>👥</span> Personel Hadir (11/11)
+        <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+          <span class="flex items-center gap-1.5"><span>👥</span> Kehadiran & Partisipasi Sesi (11 Personel)</span>
+          <span class="text-[10px] text-emerald-400 font-mono">10 War Room • 1 CEO Suite</span>
         </h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
-            <span>👑</span> <span class="font-medium text-slate-200">Daniandra (CEO)</span>
+          <div class="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center gap-2 text-xs">
+            <span>🎯</span> <span class="font-bold text-emerald-300">Daffa (CEO Office — Chair)</span>
           </div>
-          <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
-            <span>🎯</span> <span class="font-medium text-slate-200">Daffa (CEO Office)</span>
+          <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center gap-2 text-xs">
+            <span>👑</span> <span class="font-medium text-slate-300">Daniandra (CEO — Recipient)</span>
           </div>
           <div class="p-2 rounded-xl bg-slate-900/70 border border-slate-800 flex items-center gap-2 text-xs">
             <span>🧐</span> <span class="font-medium text-slate-200">Raziel Hendrix (CTO)</span>
@@ -482,20 +648,20 @@
       <!-- Keputusan Strategis Rapat -->
       <div class="p-4 rounded-2xl bg-emerald-950/20 border border-emerald-500/30 space-y-2">
         <h3 class="text-xs font-mono font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-          <span>✨</span> Keputusan Strategis yang Disahkan
+          <span>✨</span> Keputusan Strategis yang Disetujui CEO
         </h3>
         <ul class="text-xs text-slate-200 space-y-1.5 list-disc list-inside">
-          <li><strong>Pengesahan Bab 3 Arsitektur Skripsi Tel-U</strong>: Mengadopsi 18 paper arXiv terkini tentang distributed multi-agent systems.</li>
-          <li><strong>Standarisasi 60 FPS WebGL Engine</strong>: Tampilan diorama 3D dan sistem badge proyeksi Three.js diverifikasi tanpa penurunan frame rate.</li>
-          <li><strong>Hardening Keamanan Sentinel</strong>: 26 skenario automated test lulus 100%, sistem PIN gate 2609 aktif, dan port 9449 terlindungi UFW.</li>
-          <li><strong>Konektivitas Low-Latency</strong>: SSE streaming melalui Caddy reverse proxy TLS 1.3 stabil dengan latensi &lt; 10ms.</li>
+          <li><strong>Pengembangan MVP Micro-SaaS AI Automation QRIS</strong>: Integrasi API 9Router untuk memangkas biaya inferensi AI multi-model hingga 60% dan webhook payment asinkron.</li>
+          <li><strong>Validasi Skripsi Telkom University Bab 3 & 4</strong>: Arsitektur event-driven multi-agent Virtual HQ dan QRIS auto-reconciliation diresmikan sebagai novelty akademik utama.</li>
+          <li><strong>Keamanan Zero Trust & HMAC-SHA256</strong>: Validasi kriptografis pada setiap webhook QRIS dan rate-limiting ketat untuk proteksi dana merchant.</li>
+          <li><strong>Protokol Otonom CEO Office</strong>: Delegasi kepemimpinan rapat operasional kepada Daffa, ditindaklanjuti pelaporan eksekutif berkala kepada CEO Daniandra.</li>
         </ul>
       </div>
 
       <!-- Transkrip Dialog Rapat (Live Dialogue Transcript) -->
       <div>
         <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
-          <span class="flex items-center gap-1.5"><span>💬</span> Transkrip Dialog Rapat</span>
+          <span class="flex items-center gap-1.5"><span>💬</span> Transkrip Dialog Rapat & Laporan Eksekutif</span>
           <span class="text-[10px] text-cyan-400 font-mono">Tersinkronisasi Realtime</span>
         </h3>
         <div id="mom-transcript-list" class="space-y-2.5 font-sans">
@@ -506,7 +672,7 @@
       <!-- Tabel Action Items & PIC -->
       <div>
         <h3 class="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-          <span>📌</span> Tabel Action Items & PIC (Tindak Lanjut)
+          <span>📌</span> Tabel Action Items & PIC (Micro-SaaS QRIS Sprint)
         </h3>
         <div class="overflow-x-auto rounded-2xl border border-slate-800">
           <table class="w-full text-left text-xs font-mono">
@@ -521,37 +687,43 @@
             <tbody class="divide-y divide-slate-800/60 text-slate-300">
               <tr>
                 <td class="p-3 font-bold text-purple-400">Raziel Hendrix (CTO)</td>
-                <td class="p-3">Monitoring kestabilan SSE cluster port 9449 & Caddy TLS 1.3</td>
-                <td class="p-3 text-slate-400">H+1 (Besok)</td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px]">IN PROGRESS</span></td>
-              </tr>
-              <tr>
-                <td class="p-3 font-bold text-cyan-400">Kael Ashford & Nara</td>
-                <td class="p-3">Finalisasi kompilasi Bab 3 skripsi LaTeX dengan sitasi 18 paper arXiv</td>
+                <td class="p-3">Finalisasi arsitektur microservices dan pipeline webhook QRIS AI Automation</td>
                 <td class="p-3 text-slate-400">H+3</td>
                 <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px]">IN PROGRESS</span></td>
               </tr>
               <tr>
-                <td class="p-3 font-bold text-emerald-400">Idris & Mika Stellan</td>
-                <td class="p-3">Fine-tuning rendering 60 FPS Three.js & asset texture loader</td>
+                <td class="p-3 font-bold text-emerald-400">Idris & Kael Ashford</td>
+                <td class="p-3">Implementasi async worker backend FastAPI & client integrasi 9Router</td>
                 <td class="p-3 text-slate-400">H+2</td>
                 <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px]">IN PROGRESS</span></td>
               </tr>
               <tr>
+                <td class="p-3 font-bold text-orange-400">Mika Stellan & Senna</td>
+                <td class="p-3">Prototipe merchant portal cyber-luxury, live settlement ticker & Figma onboarding</td>
+                <td class="p-3 text-slate-400">H+2</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px]">IN PROGRESS</span></td>
+              </tr>
+              <tr>
+                <td class="p-3 font-bold text-cyan-400">Nara & Kael Ashford</td>
+                <td class="p-3">Penyusunan draf Bab 3 & 4 skripsi Tel-U berbasis benchmark QRIS di LaTeX Tectonic</td>
+                <td class="p-3 text-slate-400">H+3</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-500/40 text-cyan-300 text-[10px]">IN PROGRESS</span></td>
+              </tr>
+              <tr>
                 <td class="p-3 font-bold text-red-400">Viktor Moreau (QA)</td>
-                <td class="p-3">Pertahankan 100% pass rate 26 automated tests & security audit</td>
-                <td class="p-3 text-slate-400">Ongoing</td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 text-[10px]">PASSED (26/26)</span></td>
+                <td class="p-3">Penetrasi testing dan validasi HMAC-SHA256 signature webhook 100% pass</td>
+                <td class="p-3 text-slate-400">H+1</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 text-[10px]">PASSED (100%)</span></td>
               </tr>
               <tr>
                 <td class="p-3 font-bold text-sky-400">Daffa (CEO Office)</td>
-                <td class="p-3">Koordinasi timeline sprint dan review lintas divisi R&D</td>
-                <td class="p-3 text-slate-400">Mingguan</td>
-                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-amber-950 border border-amber-500/40 text-amber-300 text-[10px]">SCHEDULED</span></td>
+                <td class="p-3">Penyerahan Executive Briefing & Rekomendasi Bisnis ke CEO Daniandra di CEO Suite</td>
+                <td class="p-3 text-slate-400">Hari Ini</td>
+                <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 text-[10px]">APPROVED</span></td>
               </tr>
               <tr>
                 <td class="p-3 font-bold text-purple-300">Elara Sinclair (PA)</td>
-                <td class="p-3">Distribusi notulensi resmi ke direksi & jadwalkan rapat evaluasi</td>
+                <td class="p-3">Penyusunan berkas executive brief dan koordinasi kalender approval CEO</td>
                 <td class="p-3 text-slate-400">Hari Ini</td>
                 <td class="p-3"><span class="px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-300 text-[10px]">COMPLETED</span></td>
               </tr>
@@ -1119,23 +1291,23 @@
         },
         {
           key: "council_meeting_ceo",
-          name: "Strategic Council Meeting led by CEO Daniandra",
-          shortLabel: "COUNCIL MEETING (CEO)",
+          name: "War Room Council led by Daffa (CEO Office)",
+          shortLabel: "COUNCIL MEETING (DAFFA)",
           duration: 35,
-          stateSummary: "Strategic Council Meeting led by CEO Daniandra",
-          tickerMsg: "[WAR ROOM] CEO Daniandra leading strategic executive council briefing at head podium",
+          stateSummary: "War Room Council led by Daffa (CEO Office)",
+          tickerMsg: "[WAR ROOM] Daffa (CEO Office) leading War Room council on business opportunities & operations",
           positions: {
-            dani:    { x: 10.0,  z: -9.4,  y: 0.0, rotY: 0,              pose: "speaking_lead", room: "room-war" },
-            daffa:   { x: 7.8,   z: -7.8,  y: 0.0, rotY: 0.7,            pose: "seated_meeting", room: "room-war" },
+            dani:    { x: -12.5, z: -9.1,  y: 0.0, rotY: 0,              pose: "seated_desk",    room: "room-ceo" },
+            daffa:   { x: 10.0,  z: -9.4,  y: 0.0, rotY: 0,              pose: "speaking_lead",  room: "room-war" },
             raziel:  { x: 12.2,  z: -7.8,  y: 0.0, rotY: -0.7,           pose: "seated_meeting", room: "room-war" },
+            jovan:   { x: 7.8,   z: -7.8,  y: 0.0, rotY: 0.7,            pose: "seated_meeting", room: "room-war" },
             kael:    { x: 7.2,   z: -6.0,  y: 0.0, rotY: 1.2,            pose: "seated_meeting", room: "room-war" },
             nara:    { x: 12.8,  z: -6.0,  y: 0.0, rotY: -1.2,           pose: "seated_meeting", room: "room-war" },
             senna:   { x: 7.6,   z: -4.5,  y: 0.0, rotY: 2.0,            pose: "seated_meeting", room: "room-war" },
             idris:   { x: 12.4,  z: -4.5,  y: 0.0, rotY: -2.0,           pose: "seated_meeting", room: "room-war" },
             mika:    { x: 8.8,   z: -3.8,  y: 0.0, rotY: 2.6,            pose: "seated_meeting", room: "room-war" },
             elara:   { x: 11.2,  z: -3.8,  y: 0.0, rotY: -2.6,           pose: "seated_meeting", room: "room-war" },
-            viktor:  { x: 10.0,  z: -3.6,  y: 0.0, rotY: Math.PI,        pose: "seated_meeting", room: "room-war" },
-            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk",    room: "room-server" }
+            viktor:  { x: 10.0,  z: -3.6,  y: 0.0, rotY: Math.PI,        pose: "seated_meeting", room: "room-war" }
           }
         },
         {
@@ -1146,17 +1318,17 @@
           stateSummary: "Operations Review led by Daffa (CEO Office)",
           tickerMsg: "[WAR ROOM] Daffa (CEO Office) leading cross-departmental operations review",
           positions: {
-            daffa:   { x: 10.0,  z: -9.4,  y: 0.0, rotY: 0,              pose: "speaking_lead", room: "room-war" },
-            dani:    { x: 7.8,   z: -7.8,  y: 0.0, rotY: 0.7,            pose: "seated_meeting", room: "room-war" },
+            dani:    { x: -12.5, z: -9.1,  y: 0.0, rotY: 0,              pose: "seated_desk",    room: "room-ceo" },
+            daffa:   { x: 10.0,  z: -9.4,  y: 0.0, rotY: 0,              pose: "speaking_lead",  room: "room-war" },
             raziel:  { x: 12.2,  z: -7.8,  y: 0.0, rotY: -0.7,           pose: "seated_meeting", room: "room-war" },
+            jovan:   { x: 7.8,   z: -7.8,  y: 0.0, rotY: 0.7,            pose: "seated_meeting", room: "room-war" },
             kael:    { x: 7.2,   z: -6.0,  y: 0.0, rotY: 1.2,            pose: "seated_meeting", room: "room-war" },
             nara:    { x: 12.8,  z: -6.0,  y: 0.0, rotY: -1.2,           pose: "seated_meeting", room: "room-war" },
             senna:   { x: 7.6,   z: -4.5,  y: 0.0, rotY: 2.0,            pose: "seated_meeting", room: "room-war" },
             idris:   { x: 12.4,  z: -4.5,  y: 0.0, rotY: -2.0,           pose: "seated_meeting", room: "room-war" },
             mika:    { x: 8.8,   z: -3.8,  y: 0.0, rotY: 2.6,            pose: "seated_meeting", room: "room-war" },
             elara:   { x: 11.2,  z: -3.8,  y: 0.0, rotY: -2.6,           pose: "seated_meeting", room: "room-war" },
-            viktor:  { x: 10.0,  z: -3.6,  y: 0.0, rotY: Math.PI,        pose: "seated_meeting", room: "room-war" },
-            jovan:   { x: 14.5,  z: 5.5,   y: 0.0, rotY: Math.PI,        pose: "seated_desk",    room: "room-server" }
+            viktor:  { x: 10.0,  z: -3.6,  y: 0.0, rotY: Math.PI,        pose: "seated_meeting", room: "room-war" }
           }
         },
         {
@@ -1208,22 +1380,13 @@
       // =========================================================================
       const WAR_ROOM_DIALOGUES = [
         {
-          speakerId: "dani",
-          speakerName: "Daniandra (CEO)",
-          role: "CEO",
-          emoji: "👑",
-          color: "#10B981",
-          timeStr: "15:30 WIB",
-          text: "Rekan-rekan, kita tinjau progres arsitektur skripsi Tel-U dan performa sistem studio minggu ini."
-        },
-        {
           speakerId: "daffa",
           speakerName: "Daffa (CEO Office)",
           role: "CEO Office",
           emoji: "🎯",
           color: "#38BDF8",
-          timeStr: "15:32 WIB",
-          text: "Agenda hari ini: sinkronisasi arsitektur riset, validasi security Sentinel, dan timeline sprint."
+          timeStr: "15:30 WIB",
+          text: "Rekan-rekan studio, saya memimpin council operasional hari ini. Fokus: Analisis Peluang Bisnis Micro-SaaS AI Automation via Dynamic QRIS & API 9Router."
         },
         {
           speakerId: "raziel",
@@ -1231,8 +1394,8 @@
           role: "CTO",
           emoji: "🧐",
           color: "#A855F7",
-          timeStr: "15:33 WIB",
-          text: "Infrastruktur cluster stabil di port 9449, Caddy TLS 1.3 lancar, latensi di bawah 10ms."
+          timeStr: "15:32 WIB",
+          text: "API 9Router memungkinkan multi-model routing hemat 60%, dan settlement otomatis Dynamic QRIS siap mendrive transaksi instan."
         },
         {
           speakerId: "kael",
@@ -1240,8 +1403,8 @@
           role: "Lead Architect",
           emoji: "📐",
           color: "#38BDF8",
-          timeStr: "15:35 WIB",
-          text: "Draft Bab 3 dan kajian 18 paper arXiv sudah kami strukturkan di template LaTeX."
+          timeStr: "15:34 WIB",
+          text: "Arsitektur micro-SaaS dirancang decoupled & modular, sekaligus memvalidasi novelti event-driven skripsi Tel-U Bab 3 & 4."
         },
         {
           speakerId: "nara",
@@ -1249,8 +1412,8 @@
           role: "Lead Researcher",
           emoji: "📚",
           color: "#00DFD8",
-          timeStr: "15:36 WIB",
-          text: "Literature review mencakup spatial computing dan autonomous multi-agent coordination."
+          timeStr: "15:35 WIB",
+          text: "Riset pasar menunjukkan 78% UMKM digital butuh otomatisasi AI workflow dan WhatsApp billing dengan biaya terjangkau."
         },
         {
           speakerId: "idris",
@@ -1258,8 +1421,8 @@
           role: "Senior Dev",
           emoji: "🎧",
           color: "#10B981",
-          timeStr: "15:38 WIB",
-          text: "Backend FastAPI SSE stream broadcast stabil, 11 agent state tersinkronisasi realtime."
+          timeStr: "15:37 WIB",
+          text: "Backend FastAPI webhook QRIS payment dan 9Router client siap diintegrasikan dalam 1 sprint dengan strictly-typed contracts."
         },
         {
           speakerId: "mika",
@@ -1267,8 +1430,17 @@
           role: "Frontend",
           emoji: "⚡",
           color: "#F97316",
-          timeStr: "15:40 WIB",
-          text: "Engine 3D diorama dan live SSE stream beroperasi mulus di 60 FPS."
+          timeStr: "15:39 WIB",
+          text: "Portal merchant cyber-luxury dan canvas visualizer QRIS siap dipasang di Next.js dengan 60 FPS rendering."
+        },
+        {
+          speakerId: "senna",
+          speakerName: "Senna Louviere",
+          role: "Creative Director",
+          emoji: "🎨",
+          color: "#EC4899",
+          timeStr: "15:41 WIB",
+          text: "Design tokens cyber-luxury, dark-glass obsidian, dan aksen QRIS emerald siap memperkuat brand trust enterprise UMKM."
         },
         {
           speakerId: "viktor",
@@ -1277,7 +1449,16 @@
           emoji: "🛡️",
           color: "#EF4444",
           timeStr: "15:42 WIB",
-          text: "26 skenario automated tests lulus 100%, 4-layer security hardening aktif."
+          text: "Sentinel 4-layer defense aktif, verifikasi HMAC-SHA256 pada payload QRIS tervalidasi kokoh, 100% test pass rate."
+        },
+        {
+          speakerId: "jovan",
+          speakerName: "Jovan Aritza",
+          role: "Intelligence Officer",
+          emoji: "📡",
+          color: "#00DFD8",
+          timeStr: "15:44 WIB",
+          text: "Radar intelijen: model harga pay-per-use berbasis 9Router kita akan jauh lebih atraktif dibanding solusi kompetitor di pasaran."
         },
         {
           speakerId: "elara",
@@ -1285,8 +1466,48 @@
           role: "PA to CEO",
           emoji: "📋",
           color: "#C084FC",
-          timeStr: "15:44 WIB",
-          text: "Notulensi rapat dan action items telah tercatat rapi. Jadwal tindak lanjut siap dieksekusi."
+          timeStr: "15:45 WIB",
+          text: "Executive briefing dan rekomendasi bisnis telah dirangkum lengkap untuk diserahkan Daffa ke CEO Daniandra di Executive Suite."
+        },
+        {
+          speakerId: "daffa",
+          speakerName: "Daffa (CEO Office)",
+          role: "CEO Office",
+          emoji: "🎯",
+          color: "#38BDF8",
+          timeStr: "15:47 WIB",
+          text: "Rekomendasi dari 9 divisi sangat komprehensif! Rapat War Room resmi saya tutup. Saya segera menghadap Mas Dani di CEO Suite untuk menyerahkan berkas laporan bisnis ini."
+        }
+      ];
+
+      // Executive Report to CEO Dialogues (After War Room Concludes)
+      const CEO_REPORT_DIALOGUES = [
+        {
+          speakerId: "daffa",
+          speakerName: "Daffa (CEO Office)",
+          role: "CEO Office",
+          emoji: "🎯",
+          color: "#38BDF8",
+          timeStr: "15:49 WIB",
+          text: "Mas Dani, berikut hasil rapat War Room bersama 9 divisi: proposal peluang bisnis Micro-SaaS AI Automation QRIS sangat solid dan integrasi skripsi Tel-U Bab 3 & 4 siap dieksekusi. Mohon arahan dan approval eksekutif."
+        },
+        {
+          speakerId: "dani",
+          speakerName: "Daniandra (CEO)",
+          role: "Founder & CEO",
+          emoji: "👑",
+          color: "#10B981",
+          timeStr: "15:50 WIB",
+          text: "Luar biasa Daffa. Analisis pasar dan kelayakan teknologinya sangat matang. Proposal Micro-SaaS QRIS saya setujui (APPROVED)! Segera instruksikan seluruh tim untuk eksekusi sprint."
+        },
+        {
+          speakerId: "daffa",
+          speakerName: "Daffa (CEO Office)",
+          role: "CEO Office",
+          emoji: "🎯",
+          color: "#38BDF8",
+          timeStr: "15:51 WIB",
+          text: "Siap Mas Dani! Segera saya koordinasikan ke seluruh divisi untuk eksekusi sprint."
         }
       ];
 
@@ -1294,7 +1515,7 @@
       let warRoomDialogueTimer = null;
       let currentSpeakerAvatarId = null;
 
-      function startWarRoomDialogues(leaderId = "dani") {
+      function startWarRoomDialogues(leaderId = "daffa") {
         stopWarRoomDialogues();
         warRoomDialogueIdx = 0;
 
@@ -1311,9 +1532,16 @@
 
         showNextWarRoomDialogue();
         warRoomDialogueTimer = setInterval(() => {
-          warRoomDialogueIdx = (warRoomDialogueIdx + 1) % WAR_ROOM_DIALOGUES.length;
-          showNextWarRoomDialogue();
-        }, 4500);
+          warRoomDialogueIdx++;
+          if (warRoomDialogueIdx < WAR_ROOM_DIALOGUES.length) {
+            showNextWarRoomDialogue();
+          } else {
+            // Meeting concluded by Daffa! Now report findings to CEO in CEO Suite!
+            clearInterval(warRoomDialogueTimer);
+            warRoomDialogueTimer = null;
+            concludeWarRoomAndReportToCEO();
+          }
+        }, 4600);
       }
 
       function stopWarRoomDialogues() {
@@ -1330,7 +1558,7 @@
         }
         const momModalBadge = document.getElementById("mom-status-badge");
         if (momModalBadge) {
-          momModalBadge.textContent = "FINAL RESOLUTION";
+          momModalBadge.textContent = "APPROVED BY CEO";
           momModalBadge.className = "text-[10px] font-mono font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 uppercase";
         }
       }
@@ -1342,6 +1570,72 @@
         showSpeechBubble(dlg.speakerId, dlg.speakerName, dlg.role, dlg.emoji, dlg.color, dlg.text);
         highlightMoMTranscript(warRoomDialogueIdx);
         playUiChime("dialogue");
+      }
+
+      function concludeWarRoomAndReportToCEO() {
+        hideSpeechBubble();
+
+        const ticker = document.getElementById("activity-ticker-text");
+        if (ticker) {
+          ticker.textContent = "[CEO OFFICE] Daffa menuju ke CEO Executive Suite untuk menyerahkan rekomendasi War Room ke Mas Dani...";
+        }
+
+        // Daffa walks to CEO Suite, standing right in front of Daniandra's desk
+        const daffaAv = avatarObjects["daffa"];
+        if (daffaAv) {
+          daffaAv.targetPos.set(-10.8, 0.0, -8.2);
+          daffaAv.targetRotY = -Math.PI * 0.65; // facing Daniandra at (-12.5, -9.1)
+          daffaAv.currentPose = "standing";
+          daffaAv.currentRoom = "room-ceo";
+        }
+
+        // Camera smoothly glides to CEO Suite!
+        glideCameraTo(new THREE.Vector3(-11.5, 3.8, -4.5), new THREE.Vector3(-11.8, 1.2, -8.6), 1800);
+
+        // Sequence of Executive Report speech bubbles
+        setTimeout(() => {
+          // 1. Daffa reports to Dani
+          const d1 = CEO_REPORT_DIALOGUES[0];
+          showSpeechBubble(d1.speakerId, d1.speakerName, d1.role, d1.emoji, d1.color, d1.text);
+          playUiChime("dialogue");
+
+          setTimeout(() => {
+            // 2. Dani gives executive approval
+            const d2 = CEO_REPORT_DIALOGUES[1];
+            showSpeechBubble(d2.speakerId, d2.speakerName, d2.role, d2.emoji, d2.color, d2.text);
+            playUiChime("mode");
+
+            setTimeout(() => {
+              // 3. Daffa confirms
+              const d3 = CEO_REPORT_DIALOGUES[2];
+              showSpeechBubble(d3.speakerId, d3.speakerName, d3.role, d3.emoji, d3.color, d3.text);
+              playUiChime("dialogue");
+
+              setTimeout(() => {
+                hideSpeechBubble();
+                // Daffa returns to desk
+                if (daffaAv) {
+                  daffaAv.targetPos.set(-9.2, 0.0, -9.0);
+                  daffaAv.targetRotY = 0;
+                  daffaAv.currentPose = "seated_desk";
+                }
+
+                if (ticker) {
+                  ticker.textContent = "[APPROVED] CEO Daniandra mengesahkan proposal Micro-SaaS QRIS • 9 divisi operasional melanjutkan sprint";
+                }
+                const momBadge = document.getElementById("mom-badge-status");
+                if (momBadge) {
+                  momBadge.textContent = "APPROVED";
+                  momBadge.className = "px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                }
+                const momModalBadge = document.getElementById("mom-status-badge");
+                if (momModalBadge) {
+                  momModalBadge.textContent = "DISAHKAN CEO (APPROVED)";
+                }
+              }, 4000);
+            }, 5500);
+          }, 6000);
+        }, 2200);
       }
 
       function showSpeechBubble(speakerId, speakerName, role, emoji, color, text) {
@@ -1366,8 +1660,8 @@
         }
 
         bubble.classList.add("active-bubble");
-        bubble.classList.remove("opacity-0", "scale-90");
-        bubble.classList.add("opacity-100", "scale-100");
+        bubble.classList.remove("opacity-0");
+        bubble.classList.add("opacity-100");
 
         updateProjectedBadges();
       }
@@ -1375,8 +1669,8 @@
       function hideSpeechBubble() {
         const bubble = document.getElementById("speech-bubble");
         if (!bubble) return;
-        bubble.classList.remove("active-bubble", "opacity-100", "scale-100");
-        bubble.classList.add("opacity-0", "scale-90");
+        bubble.classList.remove("active-bubble", "opacity-100");
+        bubble.classList.add("opacity-0");
         currentSpeakerAvatarId = null;
       }
 
@@ -1385,17 +1679,22 @@
         if (!container) return;
         container.innerHTML = "";
 
-        WAR_ROOM_DIALOGUES.forEach((dlg, idx) => {
+        const allDialogues = [...WAR_ROOM_DIALOGUES, ...CEO_REPORT_DIALOGUES];
+        allDialogues.forEach((dlg, idx) => {
           const card = document.createElement("div");
           card.id = `mom-dlg-${idx}`;
-          card.className = "p-3 rounded-2xl bg-slate-900/60 border border-slate-800/80 transition-all flex items-start gap-3";
+          const isReport = idx >= WAR_ROOM_DIALOGUES.length;
+          card.className = `p-3 rounded-2xl ${isReport ? "bg-emerald-950/30 border-emerald-500/40" : "bg-slate-900/60 border-slate-800/80"} border transition-all flex items-start gap-3`;
           card.innerHTML = `
-            <div class="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-sm flex-shrink-0 border border-slate-700/60" style="border-color: ${dlg.color}50">
+            <div class="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-sm flex-shrink-0 border" style="border-color: ${dlg.color}50">
               ${dlg.emoji}
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between gap-2 mb-1">
-                <span class="font-display font-bold text-xs" style="color: ${dlg.color}">${dlg.speakerName}</span>
+                <div class="flex items-center gap-1.5">
+                  <span class="font-display font-bold text-xs" style="color: ${dlg.color}">${dlg.speakerName}</span>
+                  ${isReport ? '<span class="text-[8.5px] font-mono px-1.5 py-0.2 rounded bg-emerald-900/60 text-emerald-300 font-bold border border-emerald-500/40">LAPORAN CEO SUITE</span>' : ''}
+                </div>
                 <span class="font-mono text-[9px] text-slate-500">${dlg.timeStr}</span>
               </div>
               <p class="text-xs text-slate-300 leading-relaxed">"${dlg.text}"</p>
@@ -1421,67 +1720,61 @@
 
       function getMoMMarkdownText() {
         return `# NOTULENSI RAPAT KOORDINASI STRATEGIS // YUDIAZ VIRTUAL HQ
-**Lokasi**: War Room Strategy Amphitheater (Virtual HQ)
-**Tanggal / Waktu**: Sabtu, 26 September 2026 • 15:30 WIB
-**Pemimpin Rapat**: CEO Daniandra P. / Daffa (CEO Office)
+**Lokasi**: War Room Strategy Amphitheater & CEO Executive Suite
+**Tanggal / Waktu**: Minggu, 27 September 2026 • 15:30 WIB
+**Pemimpin Rapat**: Daffa (CEO Office)
+**Penerima Laporan / Pengesahan**: Daniandra Prayudisty (Founder & CEO)
 **Notulis**: Elara Sinclair (Personal Assistant to CEO)
-**Kehadiran**: 11 / 11 Personel (100% Hadir)
+**Status Dokumen**: APPROVED (Disetujui Eksekutif)
 
 ---
 
-## 1. Agenda Utama
-1. Sinkronisasi arsitektur skripsi Telkom University & integrasi literatur arXiv Bab 3.
-2. Evaluasi kestabilan engine 3D Virtual HQ diorama pada 60 FPS WebGL.
-3. Validasi keamanan Sentinel 4-layer defense, UFW rate-limiting, dan PIN gate 2609.
-4. Finalisasi sprint timeline dan penetapan PIC tindak lanjut.
+## 1. Agenda Utama & Rekomendasi Bisnis
+1. Analisis Peluang Bisnis Micro-SaaS AI Automation via Dynamic QRIS & API 9Router untuk pasar UMKM/Devs.
+2. Integrasi & Validasi Empiris Arsitektur Event-Driven Multi-Agent ke Naskah Skripsi Telkom University Bab 3 & 4.
+3. Audit Keamanan Transaksi Finansial: Validasi Signature HMAC-SHA256 pada Webhook QRIS & Sentinel 4-Layer Defense.
+4. Protokol Pelaporan Eksekutif: Penyerahan hasil rapat operasional oleh CEO Office langsung ke CEO di CEO Suite.
 
 ---
 
-## 2. Daftar Kehadiran Personel (11/11)
-- 👑 Daniandra (Chief Executive Officer)
-- 🎯 Daffa (CEO Office)
-- 🧐 Raziel Hendrix (CTO & Lead Orchestrator)
-- 📋 Elara Sinclair (Personal Assistant to CEO)
-- 📐 Kael Ashford (Lead Architect)
-- 📚 Nara Vasquez (Lead Researcher)
-- 🎧 Idris Nakamura (Senior Developer)
-- ⚡ Mika Stellan (Frontend Engineer)
-- 🎨 Senna Louviere (Creative Director)
-- 📡 Jovan Aritza (Intelligence Officer)
-- 🛡️ Viktor Moreau (Lead QA & Security Engineer)
+## 2. Kehadiran Personel
+- **War Room Amphitheater (10 Personel Operasional)**:
+  - 🎯 Daffa (CEO Office — Pemimpin Rapat)
+  - 🧐 Raziel Hendrix (CTO & Lead Orchestrator)
+  - 📐 Kael Ashford (Lead Architect)
+  - 📚 Nara Vasquez (Lead Researcher)
+  - 🎨 Senna Louviere (Creative Director)
+  - 🎧 Idris Nakamura (Senior Developer)
+  - ⚡ Mika Stellan (Frontend Engineer)
+  - 🛡️ Viktor Moreau (Lead QA & Security Engineer)
+  - 📋 Elara Sinclair (Personal Assistant to CEO)
+  - 📡 Jovan Aritza (Intelligence Officer)
+- **CEO Executive Suite**:
+  - 👑 Daniandra Prayudisty (Founder & CEO — Menerima Pelaporan & Memberikan Approval Eksekutif)
 
 ---
 
-## 3. Transkrip Dialog Rapat
-- [15:30 WIB] **Daniandra (CEO)**: "Rekan-rekan, kita tinjau progres arsitektur skripsi Tel-U dan performa sistem studio minggu ini."
-- [15:32 WIB] **Daffa (CEO Office)**: "Agenda hari ini: sinkronisasi arsitektur riset, validasi security Sentinel, dan timeline sprint."
-- [15:33 WIB] **Raziel Hendrix (CTO)**: "Infrastruktur cluster stabil di port 9449, Caddy TLS 1.3 lancar, latensi di bawah 10ms."
-- [15:35 WIB] **Kael Ashford (Lead Architect)**: "Draft Bab 3 dan kajian 18 paper arXiv sudah kami strukturkan di template LaTeX."
-- [15:36 WIB] **Nara Vasquez (Lead Researcher)**: "Literature review mencakup spatial computing dan autonomous multi-agent coordination."
-- [15:38 WIB] **Idris Nakamura (Senior Developer)**: "Backend FastAPI SSE stream broadcast stabil, 11 agent state tersinkronisasi realtime."
-- [15:40 WIB] **Mika Stellan (Frontend Engineer)**: "Engine 3D diorama dan live SSE stream beroperasi mulus di 60 FPS."
-- [15:42 WIB] **Viktor Moreau (Lead QA)**: "26 skenario automated tests lulus 100%, 4-layer security hardening aktif."
-- [15:44 WIB] **Elara Sinclair (PA to CEO)**: "Notulensi rapat dan action items telah tercatat rapi. Jadwal tindak lanjut siap dieksekusi."
+## 3. Hasil Deliberasi & Laporan Eksekutif
+- **Daffa (CEO Office)**: "Selamat pagi 9 rekan kepala divisi. Mas Dani memantau dari CEO Suite. Agenda kita hari ini: analisis peluang bisnis Micro-SaaS AI Automation QRIS untuk UMKM, serta sinkronisasi progres skripsi Tel-U."
+- **Jovan Aritza (Intel)**: "Radar pasar: 480+ merchant UMKM mengalami kebocoran waktu hingga 3 jam per hari untuk rekonsiliasi manual mutasi perbankan dan QRIS. Solusi otomatisasi instan sangat dibutuhkan."
+- **Raziel Hendrix (CTO)**: "Arsitektur microservices siap. Integrasi API 9Router menghemat inferensi LLM 60%, dan pipeline event-driven sanggup melayani webhook QRIS di bawah 50ms."
+- **Idris Nakamura (Senior Dev)**: "Backend FastAPI dan worker asinkron siap handle burst transaksi ribuan webhook per detik, plus notifikasi Telegram & WhatsApp bot."
+- **Mika Stellan (Frontend)**: "Prototipe merchant dashboard berdesain cyber-luxury 60 FPS di Next.js sudah siap dengan visualisasi live QRIS ticker."
+- **Senna Louviere (Creative)**: "Design tokens gold-mesh dan aksen QRIS emerald sudah final di Figma, memberi impresi enterprise-grade yang ramah pengguna."
+- **Kael Ashford (Lead Arch)**: "Arsitektur event-driven multi-agent ini menjadi studi kasus empiris utama di Bab 3 dan Bab 4 skripsi Tel-U."
+- **Nara Vasquez (Lead Rsch)**: "Kajian 28 referensi arXiv dan IEEE membuktikan efisiensi koordinasi 4.2x lebih tinggi. Draf Bab Metodologi skripsi Tel-U siap dikompilasi."
+- **Viktor Moreau (QA)**: "Audit keamanan tuntas 100%: validasi signature HMAC-SHA256, enkripsi TLS 1.3, dan kesiapan PCI-DSS teruji kokoh."
+- **Elara Sinclair (PA)**: "Executive brief dan proyeksi ROI bisnis telah dirangkum lengkap untuk diserahkan Daffa ke CEO Daniandra."
+- **Daffa ke CEO Daniandra**: "Mas Dani, berikut hasil rapat War Room: proposal bisnis Micro-SaaS AI Automation QRIS sangat solid dan integrasi skripsi Tel-U Bab 3 & 4 siap dieksekusi. Mohon approval eksekutif."
+- **CEO Daniandra Prayudisty**: "Luar biasa Daffa. Analisis pasar dan kelayakan teknologinya sangat matang. Proposal Micro-SaaS QRIS saya setujui (APPROVED)! Segera instruksikan seluruh tim untuk eksekusi sprint."
 
 ---
 
-## 4. Keputusan Strategis (Key Resolutions)
-1. **Pengesahan Bab 3 Arsitektur Skripsi Tel-U**: Mengadopsi 18 paper arXiv terkini mengenai distributed spatial multi-agent coordination.
-2. **Standarisasi Engine 3D Diorama pada 60 FPS**: Rendering Three.js r128 terverifikasi mulus tanpa degradasi performa.
-3. **Hardening Keamanan Sentinel Zero-Trust**: 26 skenario automated test lulus 100%, PIN 2609 aktif, dan port 9449 dilindungi UFW.
-4. **Deployment SSE Low-Latency Gateway**: Caddy reverse proxy TLS 1.3 melayani telemetry stream dengan latensi < 10ms.
-
----
-
-## 5. Tabel Action Items & PIC (Tindak Lanjut)
-| PIC | Tindakan Strategis | Target | Status |
-|---|---|---|---|
-| Raziel Hendrix (CTO) | Monitoring kestabilan SSE cluster port 9449 & Caddy TLS 1.3 | H+1 (Besok) | IN PROGRESS |
-| Kael Ashford & Nara Vasquez | Finalisasi kompilasi Bab 3 skripsi LaTeX dengan sitasi 18 paper arXiv | H+3 | IN PROGRESS |
-| Idris Nakamura & Mika Stellan | Fine-tuning rendering 60 FPS Three.js & asset texture loader | H+2 | IN PROGRESS |
-| Viktor Moreau (QA) | Pertahankan 100% pass rate 26 automated tests & security audit | Ongoing | PASSED (26/26) |
-| Daffa (CEO Office) | Koordinasi timeline sprint dan review lintas divisi R&D | Mingguan | SCHEDULED |
-| Elara Sinclair (PA) | Distribusi notulensi resmi ke direksi & jadwalkan rapat evaluasi | Hari Ini | COMPLETED |
+## 4. Keputusan Strategis yang Disahkan
+1. **Pengembangan MVP Micro-SaaS AI Automation QRIS**: Memanfaatkan API 9Router untuk cost efficiency dan Dynamic QRIS webhook payment.
+2. **Pengesahan Novelty Skripsi Telkom University**: Model autonomous multi-agent systems divalidasi dengan benchmark performa nyata.
+3. **Hardening Keamanan Zero-Trust**: Verifikasi HMAC-SHA256 dan rate limiting untuk proteksi transaksi merchant.
+4. **Instruksi Pelaksanaan Sprint**: Seluruh tim memulai fase eksekusi MVP di bawah supervisi CTO Raziel Hendrix.
 `;
       }
 
@@ -3651,8 +3944,196 @@
       }
 
       // =========================================================================
-      // 7. Stylized 3D Humanoid Avatars
+      // 7. Stylized 3D Humanoid Avatars with Realistic Facial Expressions & Blinking
       // =========================================================================
+      const AGENT_DEFAULT_EMOTES = {
+        dani: "👑",
+        daffa: "🎯",
+        raziel: "🧐",
+        elara: "📋",
+        idris: "🔥",
+        mika: "⚡",
+        senna: "🎨",
+        kael: "📐",
+        nara: "📚",
+        jovan: "📡",
+        viktor: "🛡️"
+      };
+
+      function drawAvatarFace(canvas, ctx, agent, state = {}) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const isBlinking = !!state.isBlinking;
+        const isSpeaking = !!state.isSpeaking;
+        const mouthCycle = state.mouthCycle || 0;
+        const emotion = state.emotion || "normal";
+
+        // 1. Subtle warm cheek blush
+        ctx.fillStyle = "rgba(244, 63, 94, 0.28)";
+        ctx.beginPath();
+        ctx.arc(32, 74, 9, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(96, 74, 9, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 2. Eyebrows
+        ctx.strokeStyle = agent.id === "elara" ? "#ca8a04" : "#1e293b";
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = "round";
+
+        if (emotion === "focused" || agent.id === "viktor" || agent.id === "idris") {
+          // Determined / focused slight slant
+          ctx.beginPath();
+          ctx.moveTo(30, 42);
+          ctx.lineTo(54, 46);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(98, 42);
+          ctx.lineTo(74, 46);
+          ctx.stroke();
+        } else {
+          // Gentle arch
+          ctx.beginPath();
+          ctx.quadraticCurveTo(42, 38, 54, 44);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.quadraticCurveTo(86, 38, 74, 44);
+          ctx.stroke();
+        }
+
+        // 3. Eyes
+        if (isBlinking || emotion === "sleeping") {
+          // Closed happy curve
+          ctx.strokeStyle = "#0f172a";
+          ctx.lineWidth = 3.8;
+          ctx.beginPath();
+          ctx.arc(42, 58, 8, Math.PI * 0.1, Math.PI * 0.9);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.arc(86, 58, 8, Math.PI * 0.1, Math.PI * 0.9);
+          ctx.stroke();
+        } else {
+          // Stylized cyber anime aesthetic
+          // Sclera
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.ellipse(42, 58, 10, 11, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(86, 58, 10, 11, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Iris (agent color tinted)
+          const irisColor = agent.accent || agent.color || "#0284c7";
+          ctx.fillStyle = irisColor;
+          ctx.beginPath();
+          ctx.arc(42, 58, 6.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(86, 58, 6.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Pupil
+          ctx.fillStyle = "#090d16";
+          ctx.beginPath();
+          ctx.arc(42, 58, 3.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(86, 58, 3.8, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Specular shine highlights (two sparkling dots!)
+          ctx.fillStyle = "#ffffff";
+          ctx.beginPath();
+          ctx.arc(39, 54, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(45, 61, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(83, 54, 2.8, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(89, 61, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 4. Glasses / Cyber Visor Accessories on Face
+        if (agent.id === "raziel") {
+          // Sleek purple cyber glasses
+          ctx.strokeStyle = "#A855F7";
+          ctx.lineWidth = 2.4;
+          ctx.strokeRect(30, 48, 24, 20);
+          ctx.strokeRect(74, 48, 24, 20);
+          ctx.beginPath();
+          ctx.moveTo(54, 56);
+          ctx.lineTo(74, 56);
+          ctx.stroke();
+        } else if (agent.id === "viktor") {
+          // Red security glasses
+          ctx.strokeStyle = "#EF4444";
+          ctx.lineWidth = 2.2;
+          ctx.strokeRect(28, 48, 26, 20);
+          ctx.strokeRect(74, 48, 26, 20);
+          ctx.beginPath();
+          ctx.moveTo(54, 56);
+          ctx.lineTo(74, 56);
+          ctx.stroke();
+        } else if (agent.id === "jovan") {
+          // Cyber-scout lens on right eye
+          ctx.strokeStyle = "#00DFD8";
+          ctx.lineWidth = 2.0;
+          ctx.beginPath();
+          ctx.arc(86, 58, 12, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(86, 44);
+          ctx.lineTo(86, 48);
+          ctx.moveTo(86, 68);
+          ctx.lineTo(86, 72);
+          ctx.moveTo(72, 58);
+          ctx.lineTo(76, 58);
+          ctx.moveTo(96, 58);
+          ctx.lineTo(100, 58);
+          ctx.stroke();
+        }
+
+        // 5. Mouth
+        if (isSpeaking) {
+          const mouthHeight = 4 + Math.abs(Math.sin(mouthCycle)) * 9;
+          ctx.fillStyle = "#881337";
+          ctx.beginPath();
+          ctx.ellipse(64, 84, 9, mouthHeight, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Teeth bar
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(58, 84 - mouthHeight * 0.8, 12, 2.5);
+
+          // Tongue
+          ctx.fillStyle = "#fb7185";
+          ctx.beginPath();
+          ctx.arc(64, 84 + mouthHeight * 0.3, 4.5, 0, Math.PI);
+          ctx.fill();
+        } else {
+          // Stylized friendly smile or confident line
+          ctx.strokeStyle = "#0f172a";
+          ctx.lineWidth = 3.0;
+          ctx.beginPath();
+          if (agent.id === "dani" || agent.id === "daffa" || agent.id === "elara") {
+            ctx.arc(64, 80, 10, 0.2 * Math.PI, 0.8 * Math.PI);
+          } else {
+            ctx.arc(64, 82, 8, 0.15 * Math.PI, 0.85 * Math.PI);
+          }
+          ctx.stroke();
+        }
+      }
+
       function buildAllAvatars() {
         AGENTS.forEach(agent => {
           const avatar = createAvatar(agent);
@@ -3701,6 +4182,32 @@
         hair.position.y = 0.22;
         hair.castShadow = true;
         headGroup.add(hair);
+
+        // Dynamic Expressive Face Canvas Texture (Blinking, Expressions, Eye shine)
+        const faceCanvas = document.createElement("canvas");
+        faceCanvas.width = 128;
+        faceCanvas.height = 128;
+        const faceCtx = faceCanvas.getContext("2d");
+
+        const faceTexture = new THREE.CanvasTexture(faceCanvas);
+        faceTexture.generateMipmaps = false;
+        faceTexture.minFilter = THREE.LinearFilter;
+        faceTexture.magFilter = THREE.LinearFilter;
+
+        const faceMat = new THREE.MeshBasicMaterial({
+          map: faceTexture,
+          transparent: true,
+          opacity: 0.98,
+          depthWrite: false
+        });
+        const faceGeo = new THREE.PlaneGeometry(0.46, 0.46);
+        const faceMesh = new THREE.Mesh(faceGeo, faceMat);
+        faceMesh.position.set(0, 0, 0.222);
+        headGroup.add(faceMesh);
+
+        // Draw initial face state
+        drawAvatarFace(faceCanvas, faceCtx, agent, { isBlinking: false, isSpeaking: false, mouthCycle: 0, emotion: "normal" });
+        faceTexture.needsUpdate = true;
 
         // Cyber-Headphones Accessory
         const headphoneGroup = new THREE.Group();
@@ -3846,6 +4353,16 @@
           kneeL: kneeLGroup,
           legR: legRGroup,
           kneeR: kneeRGroup,
+          faceCanvas: faceCanvas,
+          faceCtx: faceCtx,
+          faceTexture: faceTexture,
+          faceMesh: faceMesh,
+          blinkTimer: Math.random() * 3 + 2,
+          isBlinking: false,
+          blinkDuration: 0,
+          isSpeaking: false,
+          mouthCycle: 0,
+          activeEmotion: AGENT_DEFAULT_EMOTES[agent.id] || "💡",
           agent: agent,
           targetPos: new THREE.Vector3(0, 0, 0),
           targetRotY: 0,
@@ -3875,58 +4392,103 @@
         viktor: "🛡️"
       };
 
+      let isActivityHudActive = true;
+
       function buildDomBadges() {
         const container = document.getElementById("badge-container");
         if (!container) return;
         container.innerHTML = "";
 
         AGENTS.forEach(agent => {
-          const pill = document.createElement("div");
-          pill.id = `badge-${agent.id}`;
-          pill.className = "agent-pill-badge bg-slate-950/85 backdrop-blur-md border border-slate-700/80 px-2.5 py-1 rounded-full text-[11px] font-semibold text-slate-100 shadow-xl flex items-center gap-1.5 cursor-pointer hover:border-cyan-400 transition-colors";
-          const emoji = AGENT_EMOJIS[agent.id] || "👤";
+          const card = document.createElement("div");
+          card.id = `hud-card-${agent.id}`;
+          card.className = "agent-hud-card pointer-events-auto cursor-pointer select-none";
+          
+          const emote = AGENT_DEFAULT_EMOTES[agent.id] || "💡";
+          const shortThought = (agent.thoughts && agent.thoughts.length > 0) ? agent.thoughts[0] : agent.task;
           const isFocusAgent = ["idris", "mika", "senna", "kael"].includes(agent.id);
-          pill.innerHTML = `
-            <span class="w-2 h-2 rounded-full bg-emerald-400 badge-dot" id="dot-${agent.id}"></span>
-            <span class="text-xs mr-0.5">${emoji}</span>
-            <span class="font-display">${agent.name.split(" ")[0]}</span>
-            <span class="font-mono text-[9px] text-slate-400">(${agent.role.split(" ")[0]})</span>
-            <span id="music-indicator-${agent.id}" class="text-[10px] text-cyan-400 animate-pulse ${isFocusAgent ? "" : "hidden"}" title="Listening to Focus Synth">🎵</span>
+
+          card.innerHTML = `
+            <!-- Full HUD Mode Card (Active by Default) -->
+            <div class="hud-full-card bg-slate-950/92 backdrop-blur-xl border border-slate-700/80 hover:border-cyan-400 rounded-2xl p-2.5 shadow-[0_12px_32px_rgba(0,0,0,0.85)] flex flex-col gap-1.5 min-w-[210px] max-w-[230px] transition-all group ${isActivityHudActive ? "" : "hidden"}" style="border-top: 2.5px solid ${agent.accent || agent.color};">
+              <div class="flex items-center justify-between gap-1.5 pb-1 border-b border-slate-800/80">
+                <div class="flex items-center gap-1.5 truncate">
+                  <span class="text-base" id="hud-emote-${agent.id}">${emote}</span>
+                  <span class="font-display font-bold text-xs text-white truncate">${agent.name.split(" ")[0]}</span>
+                  <span class="font-mono text-[8.5px] px-1.5 py-0.2 rounded bg-slate-900 text-slate-400 border border-slate-800">${agent.role.split(" ")[0]}</span>
+                </div>
+                <span class="w-2 h-2 rounded-full bg-emerald-400 badge-pulse" id="hud-pulse-${agent.id}"></span>
+              </div>
+              <div class="text-[9.5px] font-sans text-slate-200 line-clamp-1 leading-tight font-medium" id="hud-task-${agent.id}">
+                ${agent.task}
+              </div>
+              <div class="flex items-center justify-between gap-1 text-[8.5px] font-mono pt-0.5">
+                <span class="px-1.5 py-0.5 rounded bg-cyan-950/80 border border-cyan-800/50 text-cyan-300 font-semibold truncate max-w-[125px]">
+                  ${agent.tool.split(" ")[0]}
+                </span>
+                <span class="text-slate-400 font-bold">
+                  ⚡ ${agent.cpu}% · ${agent.ram}G
+                </span>
+              </div>
+              <div class="text-[8px] font-mono italic text-slate-400 truncate opacity-80" id="hud-thought-${agent.id}">
+                "${shortThought}"
+              </div>
+            </div>
+
+            <!-- Mini Pill Mode (When HUD Mode Toggled Off) -->
+            <div class="hud-mini-pill ${isActivityHudActive ? "hidden" : ""} bg-slate-950/90 backdrop-blur-md border border-slate-700/80 px-2.5 py-1 rounded-full text-[11px] font-semibold text-slate-100 shadow-xl flex items-center gap-1.5 hover:border-cyan-400">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 badge-pulse" id="dot-${agent.id}"></span>
+              <span class="text-xs mr-0.5">${emote}</span>
+              <span class="font-display">${agent.name.split(" ")[0]}</span>
+              <span class="font-mono text-[9px] text-slate-400">(${agent.role.split(" ")[0]})</span>
+            </div>
           `;
-          pill.onclick = (e) => {
+
+          card.onclick = (e) => {
             e.stopPropagation();
-            window.YudiazHQ.openDossier(agent.id);
+            window.YudiazHQ.openLiveInspector(agent.id);
           };
-          container.appendChild(pill);
+
+          container.appendChild(card);
         });
       }
 
       function updateAgentBadge(agent, pose) {
+        const pulse = document.getElementById(`hud-pulse-${agent.id}`);
         const dot = document.getElementById(`dot-${agent.id}`);
-        if (!dot) return;
+        const emoteEl = document.getElementById(`hud-emote-${agent.id}`);
+        const taskEl = document.getElementById(`hud-task-${agent.id}`);
 
-        dot.className = "w-2 h-2 rounded-full badge-dot ";
+        let pulseClass = "w-2 h-2 rounded-full ";
+        let emote = AGENT_DEFAULT_EMOTES[agent.id] || "💡";
+        let activeTask = agent.task;
+
         if (pose === "sleeping_bed") {
-          dot.className += "bg-sky-400 animate-pulse";
+          pulseClass += "bg-sky-400 animate-pulse";
+          emote = "😴";
+          activeTask = "Zen Sleep Pod: Siklus Regenerasi Energi";
         } else if (pose === "pingpong_player") {
-          dot.className += "bg-amber-400 animate-ping";
+          pulseClass += "bg-amber-400 animate-ping";
+          emote = "🏓";
+          activeTask = "Pertandingan Rekreasi Ping-Pong Rally";
         } else if (pose === "speaking_lead") {
-          dot.className += "bg-cyan-400 animate-ping";
+          pulseClass += "bg-cyan-400 animate-ping";
+          emote = "🎯";
+          activeTask = "Memimpin Koordinasi War Room Amphitheater";
         } else if (pose === "seated_meeting") {
-          dot.className += "bg-amber-400";
+          pulseClass += "bg-cyan-400";
+          emote = "💬";
+          activeTask = "Deliberasi Strategis & Rekomendasi Bisnis";
         } else {
-          dot.className += "bg-emerald-400";
+          pulseClass += "bg-emerald-400";
+          emote = AGENT_DEFAULT_EMOTES[agent.id] || "💡";
+          activeTask = agent.task;
         }
 
-        const musicEl = document.getElementById(`music-indicator-${agent.id}`);
-        const av = avatarObjects[agent.id];
-        if (musicEl && av) {
-          if (av.hasHeadphones && av.headphones && av.headphones.visible && (pose === "seated_desk" || pose === "standing")) {
-            musicEl.classList.remove("hidden");
-          } else {
-            musicEl.classList.add("hidden");
-          }
-        }
+        if (pulse) pulse.className = pulseClass;
+        if (dot) dot.className = pulseClass;
+        if (emoteEl) emoteEl.textContent = emote;
+        if (taskEl) taskEl.textContent = activeTask;
       }
 
       const tempVec = new THREE.Vector3();
@@ -3937,41 +4499,270 @@
 
         Object.keys(avatarObjects).forEach(id => {
           const avatar = avatarObjects[id];
-          const badge = document.getElementById(`badge-${id}`);
-          if (!badge) return;
+          const card = document.getElementById(`hud-card-${id}`);
+          if (!card) return;
 
           tempVec.copy(avatar.group.position);
-          tempVec.y += 2.4;
+          tempVec.y += 2.38;
 
           tempVec.project(camera);
 
           if (tempVec.z > -1 && tempVec.z < 1) {
-            const x = (tempVec.x * 0.5 + 0.5) * w;
-            const y = (-(tempVec.y * 0.5) + 0.5) * h;
-            badge.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
-            badge.style.opacity = "1";
+            const screenX = (tempVec.x * 0.5 + 0.5) * w;
+            const screenY = (-(tempVec.y * 0.5) + 0.5) * h;
+
+            const clampedX = Math.max(120, Math.min(w - 120, screenX));
+            const clampedY = Math.max(75, Math.min(h - 90, screenY));
+
+            card.style.left = `${clampedX}px`;
+            card.style.top = `${clampedY}px`;
+            card.style.transform = "translate(-50%, -100%)";
+            card.style.opacity = "1";
+            card.style.pointerEvents = "auto";
           } else {
-            badge.style.opacity = "0";
+            card.style.opacity = "0";
+            card.style.pointerEvents = "none";
           }
         });
 
-        // 3D Projected Speech Bubble Position Tracking
+        // 3D Projected Speech Bubble Position Tracking (Instant, Clamped Tail to prevent clipping)
         if (currentSpeakerAvatarId && avatarObjects[currentSpeakerAvatarId]) {
           const spk = avatarObjects[currentSpeakerAvatarId];
           const bubble = document.getElementById("speech-bubble");
           if (bubble && bubble.classList.contains("active-bubble")) {
             tempVec.copy(spk.group.position);
-            tempVec.y += 2.85;
+            tempVec.y += 2.9;
             tempVec.project(camera);
 
             if (tempVec.z > -1 && tempVec.z < 1) {
-              const x = (tempVec.x * 0.5 + 0.5) * w;
-              const y = (-(tempVec.y * 0.5) + 0.5) * h;
-              bubble.style.transform = `translate(-50%, -100%) translate(${x}px, ${y}px)`;
+              const rawX = (tempVec.x * 0.5 + 0.5) * w;
+              const rawY = (-(tempVec.y * 0.5) + 0.5) * h;
+
+              const bubbleW = bubble.offsetWidth || 280;
+              const halfW = bubbleW / 2;
+              const clampedX = Math.max(halfW + 15, Math.min(w - halfW - 15, rawX));
+              const clampedY = Math.max(100, Math.min(h - 100, rawY));
+
+              bubble.style.left = `${clampedX}px`;
+              bubble.style.top = `${clampedY}px`;
+              bubble.style.transform = "translate(-50%, -100%)";
               bubble.style.opacity = "1";
+
+              // Dynamically clamp the pointer tail within the speech bubble body
+              const tailEl = bubble.querySelector(".speech-bubble-tail");
+              if (tailEl) {
+                const offsetFromCenter = rawX - clampedX;
+                const maxTailOffset = halfW - 22;
+                const clampedOffset = Math.max(-maxTailOffset, Math.min(maxTailOffset, offsetFromCenter));
+                tailEl.style.left = `calc(50% + ${clampedOffset}px)`;
+              }
             } else {
               bubble.style.opacity = "0";
             }
+          }
+        }
+      }
+
+      let cameraGlide = null;
+
+      function glideCameraTo(targetCamPos, targetLookAt, duration = 1500) {
+        const startCamPos = camera.position.clone();
+        const startLookAt = controls.target.clone();
+        const startTime = performance.now();
+        cameraGlide = {
+          startCamPos,
+          targetCamPos,
+          startLookAt,
+          targetLookAt,
+          startTime,
+          duration
+        };
+      }
+
+      function focusCameraOnAgent(agentId) {
+        const av = avatarObjects[agentId];
+        if (!av) return;
+        const p = av.group.position;
+        const targetCam = new THREE.Vector3(p.x + 16, 14, p.z + 16);
+        const targetLook = new THREE.Vector3(p.x, p.y + 1.2, p.z);
+        glideCameraTo(targetCam, targetLook, 1200);
+      }
+
+      let peerInteractionTimeout = null;
+
+      function triggerPeerInteraction(type) {
+        const menu = document.getElementById("peer-collab-menu");
+        if (menu) menu.classList.add("hidden");
+
+        playUiChime("mode");
+        if (peerInteractionTimeout) {
+          clearTimeout(peerInteractionTimeout);
+          peerInteractionTimeout = null;
+        }
+
+        const ticker = document.getElementById("activity-ticker-text");
+
+        if (type === "idris_mika_dev") {
+          if (ticker) ticker.textContent = "[DEV CORE] Idris Nakamura & Mika Stellan berdiskusi arsitektur SSE stream & WebGL 60 FPS";
+          const idris = avatarObjects["idris"];
+          const mika = avatarObjects["mika"];
+          if (idris && mika) {
+            idris.targetPos.set(-11.0, 0.0, 5.0);
+            idris.targetRotY = Math.PI * 0.45;
+            idris.currentPose = "seated_desk";
+
+            mika.targetPos.set(-8.5, 0.0, 5.0);
+            mika.targetRotY = -Math.PI * 0.45;
+            mika.currentPose = "seated_desk";
+
+            glideCameraTo(new THREE.Vector3(-9.7, 5.5, 10.5), new THREE.Vector3(-9.7, 1.2, 5.0), 1400);
+
+            setTimeout(() => {
+              showSpeechBubble("idris", "Idris Nakamura", "Senior Developer", "🎧", "#10B981", "Mika, SSE stream telemetry /api/v1/stream latensinya tembus 0.4ms! Sudah siap kita render di diorama 60 FPS.");
+              playUiChime("dialogue");
+
+              peerInteractionTimeout = setTimeout(() => {
+                showSpeechBubble("mika", "Mika Stellan", "Frontend Engineer", "⚡", "#F97316", "Mantap Idris! Buffer render Three.js r128 sudah aku bind langsung ke SSE heartbeat. Zero drop frame!");
+                playUiChime("dialogue");
+
+                peerInteractionTimeout = setTimeout(() => {
+                  hideSpeechBubble();
+                  idris.targetRotY = 0;
+                  mika.targetRotY = 0;
+                }, 4500);
+              }, 4500);
+            }, 1500);
+          }
+        } else if (type === "kael_nara_research") {
+          if (ticker) ticker.textContent = "[RESEARCH ATELIER] Kael Ashford & Nara Vasquez bedah 28 paper arXiv di meja blueprint skripsi Tel-U";
+          const kael = avatarObjects["kael"];
+          const nara = avatarObjects["nara"];
+          if (kael && nara) {
+            kael.targetPos.set(-7.8, 0.0, 7.0);
+            kael.targetRotY = -Math.PI * 0.5;
+            kael.currentPose = "standing";
+
+            nara.targetPos.set(-9.2, 0.0, 7.0);
+            nara.targetRotY = Math.PI * 0.5;
+            nara.currentPose = "standing";
+
+            glideCameraTo(new THREE.Vector3(-8.5, 5.5, 12.0), new THREE.Vector3(-8.5, 1.2, 7.0), 1400);
+
+            setTimeout(() => {
+              showSpeechBubble("kael", "Kael Ashford", "Lead Architect", "📐", "#38BDF8", "Nara, 28 sitasi arXiv untuk metodologi multi-agent coordination sudah aku sinkronkan ke Bab 3 & 4 LaTeX.");
+              playUiChime("dialogue");
+
+              peerInteractionTimeout = setTimeout(() => {
+                showSpeechBubble("nara", "Nara Vasquez", "Lead Researcher", "📚", "#00DFD8", "Sip Kael! Benchmark komunikasi peer-to-peer terbukti 4.2x lebih efisien dibanding centralized orchestrator.");
+                playUiChime("dialogue");
+
+                peerInteractionTimeout = setTimeout(() => {
+                  hideSpeechBubble();
+                  kael.targetPos.set(-8.5, 0.0, 5.0);
+                  kael.targetRotY = 0;
+                  kael.currentPose = "seated_desk";
+                  nara.targetPos.set(-6.0, 0.0, 5.0);
+                  nara.targetRotY = 0;
+                  nara.currentPose = "seated_desk";
+                }, 4500);
+              }, 4500);
+            }, 1500);
+          }
+        } else if (type === "daffa_elara_briefing") {
+          if (ticker) ticker.textContent = "[CEO OFFICE] Elara Sinclair mengonsultasikan agenda eksekutif tablet ke Daffa";
+          const daffa = avatarObjects["daffa"];
+          const elara = avatarObjects["elara"];
+          if (daffa && elara) {
+            daffa.targetPos.set(-9.2, 0.0, -9.0);
+            daffa.targetRotY = 0;
+            daffa.currentPose = "seated_desk";
+
+            elara.targetPos.set(-9.2, 0.0, -7.8);
+            elara.targetRotY = Math.PI;
+            elara.currentPose = "standing";
+
+            glideCameraTo(new THREE.Vector3(-7.5, 4.8, -4.5), new THREE.Vector3(-9.2, 1.2, -8.5), 1400);
+
+            setTimeout(() => {
+              showSpeechBubble("elara", "Elara Sinclair", "PA to CEO", "📋", "#C084FC", "Daffa, berkas evaluasi bisnis Micro-SaaS AI Automation QRIS dan executive agenda untuk Mas Dani sudah siap di tablet.");
+              playUiChime("dialogue");
+
+              peerInteractionTimeout = setTimeout(() => {
+                showSpeechBubble("daffa", "Daffa (CEO Office)", "CEO Office", "🎯", "#38BDF8", "Terima kasih Elara. Ini bahan krusial untuk saya bawa ke War Room bersama 9 divisi, lalu saya laporkan ke Mas Dani.");
+                playUiChime("dialogue");
+
+                peerInteractionTimeout = setTimeout(() => {
+                  hideSpeechBubble();
+                  elara.targetPos.set(-4.5, 0.0, -9.0);
+                  elara.targetRotY = 0;
+                  elara.currentPose = "seated_desk";
+                }, 4500);
+              }, 4500);
+            }, 1500);
+          }
+        } else if (type === "viktor_jovan_coffee") {
+          if (ticker) ticker.textContent = "[LOUNGE PANTRY] Viktor Moreau & Jovan Aritza ngopi santai di mesin espresso";
+          const viktor = avatarObjects["viktor"];
+          const jovan = avatarObjects["jovan"];
+          if (viktor && jovan) {
+            viktor.targetPos.set(-11.8, 0.0, 11.2);
+            viktor.targetRotY = Math.PI * 0.25;
+            viktor.currentPose = "standing";
+
+            jovan.targetPos.set(-10.2, 0.0, 11.2);
+            jovan.targetRotY = -Math.PI * 0.25;
+            jovan.currentPose = "standing";
+
+            glideCameraTo(new THREE.Vector3(-11.0, 4.8, 15.5), new THREE.Vector3(-11.0, 1.2, 11.2), 1400);
+
+            setTimeout(() => {
+              showSpeechBubble("viktor", "Viktor Moreau", "Lead QA", "🛡️", "#EF4444", "Jovan, ngopi dulu sejenak. Security audit HMAC-SHA256 untuk webhook QRIS lolos 100% tanpa celah.");
+              playUiChime("dialogue");
+
+              peerInteractionTimeout = setTimeout(() => {
+                showSpeechBubble("jovan", "Jovan Aritza", "Intelligence Officer", "📡", "#00DFD8", "Nice Viktor! Dari sisi intel, 480 merchant UMKM sudah menanti otomatisasi QRIS ini. Potensinya sangat besar.");
+                playUiChime("dialogue");
+
+                peerInteractionTimeout = setTimeout(() => {
+                  hideSpeechBubble();
+                  viktor.targetPos.set(-3.5, 0.0, 5.0);
+                  viktor.targetRotY = 0;
+                  viktor.currentPose = "seated_desk";
+                  jovan.targetPos.set(1.5, 0.0, 5.0);
+                  jovan.targetRotY = 0;
+                  jovan.currentPose = "seated_desk";
+                }, 4500);
+              }, 4500);
+            }, 1500);
+          }
+        } else if (type === "pingpong_showdown") {
+          if (ticker) ticker.textContent = "[PING-PONG MATCH] Idris & Mika bertanding seru! Rally bola sinkron & skor 3D live";
+          const idris = avatarObjects["idris"];
+          const mika = avatarObjects["mika"];
+          if (idris && mika) {
+            idris.targetPos.set(9.0, 0.0, 10.5);
+            idris.targetRotY = Math.PI * 0.5;
+            idris.currentPose = "pingpong_player";
+
+            mika.targetPos.set(13.0, 0.0, 10.5);
+            mika.targetRotY = -Math.PI * 0.5;
+            mika.currentPose = "pingpong_player";
+
+            glideCameraTo(new THREE.Vector3(11.0, 5.5, 15.5), new THREE.Vector3(11.0, 1.2, 10.5), 1400);
+
+            setTimeout(() => {
+              showSpeechBubble("idris", "Idris Nakamura", "Senior Developer", "🏓", "#10B981", "Smash forehand! Rally sengit nih Mika!");
+              playPingPongSound();
+
+              peerInteractionTimeout = setTimeout(() => {
+                showSpeechBubble("mika", "Mika Stellan", "Frontend Engineer", "🔥", "#F97316", "Backhand spin masuk pojok! 7 - 5 untuk frontend!");
+                playPingPongSound();
+
+                peerInteractionTimeout = setTimeout(() => {
+                  hideSpeechBubble();
+                }, 4000);
+              }, 3500);
+            }, 1500);
           }
         }
       }
@@ -3983,6 +4774,19 @@
         requestAnimationFrame(animate);
         const delta = Math.min(clock.getDelta(), 0.1);
         const time = clock.getElapsedTime();
+
+        // 0. Smooth Camera Glide Interpolation
+        if (cameraGlide) {
+          const elapsed = performance.now() - cameraGlide.startTime;
+          const p = Math.min(1.0, elapsed / cameraGlide.duration);
+          const ease = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+          camera.position.lerpVectors(cameraGlide.startCamPos, cameraGlide.targetCamPos, ease);
+          controls.target.lerpVectors(cameraGlide.startLookAt, cameraGlide.targetLookAt, ease);
+          controls.update();
+          if (p >= 1.0) {
+            cameraGlide = null;
+          }
+        }
 
         // 1. Smooth Lerping of Avatars & Natural Walking Animations
         Object.keys(avatarObjects).forEach(id => {
@@ -4201,6 +5005,61 @@
               avatar.bodyGroup.scale.set(1, 1, 1);
             }
           }
+
+          // Natural Procedural Face Blinking & Speech Animation
+          if (avatar.faceCanvas && avatar.faceCtx && avatar.faceTexture) {
+            if (!avatar.isBlinking) {
+              avatar.blinkTimer -= delta;
+              if (avatar.blinkTimer <= 0) {
+                avatar.isBlinking = true;
+                avatar.blinkDuration = 0.12;
+                drawAvatarFace(avatar.faceCanvas, avatar.faceCtx, avatar.agent, {
+                  isBlinking: true,
+                  isSpeaking: avatar.isSpeaking,
+                  mouthCycle: avatar.mouthCycle,
+                  emotion: avatar.currentPose === "sleeping_bed" ? "sleeping" : (avatar.currentPose === "seated_desk" ? "focused" : "normal")
+                });
+                avatar.faceTexture.needsUpdate = true;
+              }
+            } else {
+              avatar.blinkDuration -= delta;
+              if (avatar.blinkDuration <= 0) {
+                avatar.isBlinking = false;
+                avatar.blinkTimer = Math.random() * 4.0 + 2.5;
+                drawAvatarFace(avatar.faceCanvas, avatar.faceCtx, avatar.agent, {
+                  isBlinking: false,
+                  isSpeaking: avatar.isSpeaking,
+                  mouthCycle: avatar.mouthCycle,
+                  emotion: avatar.currentPose === "sleeping_bed" ? "sleeping" : (avatar.currentPose === "seated_desk" ? "focused" : "normal")
+                });
+                avatar.faceTexture.needsUpdate = true;
+              }
+            }
+
+            // Speaking Mouth Articulation
+            const isThisAgentSpeaking = currentSpeakerAvatarId === id;
+            if (isThisAgentSpeaking) {
+              avatar.isSpeaking = true;
+              avatar.mouthCycle += delta * 14.0;
+              drawAvatarFace(avatar.faceCanvas, avatar.faceCtx, avatar.agent, {
+                isBlinking: avatar.isBlinking,
+                isSpeaking: true,
+                mouthCycle: avatar.mouthCycle,
+                emotion: "talking"
+              });
+              avatar.faceTexture.needsUpdate = true;
+            } else if (avatar.isSpeaking) {
+              avatar.isSpeaking = false;
+              avatar.mouthCycle = 0;
+              drawAvatarFace(avatar.faceCanvas, avatar.faceCtx, avatar.agent, {
+                isBlinking: avatar.isBlinking,
+                isSpeaking: false,
+                mouthCycle: 0,
+                emotion: avatar.currentPose === "sleeping_bed" ? "sleeping" : (avatar.currentPose === "seated_desk" ? "focused" : "normal")
+              });
+              avatar.faceTexture.needsUpdate = true;
+            }
+          }
         });
 
         // 2. Ping Pong Ball Trajectory
@@ -4385,7 +5244,7 @@
 
       function onPointerDown(event) {
         if (event.button !== 0) return;
-        if (event.target.closest("#top-header") || event.target.closest("footer") || event.target.closest("#agent-dossier-modal") || event.target.closest("#pin-gate-modal")) {
+        if (event.target.closest("#top-header") || event.target.closest("footer") || event.target.closest("#agent-dossier-modal") || event.target.closest("#pin-gate-modal") || event.target.closest("#live-inspector-card") || event.target.closest("#peer-collab-menu") || event.target.closest("#mom-slideover") || event.target.closest("#badge-container")) {
           return;
         }
 
@@ -4404,8 +5263,7 @@
           }
           if (curr && curr.userData.agentId) {
             playUiChime("click");
-            window.YudiazHQ.triggerAgentSpeech(curr.userData.agentId);
-            window.YudiazHQ.openDossier(curr.userData.agentId);
+            window.YudiazHQ.openLiveInspector(curr.userData.agentId);
             return;
           }
         }
@@ -4423,6 +5281,7 @@
         }
 
         hideRoomCard();
+        window.YudiazHQ.closeLiveInspector();
       }
 
       function showRoomCard(roomId, clientX, clientY) {
@@ -4681,6 +5540,126 @@
               hideSpeechBubble();
             }
           }, 5000);
+        },
+
+        toggleActivityHUD: function() {
+          playUiChime("click");
+          isActivityHudActive = !isActivityHudActive;
+          const dot = document.getElementById("hud-toggle-dot");
+          const text = document.getElementById("hud-toggle-text");
+          const btn = document.getElementById("btn-toggle-hud");
+
+          if (isActivityHudActive) {
+            if (dot) dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+            if (text) text.textContent = "👁️ Mode Pantau Aktivitas (Live HUD)";
+            if (btn) btn.className = "pointer-events-auto flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-cyan-950/80 border border-cyan-500/50 text-cyan-300 text-xs font-mono font-bold hover:bg-cyan-900/80 transition-all shadow-[0_0_20px_rgba(0,242,254,0.3)] hover:scale-105 active:scale-95";
+          } else {
+            if (dot) dot.className = "w-2 h-2 rounded-full bg-slate-500";
+            if (text) text.textContent = "👁️ Mode Ringkas (Mini Pills)";
+            if (btn) btn.className = "pointer-events-auto flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-slate-900/80 border border-slate-700/60 text-slate-400 text-xs font-mono font-bold hover:bg-slate-800 transition-all hover:scale-105 active:scale-95";
+          }
+
+          Object.keys(avatarObjects).forEach(id => {
+            const card = document.getElementById(`hud-card-${id}`);
+            if (!card) return;
+            const full = card.querySelector(".hud-full-card");
+            const mini = card.querySelector(".hud-mini-pill");
+            if (full && mini) {
+              if (isActivityHudActive) {
+                full.classList.remove("hidden");
+                mini.classList.add("hidden");
+              } else {
+                full.classList.add("hidden");
+                mini.classList.remove("hidden");
+              }
+            }
+          });
+        },
+
+        openLiveInspector: function(agentId) {
+          const agent = AGENTS.find(a => a.id === agentId);
+          if (!agent) return;
+          selectedAgentId = agentId;
+
+          const card = document.getElementById("live-inspector-card");
+          if (!card) return;
+
+          const emoji = AGENT_EMOJIS[agent.id] || "👤";
+          const inspEmoji = document.getElementById("insp-emoji");
+          const inspName = document.getElementById("insp-name");
+          const inspRole = document.getElementById("insp-role");
+          const inspTask = document.getElementById("insp-task");
+          const inspTool = document.getElementById("insp-tool");
+          const inspRes = document.getElementById("insp-res");
+          const inspThought = document.getElementById("insp-thought");
+          const inspStatus = document.getElementById("insp-status");
+
+          if (inspEmoji) inspEmoji.textContent = emoji;
+          if (inspName) inspName.textContent = agent.name;
+          if (inspRole) inspRole.textContent = `${agent.role} • ${agent.department}`;
+          if (inspTask) inspTask.textContent = agent.task;
+          if (inspTool) inspTool.textContent = agent.tool;
+          if (inspRes) inspRes.textContent = `${agent.cpu}% CPU | ${agent.ram}GB RAM`;
+
+          const av = avatarObjects[agent.id];
+          let statusText = "● SEDANG BEKERJA";
+          let statusColor = "text-emerald-400";
+          if (av) {
+            if (av.currentPose === "sleeping_bed") {
+              statusText = "● ISTIRAHAT ZEN";
+              statusColor = "text-sky-400";
+            } else if (av.currentPose === "pingpong_player") {
+              statusText = "● REKREASI PING-PONG";
+              statusColor = "text-amber-400";
+            } else if (av.currentPose === "speaking_lead" || av.currentPose === "seated_meeting") {
+              statusText = "● RAPAT WAR ROOM";
+              statusColor = "text-cyan-400";
+            }
+          }
+          if (inspStatus) {
+            inspStatus.textContent = statusText;
+            inspStatus.className = `font-bold ${statusColor}`;
+          }
+
+          const thought = (agent.thoughts && agent.thoughts.length > 0) ? agent.thoughts[0] : agent.task;
+          if (inspThought) inspThought.textContent = `"${thought}"`;
+
+          card.classList.remove("hidden");
+          playUiChime("click");
+        },
+
+        closeLiveInspector: function() {
+          const card = document.getElementById("live-inspector-card");
+          if (card) card.classList.add("hidden");
+        },
+
+        triggerInspectorSpeech: function() {
+          if (selectedAgentId) {
+            window.YudiazHQ.triggerAgentSpeech(selectedAgentId);
+          }
+        },
+
+        focusInspectorAgent: function() {
+          if (selectedAgentId) {
+            focusCameraOnAgent(selectedAgentId);
+          }
+        },
+
+        openInspectorDossier: function() {
+          if (selectedAgentId) {
+            window.YudiazHQ.openDossier(selectedAgentId);
+          }
+        },
+
+        togglePeerCollabMenu: function() {
+          playUiChime("click");
+          const menu = document.getElementById("peer-collab-menu");
+          if (!menu) return;
+          menu.classList.toggle("hidden");
+        },
+
+        triggerPeerInteraction: function(type) {
+          triggerPeerInteraction(type);
         }
       };
 

@@ -209,6 +209,14 @@ class MeetingMinutes(BaseModel):
         default_factory=list,
         description="Assigned action items with PIC and due date",
     )
+    reporting_to_ceo: str = Field(
+        default="Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)",
+        description="Executive briefing submission record delivered to CEO",
+    )
+    ceo_feedback: str = Field(
+        default="Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix.",
+        description="Executive directive and approval feedback from CEO",
+    )
 
 
 class OfficeStateResponse(BaseModel):

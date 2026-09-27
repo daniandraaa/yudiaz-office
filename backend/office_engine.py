@@ -53,16 +53,17 @@ class OfficeEngine:
         # Autonomous simulation lifecycle state
         self._temporary_assignments: dict[str, dict[str, Any]] = {}
         self._council_active: bool = False
-        self._council_leader_toggle: bool = False
+        self._need_cycle_index: int = 0
         self.latest_meeting: Optional[MeetingMinutes] = None
 
         self._initialize_rooms()
         self._initialize_agents()
         self._seed_initial_activity()
         self.latest_meeting = self._generate_council_meeting(
-            leader_id="dani",
-            leader_name="Daniandra Prayudisty (CEO)",
+            leader_id="daffa",
+            leader_name="Daffa (CEO Office)",
             status="COMPLETED",
+            need_index=0,
         )
 
     def _initialize_rooms(self) -> None:
@@ -382,17 +383,22 @@ class OfficeEngine:
 
     def _generate_council_meeting(
         self,
-        leader_id: str = "dani",
+        leader_id: str = "daffa",
         leader_name: Optional[str] = None,
         status: str = "IN_PROGRESS",
+        need_index: Optional[int] = 0,
     ) -> MeetingMinutes:
-        """Construct realistic, rich Minutes of Meeting (MoM) record for War Room council."""
+        """Construct realistic, rich Minutes of Meeting (MoM) record for War Room council.
+
+        Council meetings are ALWAYS led by Daffa (CEO Office). Daniandra (CEO) does not attend
+        the operational War Room and stays in the CEO Suite reviewing strategic vision.
+        Agendas analyze studio business opportunities and technical needs.
+        """
         now_iso = datetime.now(timezone.utc).isoformat()
         meeting_id = f"mom-council-{int(time.time())}-{secrets.token_hex(3)}"
-        title = "Evaluasi Infrastruktur Studio, Skripsi Telkom University & Autonomous Virtual HQ"
+        resolved_leader = leader_name or "Daffa (CEO Office)"
 
         attendees = [
-            "Daniandra Prayudisty (Founder & CEO)",
             "Daffa (CEO Office)",
             "Raziel Hendrix (CTO & Lead Orchestrator)",
             "Kael Ashford (Lead Architect)",
@@ -405,209 +411,313 @@ class OfficeEngine:
             "Jovan Aritza (Intelligence Officer)",
         ]
 
-        if leader_id == "dani":
-            resolved_leader = leader_name or "Daniandra Prayudisty (CEO)"
+        active_need_idx = (need_index or 0) % 3
+
+        if active_need_idx == 0:
+            # Need 1: Business Suggestion / Micro-SaaS AI Automation
+            title = "Analisis Peluang Bisnis Micro-SaaS AI Automation via Dynamic QRIS & API 9Router untuk UMKM/Devs"
             dialogues = [
                 MeetingDialogue(
-                    speaker_id="dani",
-                    speaker_name="Daniandra Prayudisty",
-                    role="Founder & CEO",
-                    text="Selamat pagi rekan-rekan. Council hari ini kita fokuskan pada tiga prioritas strategis: stabilitas backend Virtual HQ, akselerasi naskah skripsi Telkom University, dan konsistensi visual 3D diorama. Raziel, silakan laporkan performa telemetry mesh dan event loop.",
+                    speaker_id="daffa",
+                    speaker_name="Daffa",
+                    role="CEO Office",
+                    text="Selamat pagi rekan-rekan. Sesuai arahan CEO Daniandra, saya memimpin council operasional hari ini. Fokus utama kita: Analisis Peluang Bisnis Micro-SaaS AI Automation via Dynamic QRIS & API 9Router untuk pasar UMKM dan pengembang software. Raziel, bagaimana kelayakan teknis dan arsitektur solusinya?",
                 ),
                 MeetingDialogue(
                     speaker_id="raziel",
                     speaker_name="Raziel Hendrix",
                     role="CTO & Lead Orchestrator",
-                    text="Secara keseluruhan infrastructure core berjalan optimal di sub-millisecond latency. Pipeline SSE broadcast dan autonomous tick engine stabil tanpa memory leak. Kami juga telah memastikan endpoint meeting minutes tersinkronisasi realtime ke seluruh connected clients.",
+                    text="Dari evaluasi teknis, integrasi API 9Router memungkinkan dynamic multi-model routing berlatensi rendah dengan efisiensi biaya inferensi hingga 60%. Settlement otomatis via Dynamic QRIS memberikan konversi instan tanpa friksi manual.",
                 ),
                 MeetingDialogue(
                     speaker_id="kael",
                     speaker_name="Kael Ashford",
                     role="Lead Architect",
-                    text="Untuk skripsi Telkom University, spesifikasi arsitektur bab 1 hingga bab 4 sudah dipetakan dengan standar LaTeX akademik Tel-U. Pola event-driven autonomous coordination pada Virtual HQ menjadi novelty utama yang kita elaborasi dalam ADR dan sequence diagram.",
+                    text="Arsitektur micro-SaaS ini dirancang modular: webhook mutasi QRIS asinkron, proxy gateway inferensi 9Router, dan token quota limiter. Desain event-driven ini sekaligus memvalidasi arsitektur tugas akhir yang scalable.",
                 ),
                 MeetingDialogue(
                     speaker_id="nara",
                     speaker_name="Nara Vasquez",
                     role="Lead Researcher",
-                    text="Saya telah mengompilasi 28 referensi terindeks IEEE dan arXiv terkait multi-agent emergent coordination. Format sitasi BibTeX dan penulisan naskah LaTeX Tectonic sudah terstruktur rapi untuk Bab Metodologi Penelitian dan perbandingan state-of-the-art.",
-                ),
-                MeetingDialogue(
-                    speaker_id="jovan",
-                    speaker_name="Jovan Aritza",
-                    role="Intelligence Officer",
-                    text="Monitoring radar kampus Telkom University: portal akademik telah membuka pendaftaran sidang pra-skripsi dan verifikasi dokumen. Kita masih memiliki window aman dua pekan sebelum submission deadline, radar NOC terus memantau pembaruan pengumuman.",
+                    text="Riset pasar menunjukkan lebih dari 78% UMKM digital di Indonesia mencari solusi AI customer support dan billing WhatsApp yang terjangkau. Analisis data empiris membuktikan ruang penetrasi pasar kita sangat luas.",
                 ),
                 MeetingDialogue(
                     speaker_id="idris",
                     speaker_name="Idris Nakamura",
                     role="Senior Developer",
-                    text="Dari sisi backend engineering, skema data Pydantic v2 untuk Minutes of Meeting, dialogues, dan action items sudah clean dan strictly typed. Endpoint /api/v1/meetings/latest siap melayani query dengan latensi konsisten di bawah 5 milidetik.",
+                    text="Backend FastAPI siap mengeksekusi integrasi ini. Endpoint webhook verifikasi signature QRIS dan router 9Router client dapat kita selesaikan dalam 1 sprint dengan strictly-typed Pydantic contracts.",
                 ),
                 MeetingDialogue(
                     speaker_id="mika",
                     speaker_name="Mika Stellan",
                     role="Frontend Engineer",
-                    text="Viewport 3D diorama canvas 2.5D kini secara dinamis menampilkan status rapat di War Room Amphitheater. UI overlay modal untuk Minutes of Meeting sudah terhubung langsung ke state feed untuk render dialog yang halus.",
+                    text="Kami siapkan antarmuka merchant portal cyber-luxury yang ringkas dan intuitif untuk setup API key dan pemantauan transaksi QRIS secara real-time di Next.js canvas.",
                 ),
                 MeetingDialogue(
                     speaker_id="senna",
                     speaker_name="Senna Louviere",
                     role="Creative Director",
-                    text="Design token cyber-luxury dengan aksen gold-mesh (#FFD700), cyber emerald (#10B981), dan dark-glass obsidian telah disinkronkan. Tipografi, status pills, dan visual hierarki Minutes of Meeting terbukti kontras tinggi dan memenuhi standar WCAG AAA.",
+                    text="Landing page produk micro-SaaS dirancang dengan cyber-luxury tokens, tipografi tajam, dan aksen emerald QRIS untuk menumbuhkan rasa percaya enterprise-grade bagi merchant UMKM.",
                 ),
                 MeetingDialogue(
                     speaker_id="viktor",
                     speaker_name="Viktor Moreau",
                     role="Lead QA & Security Engineer",
-                    text="Seluruh test suite pytest 100% passed tanpa celah regresi. Brute-force protection pada PIN auth dan validasi payload endpoint meeting minutes teruji kokoh terhadap skenario edge case dan concurrent load.",
+                    text="Keamanan transaksi moneter dan data pelanggan terproteksi Sentinel 4-layer defense. Validasi HMAC-SHA256 pada payload QRIS dan rate-limiting ketat memastikan zero-leakage.",
+                ),
+                MeetingDialogue(
+                    speaker_id="jovan",
+                    speaker_name="Jovan Aritza",
+                    role="Intelligence Officer",
+                    text="Monitoring kompetitor: biaya langganan AI bot di pasar saat ini relatif mahal dan kaku. Dengan 9Router dan pembayaran QRIS langsung, skema harga pay-per-use kita akan sangat atraktif bagi UMKM.",
                 ),
                 MeetingDialogue(
                     speaker_id="elara",
                     speaker_name="Elara Sinclair",
                     role="Personal Assistant to CEO",
-                    text="Agenda bimbingan lanjutan dengan dosen pembimbing Tel-U sudah saya kunci di kalender Daniandra untuk hari Kamis pukul 14:00 WIB. Executive summary dan draf bab terbaru sudah siap diteruskan.",
+                    text="Seluruh notulensi analisis peluang bisnis, estimasi proyeksi revenue, dan diagram teknis telah terangkum rapi. Berkas siap diserahkan kepada Daffa untuk dilaporkan langsung ke CEO Daniandra di ruang CEO.",
                 ),
                 MeetingDialogue(
                     speaker_id="daffa",
                     speaker_name="Daffa",
                     role="CEO Office",
-                    text="Dari CEO Office, koordinasi lintas divisi dan deliverables mingguan telah terkonsolidasi pada priority dashboard. Alignment antara engineering, riset skripsi, dan UI tokens berjalan terarah sesuai roadmap.",
+                    text="Terima kasih seluruh tim atas analisis bisnis dan kesiapan teknis yang solid. Rapat council resmi ditutup. Saya akan segera menuju CEO Suite untuk menyerahkan Executive Council Briefing & Rekomendasi Bisnis ini kepada CEO Daniandra.",
+                ),
+            ]
+            key_decisions = [
+                "Pengembangan produk Micro-SaaS AI Automation studio terintegrasi Dynamic QRIS dan API 9Router untuk efisiensi biaya routing LLM hingga 60%.",
+                "Penerapan model bisnis pay-per-use berbasis API token yang kompetitif dan ramah bagi pelaku UMKM serta pengembang software.",
+                "Hardening endpoint payment webhook QRIS menggunakan validasi HMAC-SHA256 berarsitektur event-driven asinkron.",
+                "Penyusunan rekomendasi bisnis resmi oleh CEO Office untuk persetujuan eksekutif CEO Daniandra Prayudisty.",
+            ]
+            action_items = [
+                ActionItem(
+                    pic="Idris Nakamura & Kael Ashford",
+                    task="Implementasi prototipe backend Micro-SaaS AI automation dan integrasi client 9Router",
+                    due="2026-10-02",
+                ),
+                ActionItem(
+                    pic="Nara Vasquez & Jovan Aritza",
+                    task="Riset pasar adopsi otomasi UMKM dan benchmark pricing SaaS kompetitor",
+                    due="2026-10-01",
+                ),
+                ActionItem(
+                    pic="Mika Stellan & Senna Louviere",
+                    task="Desain visual landing page cyber-luxury dan UI portal merchant QRIS",
+                    due="2026-10-03",
+                ),
+                ActionItem(
+                    pic="Viktor Moreau",
+                    task="Pengujian penetrasi keamanan webhook payment gateway dan automated test suite",
+                    due="2026-10-04",
+                ),
+                ActionItem(
+                    pic="Daffa",
+                    task="Penyampaian Executive Council Briefing & Rekomendasi Bisnis kepada CEO Daniandra di CEO Suite",
+                    due="2026-09-28",
+                ),
+            ]
+        elif active_need_idx == 1:
+            # Need 2: R&D / Thesis Architecture Telkom University Bab 3 & 4
+            title = "Evaluasi Arsitektur Skripsi Telkom University Bab 3 & 4 (Event-Driven Autonomous Multi-Agent Systems)"
+            dialogues = [
+                MeetingDialogue(
+                    speaker_id="daffa",
+                    speaker_name="Daffa",
+                    role="CEO Office",
+                    text="Selamat pagi rekan-rekan. Mewakili CEO Office, saya memimpin council hari ini untuk Evaluasi Arsitektur Skripsi Telkom University Bab 3 & 4 mengenai Event-Driven Autonomous Multi-Agent Systems. Raziel dan Kael, bagaimana evaluasi pemodelan sistem dan noveltinya?",
                 ),
                 MeetingDialogue(
-                    speaker_id="dani",
-                    speaker_name="Daniandra Prayudisty",
-                    role="Founder & CEO",
-                    text="Luar biasa. Semua poin strategis dan action items sudah terdistribusi dengan PIC yang jelas. Mari kita eksekusi dengan presisi tinggi. Seluruh tim dipersilakan kembali ke workstation masing-masing dan melanjutkan deep work.",
+                    speaker_id="raziel",
+                    speaker_name="Raziel Hendrix",
+                    role="CTO & Lead Orchestrator",
+                    text="Evaluasi arsitektur membuktikan novelti kita pada koordinasi spatial dan asynchronous event loop sangat kokoh. Benchmark throughput telemetry dan latency broadcast di Virtual HQ menjadi data empiris valid untuk Bab 4.",
+                ),
+                MeetingDialogue(
+                    speaker_id="kael",
+                    speaker_name="Kael Ashford",
+                    role="Lead Architect",
+                    text="Bab 3 Metodologi dan Bab 4 Hasil & Pembahasan telah disinkronkan dengan template LaTeX resmi Telkom University. Diagram state machine, sequence diagram, dan spesifikasi formal koordinasi agen tuntas dikompilasi dengan Tectonic.",
+                ),
+                MeetingDialogue(
+                    speaker_id="nara",
+                    speaker_name="Nara Vasquez",
+                    role="Lead Researcher",
+                    text="Literature review Bab 2 dan Bab 3 telah diperkaya dengan 30 sitasi IEEE/ACM terbaru. Evaluasi komparatif antara hierarchical dan emergent agent coordination membuktikan keunggulan efisiensi arsitektur kita.",
+                ),
+                MeetingDialogue(
+                    speaker_id="idris",
+                    speaker_name="Idris Nakamura",
+                    role="Senior Developer",
+                    text="Test bed eksperimen pada endpoint API dan modul simulasi backend telah menghasilkan dataset log metrik yang siap diproyeksikan ke dalam grafik Bab 4. Seluruh kode pengujian lulus 100% di pytest.",
+                ),
+                MeetingDialogue(
+                    speaker_id="mika",
+                    speaker_name="Mika Stellan",
+                    role="Frontend Engineer",
+                    text="Visualisasi diagram arsitektur dan hasil simulasi interaksi agen di canvas 2.5D telah diekspor dalam format vektor resolusi tinggi sesuai standar publikasi ilmiah Tel-U.",
+                ),
+                MeetingDialogue(
+                    speaker_id="senna",
+                    speaker_name="Senna Louviere",
+                    role="Creative Director",
+                    text="Layout tipografi LaTeX, penomoran tabel, grafik performa, dan skema visual monokrom akademik sudah dipoles sesuai panduan naskah tugas akhir Informatika Tel-U.",
+                ),
+                MeetingDialogue(
+                    speaker_id="viktor",
+                    speaker_name="Viktor Moreau",
+                    role="Lead QA & Security Engineer",
+                    text="Validasi eksperimen diuji dengan skenario beban tinggi untuk memastikan tidak ada fluktuasi bias pada data Bab 4. Metrik latensi p99 terbukti stabil di bawah 5 milidetik.",
+                ),
+                MeetingDialogue(
+                    speaker_id="jovan",
+                    speaker_name="Jovan Aritza",
+                    role="Intelligence Officer",
+                    text="Pantauan radar Telkom University: jadwal pendaftaran sidang pra-skripsi dan verifikasi berkas sudah dibuka. Kita berada di timeline yang sangat aman untuk submit draf Bab 1-4 pekan ini.",
+                ),
+                MeetingDialogue(
+                    speaker_id="elara",
+                    speaker_name="Elara Sinclair",
+                    role="Personal Assistant to CEO",
+                    text="Executive brief evaluasi skripsi dan draf kompilasi PDF Bab 3 & 4 sudah saya cetak dan siapkan di tablet eksekutif. Dokumen siap diteruskan ke CEO Daniandra untuk arahan strategis final.",
+                ),
+                MeetingDialogue(
+                    speaker_id="daffa",
+                    speaker_name="Daffa",
+                    role="CEO Office",
+                    text="Terima kasih atas kerja keras seluruh tim R&D dan arsitektur. Rapat council selesai. Saya akan langsung membawa berkas evaluasi skripsi ini dan melapor ke CEO Daniandra di ruang CEO.",
+                ),
+            ]
+            key_decisions = [
+                "Standarisasi naskah skripsi Telkom University Bab 3 & 4 menggunakan format template LaTeX resmi dengan compiler Tectonic.",
+                "Pemanfaatan data empiris latensi dan throughput Virtual HQ sebagai novelti arsitektur event-driven autonomous multi-agent systems.",
+                "Sinkronisasi berkala timeline akademik dan pendaftaran sidang pra-skripsi Tel-U melalui koordinasi CEO Office dan PA.",
+            ]
+            action_items = [
+                ActionItem(
+                    pic="Kael Ashford & Nara Vasquez",
+                    task="Finalisasi draf Bab 3 & Bab 4 Skripsi Telkom University dalam format LaTeX Tectonic",
+                    due="2026-10-02",
+                ),
+                ActionItem(
+                    pic="Idris Nakamura",
+                    task="Ekspor dataset pengujian telemetry engine untuk validasi grafik Bab 4",
+                    due="2026-09-30",
+                ),
+                ActionItem(
+                    pic="Mika Stellan & Senna Louviere",
+                    task="Visualisasi diagram arsitektur resolusi tinggi untuk naskah skripsi",
+                    due="2026-09-29",
+                ),
+                ActionItem(
+                    pic="Jovan Aritza & Elara Sinclair",
+                    task="Monitoring portal akademik Tel-U terkait jadwal pendaftaran sidang pra-skripsi",
+                    due="2026-10-01",
+                ),
+                ActionItem(
+                    pic="Daffa",
+                    task="Laporan kemajuan evaluasi skripsi kepada CEO Daniandra di Executive Suite",
+                    due="2026-09-28",
                 ),
             ]
         else:
-            resolved_leader = leader_name or "Daffa (CEO Office)"
+            # Need 3: DevOps / Security Sentinel & Server Observability
+            title = "Audit Keamanan Sentinel & Peningkatan Kapasitas Observabilitas Server Studio"
             dialogues = [
                 MeetingDialogue(
                     speaker_id="daffa",
                     speaker_name="Daffa",
                     role="CEO Office",
-                    text="Selamat pagi rekan-rekan studio Yudiaz. Saya mewakili CEO Office memimpin War Room council pagi ini. Agenda pokok kita: verifikasi kesiapan infrastruktur studio, sinkronisasi naskah skripsi Telkom University, serta akselerasi Autonomous Virtual HQ tanpa hambatan birokrasi.",
-                ),
-                MeetingDialogue(
-                    speaker_id="raziel",
-                    speaker_name="Raziel Hendrix",
-                    role="CTO & Lead Orchestrator",
-                    text="Engineering pipeline berjalan prima. Background autonomous tick engine dan SSE broadcast terus mengalirkan state sinkron ke client. Latensi sistem terjaga di baseline rendah dan siap mendukung penambahan agent baru.",
-                ),
-                MeetingDialogue(
-                    speaker_id="jovan",
-                    speaker_name="Jovan Aritza",
-                    role="Intelligence Officer",
-                    text="Radar intel Telkom University mengonfirmasi jadwal bimbingan dan timeline pengunggahan draft skripsi final. Informasi dari fakultas sudah kami verifikasi dan sinkronkan dengan kalender PA.",
-                ),
-                MeetingDialogue(
-                    speaker_id="nara",
-                    speaker_name="Nara Vasquez",
-                    role="Lead Researcher",
-                    text="Eksperimen komparasi koordinasi multi-agent untuk bab 3 skripsi Tel-U telah membuktikan efisiensi protokol event-driven kita. Hasil analisis data siap dimasukkan ke naskah LaTeX.",
-                ),
-                MeetingDialogue(
-                    speaker_id="kael",
-                    speaker_name="Kael Ashford",
-                    role="Lead Architect",
-                    text="Template skripsi Tel-U berbasis LaTeX dan compiler Tectonic siap menghasilkan dokumen terstandarisasi secara otomatis. Integrasi diagram sistem arsitektur Virtual HQ telah tuntas.",
-                ),
-                MeetingDialogue(
-                    speaker_id="idris",
-                    speaker_name="Idris Nakamura",
-                    role="Senior Developer",
-                    text="FastAPI backend telah menyediakan skema Meeting Minutes lengkap dengan dialogues dan action items. Endpoint /api/v1/meetings/latest telah diintegrasikan dengan state engine secara robust.",
-                ),
-                MeetingDialogue(
-                    speaker_id="mika",
-                    speaker_name="Mika Stellan",
-                    role="Frontend Engineer",
-                    text="Diorama 3D canvas di frontend memperbarui posisi dan status agen ke ruang War Room secara instan. Modal MoM siap memvisualisasikan diskusi dan daftar tugas ini ke pengguna.",
-                ),
-                MeetingDialogue(
-                    speaker_id="senna",
-                    speaker_name="Senna Louviere",
-                    role="Creative Director",
-                    text="Visual tokens cyber-luxury untuk status 'IN_PROGRESS' dan 'COMPLETED' telah diimplementasikan. Nuansa mewah gold-mesh dan dark-glass memberikan pengalaman visual profesional.",
+                    text="Selamat pagi rekan-rekan. Rapat War Room council pagi ini kita dedikasikan untuk Audit Keamanan Sentinel & Peningkatan Kapasitas Observabilitas Server Studio. Viktor dan Raziel, silakan laporkan status audit ketahanan infrastruktur kita.",
                 ),
                 MeetingDialogue(
                     speaker_id="viktor",
                     speaker_name="Viktor Moreau",
                     role="Lead QA & Security Engineer",
-                    text="Quality assurance memastikan 100% test coverage dan zero regression pada seluruh endpoint API. Rate limiter dan autentikasi command PIN berada dalam kondisi aman.",
+                    text="Audit Sentinel 4-layer defense selesai dijalankan: scanning port 9449, rate-limiting brute-force guard pada PIN auth, dan audit dependensi bebas CVE critical. Seluruh parameter berstatus zero vulnerability.",
+                ),
+                MeetingDialogue(
+                    speaker_id="raziel",
+                    speaker_name="Raziel Hendrix",
+                    role="CTO & Lead Orchestrator",
+                    text="Dari sisi cloud infrastructure, pipeline SSE broadcaster dan telemetry mesh beroperasi dengan CPU di bawah 15%. Kapasitas observabilitas server telah diperkuat dengan structured logging dan metric export.",
+                ),
+                MeetingDialogue(
+                    speaker_id="kael",
+                    speaker_name="Kael Ashford",
+                    role="Lead Architect",
+                    text="Arsitektur keamanan Sentinel telah kami formalisasi dalam Security Architecture Specification: TLS 1.3 termination di reverse proxy Caddy, strict CORS, dan memory state isolation di simulation loop.",
+                ),
+                MeetingDialogue(
+                    speaker_id="idris",
+                    speaker_name="Idris Nakamura",
+                    role="Senior Developer",
+                    text="Backend telah dilengkapi rate-limiting middleware per endpoint, validasi input Pydantic yang ketat, serta sanitasi log audit untuk mencegah kebocoran data sensitif.",
+                ),
+                MeetingDialogue(
+                    speaker_id="nara",
+                    speaker_name="Nara Vasquez",
+                    role="Lead Researcher",
+                    text="Rujukan standar keamanan CIS Benchmark dan OWASP API Security Top 10 telah kami jadikan panduan pengamanan berkelanjutan seluruh service studio.",
+                ),
+                MeetingDialogue(
+                    speaker_id="mika",
+                    speaker_name="Mika Stellan",
+                    role="Frontend Engineer",
+                    text="Dashboard telemetry pada frontend diorama kini dilengkapi visual warning alert dan indikator latency real-time jika terjadi fluktuasi beban server.",
+                ),
+                MeetingDialogue(
+                    speaker_id="senna",
+                    speaker_name="Senna Louviere",
+                    role="Creative Director",
+                    text="Desain visual status Sentinel audit, badge enkripsi, dan visual panel telemetry telah diselaraskan dengan aksen cyber-emerald obsidian.",
+                ),
+                MeetingDialogue(
+                    speaker_id="jovan",
+                    speaker_name="Jovan Aritza",
+                    role="Intelligence Officer",
+                    text="Monitoring perimeter NOC mengonfirmasi tidak ada aktivitas scan atau anomali jaringan mencurigakan yang mendekati server studio.",
                 ),
                 MeetingDialogue(
                     speaker_id="elara",
                     speaker_name="Elara Sinclair",
                     role="Personal Assistant to CEO",
-                    text="Kalender eksekutif dan agenda bimbingan akademik Daniandra telah sinkron. Seluruh logistik dan dokumen pendukung siap tepat waktu.",
-                ),
-                MeetingDialogue(
-                    speaker_id="dani",
-                    speaker_name="Daniandra Prayudisty",
-                    role="Founder & CEO",
-                    text="Pengawalan dari Daffa dan CEO Office sangat terstruktur. Seluruh PIC harus memegang komitmen tenggat waktu pada action items yang disepakati.",
+                    text="Laporan ringkas hasil audit keamanan Sentinel dan observabilitas server telah dirangkum dalam one-page executive summary untuk briefing pimpinan.",
                 ),
                 MeetingDialogue(
                     speaker_id="daffa",
                     speaker_name="Daffa",
                     role="CEO Office",
-                    text="Baik, terima kasih Mas Dani dan seluruh tim. Council meeting resmi kita tutup. Silakan rekan-rekan kembali ke workstation untuk melanjutkan tugas fokus masing-masing.",
+                    text="Sempurna, infrastruktur yang aman dan teruji adalah pondasi utama ekspansi produk kita. Council selesai. Saya segera menghadap CEO Daniandra di CEO Suite untuk menyerahkan laporan ini.",
                 ),
             ]
-
-        key_decisions = [
-            "Standarisasi naskah skripsi Telkom University menggunakan format template LaTeX resmi dengan pipeline compiler Tectonic.",
-            "Implementasi endpoint REST /api/v1/meetings/latest dan sinkronisasi real-time SSE untuk Minutes of Meeting (MoM) di Virtual HQ.",
-            "Penyelarasan palet cyber-luxury design tokens (gold-mesh, cyber-emerald, obsidian dark glass) pada 3D diorama canvas dan meeting modal.",
-            "Penerapan automated testing gate 100% pass rate di pytest sebelum deployment pembaruan ke staging.",
-            "Sinkronisasi berkala timeline akademik dan pendaftaran sidang pra-skripsi Tel-U melalui koordinasi CEO Office dan PA.",
-        ]
-
-        action_items = [
-            ActionItem(
-                pic="Kael Ashford & Nara Vasquez",
-                task="Finalisasi draf Bab 3 & Bab 4 Skripsi Telkom University dalam format LaTeX Tectonic",
-                due="2026-10-02",
-            ),
-            ActionItem(
-                pic="Idris Nakamura",
-                task="Implementasi dan hardening endpoint /api/v1/meetings/latest beserta Pydantic validation",
-                due="2026-09-28",
-            ),
-            ActionItem(
-                pic="Mika Stellan",
-                task="Integrasi visual modal Minutes of Meeting ke dalam viewport 3D Diorama Canvas",
-                due="2026-09-29",
-            ),
-            ActionItem(
-                pic="Viktor Moreau",
-                task="Otomasi testing E2E untuk endpoint meeting minutes dan validasi 100% test coverage",
-                due="2026-09-28",
-            ),
-            ActionItem(
-                pic="Senna Louviere",
-                task="Finalisasi cyber-luxury design tokens dan typography styling untuk UI Minutes of Meeting",
-                due="2026-09-30",
-            ),
-            ActionItem(
-                pic="Elara Sinclair",
-                task="Sinkronisasi jadwal bimbingan skripsi Daniandra dengan dosen pembimbing Tel-U",
-                due="2026-10-01",
-            ),
-            ActionItem(
-                pic="Jovan Aritza",
-                task="Monitoring radar akademik Tel-U terkait jadwal pendaftaran sidang pra-skripsi",
-                due="2026-10-03",
-            ),
-            ActionItem(
-                pic="Daffa",
-                task="Supervisi eksekusi action items dan evaluasi deliverable lintas divisi CEO Office",
-                due="2026-10-05",
-            ),
-        ]
+            key_decisions = [
+                "Penerapan Sentinel 4-layer defense dan zero-vulnerability security baseline pada seluruh endpoint API.",
+                "Peningkatan kapasitas observabilitas server studio dengan structured audit logging dan metrik telemetri real-time.",
+                "Penerapan automated security scanning terintegrasi pada pipeline deployment studio.",
+            ]
+            action_items = [
+                ActionItem(
+                    pic="Viktor Moreau",
+                    task="Audit keamanan Sentinel pada port 9449 dan verifikasi proteksi brute-force PIN",
+                    due="2026-09-30",
+                ),
+                ActionItem(
+                    pic="Raziel Hendrix & Idris Nakamura",
+                    task="Peningkatan kapasitas observabilitas server dan optimasi pool broadcaster SSE",
+                    due="2026-10-01",
+                ),
+                ActionItem(
+                    pic="Kael Ashford & Nara Vasquez",
+                    task="Penyusunan Security Architecture Specification dan kepatuhan CIS Benchmark",
+                    due="2026-10-02",
+                ),
+                ActionItem(
+                    pic="Daffa",
+                    task="Penyampaian laporan audit keamanan dan observabilitas server ke CEO Daniandra",
+                    due="2026-09-28",
+                ),
+            ]
 
         return MeetingMinutes(
             meeting_id=meeting_id,
@@ -619,6 +729,8 @@ class OfficeEngine:
             dialogues=dialogues,
             key_decisions=key_decisions,
             action_items=action_items,
+            reporting_to_ceo="Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)",
+            ceo_feedback="Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix.",
         )
 
     def _calculate_seat_position(self, room: RoomInfo, slot_index: int) -> AgentPosition:
@@ -781,38 +893,53 @@ class OfficeEngine:
         return agent
 
     def gather_war_room(self) -> OfficeStateResponse:
-        """Trigger War Room protocol: move all personnel to War Room Amphitheater."""
+        """Trigger War Room protocol: gather 10 operational personnel led by Daffa while CEO Daniandra stays in CEO Suite."""
         self._office_mode = OfficeMode.WAR_ROOM
         self._temporary_assignments.clear()
         self._council_active = False
         war_room = self.rooms["room-war"]
+        ceo_room = self.rooms["room-ceo"]
 
         # Clear occupants across all rooms
         for room in self.rooms.values():
             room.current_occupants.clear()
 
-        # Place all agents into War Room
+        # CEO Daniandra stays in room-ceo reviewing strategic vision
+        dani_agent = self.agents["dani"]
+        ceo_room.current_occupants.append("dani")
+        dani_agent.status = AgentStatus.WORKING
+        dani_agent.current_task = "Executive Strategic Vision & Studio Governance Oversight (CEO Suite)"
+        dani_agent.active_tool = "Notion Strategic Roadmap"
+        dani_agent.updated_at = datetime.now(timezone.utc).isoformat()
+        self._reposition_room_occupants("room-ceo")
+
+        # Place the 10 operational personnel into War Room led by Daffa
         for agent_id, agent in self.agents.items():
+            if agent_id == "dani":
+                continue
             war_room.current_occupants.append(agent_id)
             agent.status = AgentStatus.MEETING
-            if agent_id in ("dani", "raziel", "daffa"):
-                agent.current_task = "Convening Studio Council & High-Priority Strategy Briefing"
+            if agent_id == "daffa":
+                agent.current_task = "Leading War Room Council: Business Analysis & Studio Operations (CEO Office)"
+            elif agent_id == "raziel":
+                agent.current_task = "Technical Architecture & Micro-SaaS Business Analysis"
             else:
-                agent.current_task = "All-Hands Strategic Alignment & Studio Directives"
+                agent.current_task = "War Room Council: Business Opportunities & Technical Strategy Deliberation"
             agent.updated_at = datetime.now(timezone.utc).isoformat()
 
         self._reposition_room_occupants("room-war")
 
         self.latest_meeting = self._generate_council_meeting(
-            leader_id="dani",
-            leader_name="Daniandra Prayudisty (CEO)",
+            leader_id="daffa",
+            leader_name="Daffa (CEO Office)",
             status="IN_PROGRESS",
+            need_index=self._need_cycle_index,
         )
 
         self.add_activity(
-            agent_id="dani",
+            agent_id="daffa",
             action="WAR_ROOM_CONVENED",
-            details="Executive Command initiated War Room protocol. All 11 agents assembled in Strategy Amphitheater.",
+            details="Daffa (CEO Office) convened War Room council with 10 operational personnel. CEO Daniandra reviews strategic vision from the CEO Suite.",
             severity="ALERT",
             room_id="room-war",
         )
@@ -827,6 +954,15 @@ class OfficeEngine:
 
         if self.latest_meeting and self.latest_meeting.status == "IN_PROGRESS":
             self.latest_meeting.status = "COMPLETED"
+            self.latest_meeting.reporting_to_ceo = "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
+            self.latest_meeting.ceo_feedback = "Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix."
+            self.add_activity(
+                agent_id="daffa",
+                action="EXECUTIVE_BRIEFING_DELIVERED",
+                details="Daffa (CEO Office) delivered the Executive Council Briefing & Business Recommendations to CEO Daniandra in the Executive Suite.",
+                severity="INFO",
+                room_id="room-ceo",
+            )
 
         # Clear occupants across all rooms
         for room in self.rooms.values():
@@ -865,6 +1001,15 @@ class OfficeEngine:
 
         if self.latest_meeting and self.latest_meeting.status == "IN_PROGRESS":
             self.latest_meeting.status = "COMPLETED"
+            self.latest_meeting.reporting_to_ceo = "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
+            self.latest_meeting.ceo_feedback = "Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix."
+            self.add_activity(
+                agent_id="daffa",
+                action="EXECUTIVE_BRIEFING_DELIVERED",
+                details="Daffa (CEO Office) delivered the Executive Council Briefing & Business Recommendations to CEO Daniandra in the Executive Suite.",
+                severity="INFO",
+                room_id="room-ceo",
+            )
 
         rest_room = self.rooms["room-pods"]
 
@@ -915,6 +1060,15 @@ class OfficeEngine:
 
         if self.latest_meeting and self.latest_meeting.status == "IN_PROGRESS":
             self.latest_meeting.status = "COMPLETED"
+            self.latest_meeting.reporting_to_ceo = "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
+            self.latest_meeting.ceo_feedback = "Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix."
+            self.add_activity(
+                agent_id="daffa",
+                action="EXECUTIVE_BRIEFING_DELIVERED",
+                details="Daffa (CEO Office) delivered the Executive Council Briefing & Business Recommendations to CEO Daniandra in the Executive Suite.",
+                severity="INFO",
+                room_id="room-ceo",
+            )
 
         # Clear occupants across all rooms
         for room in self.rooms.values():
@@ -1212,16 +1366,25 @@ class OfficeEngine:
             )
             if not still_in_council:
                 self._council_active = False
-                leader_id = "dani" if self._council_leader_toggle else "daffa"
-                leader_name = "CEO Daniandra" if self._council_leader_toggle else "Daffa (CEO Office)"
+                leader_id = "daffa"
+                leader_name = "Daffa (CEO Office)"
                 if self.latest_meeting and self.latest_meeting.status == "IN_PROGRESS":
                     self.latest_meeting.status = "COMPLETED"
+                    self.latest_meeting.reporting_to_ceo = "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
+                    self.latest_meeting.ceo_feedback = "Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix."
                 self.add_activity(
                     agent_id=leader_id,
                     action="COUNCIL_CONCLUDED",
                     details=f"War Room council meeting led by {leader_name} has concluded. All personnel returned to designated workstations for deep focus.",
                     severity="INFO",
                     room_id="room-war",
+                )
+                self.add_activity(
+                    agent_id=leader_id,
+                    action="EXECUTIVE_BRIEFING_DELIVERED",
+                    details="Daffa (CEO Office) delivered the Executive Council Briefing & Business Recommendations to CEO Daniandra in the Executive Suite.",
+                    severity="INFO",
+                    room_id="room-ceo",
                 )
 
         # Natural deliberation progression if council is currently ongoing
@@ -1232,19 +1395,19 @@ class OfficeEngine:
             ]
             if council_items:
                 rem_ticks = council_items[0]["return_tick"] - self._sim_ticks
-                leader_display = "CEO Daniandra" if self._council_leader_toggle else "Daffa (CEO Office)"
+                leader_display = "Daffa (CEO Office)"
                 if rem_ticks == 3:
                     for ag in self.agents.values():
                         if ag.position.room_id == "room-war":
-                            ag.current_task = f"War Room Council: Skripsi Telkom University & Thesis Architecture (Led by {leader_display})"
+                            ag.current_task = f"War Room Council: Business Opportunity Analysis & Micro-SaaS Feasibility (Led by {leader_display})"
                 elif rem_ticks == 2:
                     for ag in self.agents.values():
                         if ag.position.room_id == "room-war":
-                            ag.current_task = f"War Room Council: Studio Infrastructure & 3D Diorama Review (Led by {leader_display})"
+                            ag.current_task = f"War Room Council: Architecture Specs & Security Audit Deliberation (Led by {leader_display})"
                 elif rem_ticks == 1:
                     for ag in self.agents.values():
                         if ag.position.room_id == "room-war":
-                            ag.current_task = f"War Room Council: Finalizing Action Items & Strategic MoM (Led by {leader_display})"
+                            ag.current_task = f"War Room Council: Finalizing Business Advice & MoM for CEO Briefing (Led by {leader_display})"
 
         # 3. Schedule autonomous events when in NORMAL office mode
         event_triggered = False
@@ -1260,22 +1423,35 @@ class OfficeEngine:
 
             # A. Council Meeting in War Room
             if is_council_tick and not self._council_active:
-                self._council_leader_toggle = not self._council_leader_toggle
-                if self._council_leader_toggle:
-                    leader_id = "dani"
-                    leader_name = "CEO Daniandra"
-                    leader_full = "Daniandra Prayudisty (CEO)"
-                    leader_details = "CEO Daniandra is leading the meeting in the War Room."
-                else:
-                    leader_id = "daffa"
-                    leader_name = "Daffa (CEO Office)"
-                    leader_full = "Daffa (CEO Office)"
-                    leader_details = "Daffa (CEO Office) is leading the meeting in the War Room."
+                leader_id = "daffa"
+                leader_name = "Daffa (CEO Office)"
+                leader_full = "Daffa (CEO Office)"
+                leader_details = "Daffa (CEO Office) is leading the meeting in the War Room."
 
                 self._council_active = True
                 war_room = self.rooms["room-war"]
+                ceo_room = self.rooms["room-ceo"]
 
+                # CEO Daniandra stays in room-ceo reviewing strategic vision
+                dani_agent = self.agents["dani"]
+                if dani_agent.position.room_id != "room-ceo":
+                    old_room = self.rooms.get(dani_agent.position.room_id)
+                    if old_room and "dani" in old_room.current_occupants:
+                        old_room.current_occupants.remove("dani")
+                        self._reposition_room_occupants(old_room.id)
+                    if "dani" not in ceo_room.current_occupants:
+                        ceo_room.current_occupants.append("dani")
+                    self._reposition_room_occupants("room-ceo")
+
+                dani_agent.status = AgentStatus.WORKING
+                dani_agent.current_task = "Executive Strategic Vision & Studio Governance Oversight (CEO Suite)"
+                dani_agent.updated_at = datetime.now(timezone.utc).isoformat()
+
+                # Move 10 operational personnel to War Room
                 for aid, ag in self.agents.items():
+                    if aid == "dani":
+                        continue
+
                     old_room_id = ag.position.room_id
                     if old_room_id != "room-war":
                         old_room = self.rooms.get(old_room_id)
@@ -1300,7 +1476,9 @@ class OfficeEngine:
                     leader_id=leader_id,
                     leader_name=leader_full,
                     status="IN_PROGRESS",
+                    need_index=self._need_cycle_index,
                 )
+                self._need_cycle_index += 1
                 self.add_activity(
                     agent_id=leader_id,
                     action="COUNCIL_CONVENED",

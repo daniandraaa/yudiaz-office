@@ -308,7 +308,7 @@ async def test_rooms_initial_occupants_distribution(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_gather_war_room_action(async_client: AsyncClient):
-    """Verify gather_war_room protocol moves all 11 agents to War Room."""
+    """Verify gather_war_room protocol gathers 10 operational personnel led by Daffa while CEO stays in room-ceo."""
     res = await async_client.post(
         "/api/v1/office/action",
         json={"action": "gather_war_room"},
@@ -318,12 +318,30 @@ async def test_gather_war_room_action(async_client: AsyncClient):
 
     assert data["office_mode"] == OfficeMode.WAR_ROOM.value
     war_room = [r for r in data["rooms"] if r["id"] == "room-war"][0]
-    assert len(war_room["current_occupants"]) == 11
+    assert len(war_room["current_occupants"]) == 10
+    assert "daffa" in war_room["current_occupants"]
+    assert "dani" not in war_room["current_occupants"]
 
-    # Ensure all agents have meeting status
-    for agent in data["agents"]:
-        assert agent["position"]["room_id"] == "room-war"
-        assert agent["status"] == AgentStatus.MEETING.value
+    # Verify CEO Daniandra stays in room-ceo reviewing strategic vision
+    ceo_room = [r for r in data["rooms"] if r["id"] == "room-ceo"][0]
+    assert "dani" in ceo_room["current_occupants"]
+
+    agent_map = {a["id"]: a for a in data["agents"]}
+    assert agent_map["dani"]["position"]["room_id"] == "room-ceo"
+    assert agent_map["dani"]["status"] == AgentStatus.WORKING.value
+
+    # Ensure all 10 War Room agents have meeting status
+    for aid in war_room["current_occupants"]:
+        assert agent_map[aid]["position"]["room_id"] == "room-war"
+        assert agent_map[aid]["status"] == AgentStatus.MEETING.value
+
+    # Verify meeting minutes led by Daffa and analyzing business opportunities
+    latest_meeting = data["latest_meeting"]
+    assert latest_meeting is not None
+    assert "Daffa" in latest_meeting["leader_name"]
+    assert len(latest_meeting["attendees"]) == 10
+    assert not any("Daniandra" in att for att in latest_meeting["attendees"])
+    assert any("Micro-SaaS" in dec or "QRIS" in dec or "Bisnis" in dec or "9Router" in dec for dec in latest_meeting["key_decisions"])
 
 
 @pytest.mark.asyncio
@@ -647,26 +665,29 @@ async def test_simulation_tick_and_lifecycle():
 # ============================================================================
 
 def test_autonomous_council_meeting_simulation():
-    """Verify autonomous council convening in War Room with explicit leadership logs."""
+    """Verify autonomous council convening in War Room with Daffa leading and executive reporting to CEO."""
     engine = OfficeEngine()
     engine.resume_deep_work()
 
-    # 1. First council: CEO Daniandra leads
+    # 1. First council: Daffa (CEO Office) leads while Daniandra stays in room-ceo
     engine._simulate_tick(force_event="council")
     assert engine._council_active is True
-    assert len(engine.rooms["room-war"].current_occupants) == 11
+    assert len(engine.rooms["room-war"].current_occupants) == 10
+    assert "dani" not in engine.rooms["room-war"].current_occupants
+    assert engine.agents["dani"].position.room_id == "room-ceo"
+    assert engine.agents["dani"].status == AgentStatus.WORKING
 
-    # Check leadership log explicitly mentions CEO Daniandra is leading the meeting
+    # Check leadership log explicitly mentions Daffa (CEO Office) is leading the meeting
     council_logs = [a for a in engine.get_activities(limit=10) if a.action == "COUNCIL_CONVENED"]
     assert len(council_logs) >= 1
     first_log = council_logs[0]
-    assert first_log.agent_id == "dani"
-    assert "CEO Daniandra is leading the meeting" in first_log.details
+    assert first_log.agent_id == "daffa"
+    assert "Daffa (CEO Office) is leading the meeting" in first_log.details
 
-    # Verify all agents are in meeting status
-    for agent in engine.agents.values():
-        assert agent.position.room_id == "room-war"
-        assert agent.status == AgentStatus.MEETING
+    # Verify all 10 War Room agents are in meeting status
+    for aid in engine.rooms["room-war"].current_occupants:
+        assert engine.agents[aid].position.room_id == "room-war"
+        assert engine.agents[aid].status == AgentStatus.MEETING
 
     # Advance ticks to complete meeting duration (4 ticks)
     for _ in range(4):
@@ -682,13 +703,21 @@ def test_autonomous_council_meeting_simulation():
     assert engine.agents["idris"].position.room_id == "room-dev"
     assert engine.agents["mika"].position.room_id == "room-dev"
 
-    # Verify council conclusion audit log
+    # Verify council conclusion and executive briefing delivery to CEO Daniandra
     concluded_logs = [a for a in engine.get_activities(limit=10) if a.action == "COUNCIL_CONCLUDED"]
     assert len(concluded_logs) >= 1
 
-    # 2. Second council: Daffa (CEO Office) leads
+    briefing_logs = [a for a in engine.get_activities(limit=10) if a.action == "EXECUTIVE_BRIEFING_DELIVERED"]
+    assert len(briefing_logs) >= 1
+    assert "Daffa (CEO Office) delivered the Executive Council Briefing & Business Recommendations to CEO Daniandra in the Executive Suite." in briefing_logs[0].details
+    assert engine.latest_meeting.reporting_to_ceo == "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
+    assert engine.latest_meeting.ceo_feedback == "Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix."
+
+    # 2. Second council: Daffa (CEO Office) leads subsequent need-based council
     engine._simulate_tick(force_event="council")
     assert engine._council_active is True
+    assert len(engine.rooms["room-war"].current_occupants) == 10
+    assert engine.agents["dani"].position.room_id == "room-ceo"
     daffa_logs = [a for a in engine.get_activities(limit=5) if a.action == "COUNCIL_CONVENED"]
     assert len(daffa_logs) >= 1
     assert daffa_logs[0].agent_id == "daffa"
@@ -811,22 +840,21 @@ async def test_get_latest_meeting_endpoint(async_client: AsyncClient):
     # Core metadata
     assert mom is not None
     assert "meeting_id" in mom
-    assert mom["title"] == "Evaluasi Infrastruktur Studio, Skripsi Telkom University & Autonomous Virtual HQ"
-    assert mom["leader_name"] in ("Daniandra Prayudisty (CEO)", "Daffa (CEO Office)")
+    assert "Micro-SaaS" in mom["title"] or "Telkom University" in mom["title"]
+    assert mom["leader_name"] == "Daffa (CEO Office)"
     assert mom["status"] in ("IN_PROGRESS", "COMPLETED")
     assert "started_at" in mom
 
-    # Attendees: all 11 studio agents present
-    assert len(mom["attendees"]) == 11
-    expected_agents = ["Daniandra", "Daffa", "Raziel", "Kael", "Nara", "Senna", "Idris", "Mika", "Viktor", "Elara", "Jovan"]
+    # Attendees: 10 operational personnel led by Daffa
+    assert len(mom["attendees"]) == 10
+    expected_agents = ["Daffa", "Raziel", "Kael", "Nara", "Senna", "Idris", "Mika", "Viktor", "Elara", "Jovan"]
     for agent_name in expected_agents:
         assert any(agent_name in att for att in mom["attendees"]), f"Missing {agent_name} in attendees"
 
-    # Dialogues: rich sequenced statements from all divisions
+    # Dialogues: rich sequenced statements from division leads
     dialogues = mom["dialogues"]
-    assert len(dialogues) >= 11
+    assert len(dialogues) >= 10
     speaker_ids = {d["speaker_id"] for d in dialogues}
-    assert "dani" in speaker_ids
     assert "daffa" in speaker_ids
     assert "raziel" in speaker_ids
     assert "kael" in speaker_ids
@@ -847,11 +875,9 @@ async def test_get_latest_meeting_endpoint(async_client: AsyncClient):
 
     # Key decisions: strategic consensus items
     assert len(mom["key_decisions"]) >= 4
-    assert any("Telkom University" in dec for dec in mom["key_decisions"])
-    assert any("LaTeX" in dec or "Tectonic" in dec for dec in mom["key_decisions"])
 
     # Action items: commitments with PIC, task, and due date
-    assert len(mom["action_items"]) >= 6
+    assert len(mom["action_items"]) >= 5
     for item in mom["action_items"]:
         assert item["pic"]
         assert item["task"]
@@ -867,8 +893,8 @@ async def test_meeting_minutes_in_office_state(async_client: AsyncClient):
 
     assert "latest_meeting" in data
     assert data["latest_meeting"] is not None
-    assert data["latest_meeting"]["title"] == "Evaluasi Infrastruktur Studio, Skripsi Telkom University & Autonomous Virtual HQ"
-    assert len(data["latest_meeting"]["dialogues"]) >= 11
+    assert "Micro-SaaS" in data["latest_meeting"]["title"] or "Telkom University" in data["latest_meeting"]["title"]
+    assert len(data["latest_meeting"]["dialogues"]) >= 10
 
 
 @pytest.mark.asyncio
@@ -879,53 +905,115 @@ async def test_meeting_minutes_lifecycle_transitions(async_client: AsyncClient):
     assert res_war.status_code == 200
     war_state = res_war.json()
     assert war_state["latest_meeting"]["status"] == "IN_PROGRESS"
+    assert "Daffa" in war_state["latest_meeting"]["leader_name"]
+    assert len(war_state["latest_meeting"]["attendees"]) == 10
+    assert not any("Daniandra" in a for a in war_state["latest_meeting"]["attendees"])
 
     # Query latest meeting directly
     res_mom = await async_client.get("/api/v1/meetings/latest")
     assert res_mom.status_code == 200
     assert res_mom.json()["status"] == "IN_PROGRESS"
 
-    # Resume Deep Work -> meeting marks as COMPLETED
+    # Resume Deep Work -> meeting marks as COMPLETED with executive reporting to CEO
     res_resume = await async_client.post("/api/v1/office/action", json={"action": "resume_deep_work"})
     assert res_resume.status_code == 200
     resumed_state = res_resume.json()
     assert resumed_state["latest_meeting"]["status"] == "COMPLETED"
+    assert resumed_state["latest_meeting"]["reporting_to_ceo"] == "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
+    assert resumed_state["latest_meeting"]["ceo_feedback"] == "Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix."
+
+    # Verify executive briefing delivery audit log
+    assert any(
+        "Daffa (CEO Office) delivered the Executive Council Briefing & Business Recommendations to CEO Daniandra in the Executive Suite." in act["details"]
+        for act in resumed_state["recent_activities"]
+    )
 
     # Query endpoint after completion
     res_mom_after = await async_client.get("/api/v1/meetings/latest")
     assert res_mom_after.status_code == 200
     assert res_mom_after.json()["status"] == "COMPLETED"
+    assert res_mom_after.json()["reporting_to_ceo"] == "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
 
 
 def test_autonomous_council_meeting_minutes_generation():
-    """Verify engine generates rich minutes for both CEO Daniandra and Daffa council sessions."""
+    """Verify engine generates rich minutes for Daffa-led council sessions with CEO reporting."""
     engine = OfficeEngine()
     engine.resume_deep_work()
 
-    # 1. Convene CEO Daniandra session
+    # 1. Convene Daffa session (Need 1: Business Micro-SaaS)
     engine._simulate_tick(force_event="council")
     assert engine._council_active is True
     assert engine.latest_meeting is not None
-    assert engine.latest_meeting.leader_name == "Daniandra Prayudisty (CEO)"
+    assert engine.latest_meeting.leader_name == "Daffa (CEO Office)"
     assert engine.latest_meeting.status == "IN_PROGRESS"
-    assert len(engine.latest_meeting.dialogues) == 12
+    assert len(engine.latest_meeting.attendees) == 10
+    assert not any("Daniandra" in a for a in engine.latest_meeting.attendees)
+    assert len(engine.latest_meeting.dialogues) == 11
+    assert "Micro-SaaS" in engine.latest_meeting.title or "QRIS" in engine.latest_meeting.title
 
-    # Step through council deliberation
+    # Step through council deliberation (4 ticks)
     for _ in range(4):
         engine._simulate_tick()
 
     assert engine._council_active is False
     assert engine.latest_meeting.status == "COMPLETED"
+    assert engine.latest_meeting.reporting_to_ceo == "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
+    assert engine.latest_meeting.ceo_feedback == "Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix."
 
-    # 2. Convene Daffa (CEO Office) session
+    # Verify executive briefing delivery log in room-ceo
+    briefing_logs = [
+        a for a in engine.get_activities(limit=10)
+        if a.action == "EXECUTIVE_BRIEFING_DELIVERED"
+    ]
+    assert len(briefing_logs) >= 1
+    assert briefing_logs[0].details == "Daffa (CEO Office) delivered the Executive Council Briefing & Business Recommendations to CEO Daniandra in the Executive Suite."
+    assert briefing_logs[0].room_id == "room-ceo"
+
+    # 2. Convene second session (Need 2: Telkom University Thesis)
     engine._simulate_tick(force_event="council")
     assert engine._council_active is True
     assert engine.latest_meeting.leader_name == "Daffa (CEO Office)"
-    assert engine.latest_meeting.status == "IN_PROGRESS"
-    assert len(engine.latest_meeting.dialogues) == 12
-
+    assert "Skripsi Telkom University" in engine.latest_meeting.title
     for _ in range(4):
         engine._simulate_tick()
-
     assert engine._council_active is False
     assert engine.latest_meeting.status == "COMPLETED"
+
+    # 3. Convene third session (Need 3: Sentinel Security & Observability)
+    engine._simulate_tick(force_event="council")
+    assert engine._council_active is True
+    assert engine.latest_meeting.leader_name == "Daffa (CEO Office)"
+    assert "Sentinel" in engine.latest_meeting.title
+    for _ in range(4):
+        engine._simulate_tick()
+    assert engine._council_active is False
+    assert engine.latest_meeting.status == "COMPLETED"
+
+
+def test_business_analysis_and_need_based_agendas():
+    """Verify council meeting agendas analyze real studio needs and business opportunities."""
+    engine = OfficeEngine()
+
+    # Need 1: Business Suggestion (Micro-SaaS AI Automation via QRIS & 9Router)
+    mom_biz = engine._generate_council_meeting(status="COMPLETED", need_index=0)
+    assert mom_biz.title == "Analisis Peluang Bisnis Micro-SaaS AI Automation via Dynamic QRIS & API 9Router untuk UMKM/Devs"
+    assert mom_biz.leader_name == "Daffa (CEO Office)"
+    assert len(mom_biz.attendees) == 10
+    assert not any("Daniandra" in a for a in mom_biz.attendees)
+    assert any("9Router" in d.text for d in mom_biz.dialogues)
+    assert any("Dynamic QRIS" in d.text or "QRIS" in d.text for d in mom_biz.dialogues)
+    assert any("UMKM" in d.text for d in mom_biz.dialogues)
+    assert mom_biz.reporting_to_ceo == "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
+    assert mom_biz.ceo_feedback == "Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix."
+
+    # Need 2: R&D / Thesis (Telkom University Bab 3 & 4)
+    mom_thesis = engine._generate_council_meeting(status="COMPLETED", need_index=1)
+    assert mom_thesis.title == "Evaluasi Arsitektur Skripsi Telkom University Bab 3 & 4 (Event-Driven Autonomous Multi-Agent Systems)"
+    assert any("Bab 3" in d.text for d in mom_thesis.dialogues)
+    assert any("Tectonic" in d.text or "LaTeX" in d.text for d in mom_thesis.dialogues)
+
+    # Need 3: DevOps / Security (Sentinel Audit & Server Observability)
+    mom_sec = engine._generate_council_meeting(status="COMPLETED", need_index=2)
+    assert mom_sec.title == "Audit Keamanan Sentinel & Peningkatan Kapasitas Observabilitas Server Studio"
+    assert any("Sentinel" in d.text for d in mom_sec.dialogues)
+    assert any("port 9449" in d.text or "observabilitas" in d.text.lower() for d in mom_sec.dialogues)
