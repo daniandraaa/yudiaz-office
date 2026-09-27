@@ -238,6 +238,10 @@ class OfficeStateResponse(BaseModel):
         default=None,
         description="Latest War Room Council meeting minutes",
     )
+    meetings_history: list[MeetingMinutes] = Field(
+        default_factory=list,
+        description="Historical archive of past and current meeting minutes",
+    )
 
 
 class AuthVerifyRequest(BaseModel):

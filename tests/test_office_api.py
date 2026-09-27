@@ -996,24 +996,141 @@ def test_business_analysis_and_need_based_agendas():
 
     # Need 1: Business Suggestion (Micro-SaaS AI Automation via QRIS & 9Router)
     mom_biz = engine._generate_council_meeting(status="COMPLETED", need_index=0)
-    assert mom_biz.title == "Analisis Peluang Bisnis Micro-SaaS AI Automation via Dynamic QRIS & API 9Router untuk UMKM/Devs"
+    assert mom_biz.title == "Analisis Strategis: Monetisasi Micro-SaaS AI & Dynamic QRIS Payment Gateway"
     assert mom_biz.leader_name == "Daffa (CEO Office)"
     assert len(mom_biz.attendees) == 10
     assert not any("Daniandra" in a for a in mom_biz.attendees)
     assert any("9Router" in d.text for d in mom_biz.dialogues)
     assert any("Dynamic QRIS" in d.text or "QRIS" in d.text for d in mom_biz.dialogues)
     assert any("UMKM" in d.text for d in mom_biz.dialogues)
+    assert any("Intel Xeon" in d.text or "54 GB ECC RAM" in d.text for d in mom_biz.dialogues)
+    assert any("HMAC-SHA256" in d.text for d in mom_biz.dialogues)
+    assert any("Rp 35.000" in d.text or "Rp 35k" in d.text for d in mom_biz.dialogues)
     assert mom_biz.reporting_to_ceo == "Diserahkan kepada CEO Daniandra Prayudisty oleh Daffa (CEO Office)"
     assert mom_biz.ceo_feedback == "Disetujui. Lanjutkan eksekusi teknis di bawah supervisi CTO Raziel Hendrix."
 
     # Need 2: R&D / Thesis (Telkom University Bab 3 & 4)
     mom_thesis = engine._generate_council_meeting(status="COMPLETED", need_index=1)
-    assert mom_thesis.title == "Evaluasi Arsitektur Skripsi Telkom University Bab 3 & 4 (Event-Driven Autonomous Multi-Agent Systems)"
+    assert mom_thesis.title == "Evaluasi R&D: Sinkronisasi LaTeX Bab 3-4 Skripsi Telkom University via Tectonic"
     assert any("Bab 3" in d.text for d in mom_thesis.dialogues)
     assert any("Tectonic" in d.text or "LaTeX" in d.text for d in mom_thesis.dialogues)
+    assert any("Intel Xeon" in d.text or "54 GB ECC RAM" in d.text for d in mom_thesis.dialogues)
 
     # Need 3: DevOps / Security (Sentinel Audit & Server Observability)
     mom_sec = engine._generate_council_meeting(status="COMPLETED", need_index=2)
-    assert mom_sec.title == "Audit Keamanan Sentinel & Peningkatan Kapasitas Observabilitas Server Studio"
+    assert mom_sec.title == "Audit Keamanan & Keandalan Cluster Sentinel: 4-Layer Server Hardening"
     assert any("Sentinel" in d.text for d in mom_sec.dialogues)
-    assert any("port 9449" in d.text or "observabilitas" in d.text.lower() for d in mom_sec.dialogues)
+    assert any("Fail2ban" in d.text or "2.57.122.209" in d.text for d in mom_sec.dialogues)
+    assert any("Intel Xeon" in d.text or "54 GB ECC RAM" in d.text for d in mom_sec.dialogues)
+
+
+# ============================================================================
+# 15. Meetings History & Specific Meeting Archive Endpoints Tests
+# ============================================================================
+
+@pytest.mark.asyncio
+async def test_meetings_history_in_office_state(async_client: AsyncClient):
+    """Verify GET /api/v1/office/state includes meetings_history archive list."""
+    res = await async_client.get("/api/v1/office/state")
+    assert res.status_code == 200
+    data = res.json()
+
+    assert "meetings_history" in data
+    assert isinstance(data["meetings_history"], list)
+    assert len(data["meetings_history"]) >= 1
+
+    first_hist = data["meetings_history"][0]
+    assert "meeting_id" in first_hist
+    assert "title" in first_hist
+    assert "dialogues" in first_hist
+    assert "key_decisions" in first_hist
+    assert "action_items" in first_hist
+    assert first_hist["meeting_id"] == data["latest_meeting"]["meeting_id"]
+
+
+@pytest.mark.asyncio
+async def test_get_meetings_history_endpoint(async_client: AsyncClient):
+    """Verify GET /api/v1/meetings/history returns list of archived meeting minutes newest first."""
+    res = await async_client.get("/api/v1/meetings/history")
+    assert res.status_code == 200
+    history = res.json()
+
+    assert isinstance(history, list)
+    assert len(history) >= 1
+
+    for mom in history:
+        assert "meeting_id" in mom
+        assert "title" in mom
+        assert "leader_name" in mom
+        assert "status" in mom
+        assert len(mom["attendees"]) == 10
+        assert len(mom["dialogues"]) >= 10
+        assert len(mom["key_decisions"]) >= 4
+        assert len(mom["action_items"]) >= 5
+
+
+@pytest.mark.asyncio
+async def test_get_meeting_by_id_endpoint(async_client: AsyncClient):
+    """Verify GET /api/v1/meetings/{meeting_id} fetches specific meeting or returns 404."""
+    # 1. Fetch valid meeting ID from latest meeting
+    res_latest = await async_client.get("/api/v1/meetings/latest")
+    assert res_latest.status_code == 200
+    latest = res_latest.json()
+    valid_id = latest["meeting_id"]
+
+    res_single = await async_client.get(f"/api/v1/meetings/{valid_id}")
+    assert res_single.status_code == 200
+    fetched = res_single.json()
+    assert fetched["meeting_id"] == valid_id
+    assert fetched["title"] == latest["title"]
+    assert fetched["leader_name"] == latest["leader_name"]
+
+    # 2. Fetch non-existent meeting returns 404
+    res_404 = await async_client.get("/api/v1/meetings/mom-council-nonexistent-000")
+    assert res_404.status_code == 404
+    assert "not found" in res_404.json()["detail"].lower()
+
+
+def test_meeting_history_archiving_and_deduplication():
+    """Verify meeting history maintains newest first, deduplicates updates, and caps at 20."""
+    engine = OfficeEngine()
+    engine.resume_deep_work()
+
+    initial_history = engine.get_meetings_history()
+    assert len(initial_history) >= 1
+    assert initial_history[0].meeting_id == engine.latest_meeting.meeting_id
+
+    # 1. Convene War Room creates IN_PROGRESS meeting
+    engine.gather_war_room()
+    war_meeting_id = engine.latest_meeting.meeting_id
+    history_after_war = engine.get_meetings_history()
+    assert history_after_war[0].meeting_id == war_meeting_id
+    assert history_after_war[0].status == "IN_PROGRESS"
+
+    # 2. Resuming deep work updates the meeting to COMPLETED and deduplicates
+    engine.resume_deep_work()
+    history_after_resume = engine.get_meetings_history()
+    assert history_after_resume[0].meeting_id == war_meeting_id
+    assert history_after_resume[0].status == "COMPLETED"
+
+    # Verify no duplicate war_meeting_id in history
+    matching_ids = [m.meeting_id for m in history_after_resume if m.meeting_id == war_meeting_id]
+    assert len(matching_ids) == 1
+
+    # 3. Test get_meeting_by_id directly on engine
+    found = engine.get_meeting_by_id(war_meeting_id)
+    assert found is not None
+    assert found.meeting_id == war_meeting_id
+    assert engine.get_meeting_by_id("mom-ghost-404") is None
+
+    # 4. Test max 20 history cap
+    for i in range(25):
+        dummy_meeting = engine._generate_council_meeting(
+            status="COMPLETED",
+            need_index=i % 3,
+            time_offset=i * 100,
+        )
+        engine._archive_meeting(dummy_meeting)
+
+    capped_history = engine.get_meetings_history()
+    assert len(capped_history) == 20

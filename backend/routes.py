@@ -175,6 +175,32 @@ async def get_latest_meeting() -> Optional[MeetingMinutes]:
     return office_engine.get_latest_meeting()
 
 
+@router.get(
+    "/meetings/history",
+    response_model=list[MeetingMinutes],
+    summary="Get Historical Archive of Council Meeting Minutes",
+)
+async def get_meetings_history() -> list[MeetingMinutes]:
+    """Retrieve historical archive of past and current War Room council meeting minutes (newest first)."""
+    return office_engine.get_meetings_history()
+
+
+@router.get(
+    "/meetings/{meeting_id}",
+    response_model=Optional[MeetingMinutes],
+    summary="Get Specific Council Meeting Minutes by ID",
+)
+async def get_meeting_by_id(meeting_id: str) -> Optional[MeetingMinutes]:
+    """Retrieve specific War Room council meeting minutes by ID."""
+    meeting = office_engine.get_meeting_by_id(meeting_id)
+    if not meeting:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Meeting with id '{meeting_id}' not found.",
+        )
+    return meeting
+
+
 @router.get("/stream", summary="Server-Sent Events (SSE) Live Telemetry Stream")
 async def sse_stream(
     request: Request,
