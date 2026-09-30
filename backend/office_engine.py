@@ -8,16 +8,98 @@ and live telemetry streaming.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import json
 import os
+from pathlib import Path
 import random
 import re
 import secrets
+import sqlite3
 import time
 from typing import Any, Optional
 import uuid
 import httpx
+
+PROFILE_DB_MAP: dict[str, Path] = {
+    "daffa": Path.home() / ".hermes" / "state.db",
+    "raziel": Path.home() / ".hermes" / "profiles" / "raziel-cto" / "state.db",
+    "elara": Path.home() / ".hermes" / "profiles" / "elara-pa" / "state.db",
+    "jovan": Path.home() / ".hermes" / "profiles" / "jovan-intel" / "state.db",
+    "cucurella": Path.home() / ".hermes" / "profiles" / "cucurella-soetahills" / "state.db",
+    "kael": Path.home() / ".hermes" / "profiles" / "kael-architect" / "state.db",
+    "nara": Path.home() / ".hermes" / "profiles" / "nara-researcher" / "state.db",
+    "senna": Path.home() / ".hermes" / "profiles" / "senna-designer" / "state.db",
+    "idris": Path.home() / ".hermes" / "profiles" / "idris-developer" / "state.db",
+    "mika": Path.home() / ".hermes" / "profiles" / "mika-frontend" / "state.db",
+    "viktor": Path.home() / ".hermes" / "profiles" / "viktor-qa" / "state.db",
+}
+
+def clean_user_prompt(text: str) -> str:
+    if not text:
+        return ""
+    text = re.sub(r'\[OUT-OF-BAND USER MESSAGE.*?\]', '', text, flags=re.DOTALL)
+    text = re.sub(r'\[/OUT-OF-BAND USER MESSAGE\]', '', text, flags=re.DOTALL)
+    text = re.sub(r'Gateway message origin.*?\n\n', '', text, flags=re.DOTALL)
+    text = re.sub(r'\[IMPORTANT:.*?\]', '', text, flags=re.DOTALL)
+    text = re.sub(r'\[Note:.*?\]', '', text, flags=re.DOTALL)
+    return text.strip()
+
+def get_agent_live_telegram_data(agent_id: str) -> Optional[dict[str, Any]]:
+    db_path = PROFILE_DB_MAP.get(agent_id)
+    if not db_path or not db_path.exists():
+        return None
+    try:
+        con = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True, timeout=1.0)
+        cur = con.cursor()
+        asst = cur.execute(
+            """
+            SELECT timestamp, content, reasoning, reasoning_content, tool_name
+            FROM messages
+            WHERE role = 'assistant'
+            ORDER BY id DESC LIMIT 1
+            """
+        ).fetchone()
+        user_msg = cur.execute(
+            """
+            SELECT content, timestamp
+            FROM messages
+            WHERE role = 'user' AND content IS NOT NULL
+            ORDER BY id DESC LIMIT 1
+            """
+        ).fetchone()
+        con.close()
+        if not asst:
+            return None
+        ts, content, reasoning, r_content, tool_name = asst
+        thought = (reasoning or r_content or "").strip()
+        if not thought and content:
+            first_line = content.strip().split("\n")[0]
+            if len(first_line) > 180:
+                first_line = first_line[:177] + "..."
+            thought = first_line
+
+        user_task = clean_user_prompt(user_msg[0]) if user_msg else ""
+        if len(user_task) > 120:
+            user_task = user_task[:117] + "..."
+
+        is_recent = (time.time() - ts) < 86400
+
+        return {
+            "timestamp": ts,
+            "thought": thought,
+            "task": user_task,
+            "tool": tool_name or "Telegram Gateway",
+            "reply": (content[:160] + "...") if content and len(content) > 160 else (content or ""),
+            "is_recent": is_recent,
+        }
+    except Exception:
+        return None
+
+WIB = timezone(timedelta(hours=7))
+
+def get_wib_now() -> datetime:
+    return datetime.now(timezone.utc).astimezone(WIB)
 
 from backend.config import get_settings
 from backend.models import (
@@ -68,6 +150,8 @@ class OfficeEngine:
         self._initialize_agents()
         self._seed_initial_activity()
         self._seed_initial_meetings()
+        self.conversation_history: list[dict[str, Any]] = []
+        self._seed_initial_conversations()
 
     def _archive_meeting(self, meeting: MeetingMinutes) -> None:
         """Archive or update meeting in history, deduplicating by meeting_id, newest first, max 20."""
@@ -243,7 +327,7 @@ class OfficeEngine:
                 "task": "Strategic Direction & Studio Vision",
                 "avatar_color": "#FFD700",
                 "tool": "Notion Strategic Roadmap",
-                "context": "Yudiaz Creative Studio governance & executive roadmaps",
+                "context": "Mengevaluasi kesiapan ekosistem studio: dev pipeline Raziel, radar kampus Jovan, dan kampanye Soetahills",
             },
             {
                 "id": "raziel",
@@ -255,7 +339,7 @@ class OfficeEngine:
                 "task": "System Orchestration & Cloud Infrastructure",
                 "avatar_color": "#7928CA",
                 "tool": "Hermes Agent Hub",
-                "context": "Telemetry mesh, multi-agent synchronizer, high-availability cluster",
+                "context": "Barusan review PR Idris & Mika, latency stream 0.4ms aman dan arsitektur modular siap nampung beban multi-agent",
             },
             {
                 "id": "kael",
@@ -267,7 +351,7 @@ class OfficeEngine:
                 "task": "Distributed Multi-Agent Architecture Specs",
                 "avatar_color": "#0070F3",
                 "tool": "ADR & System Graph Generator",
-                "context": "Modular service mesh, WebSocket/SSE streaming topology",
+                "context": "Lagi kalkulasi beban database event-driven loop, circular dependency berhasil dicegah dan Tectonic compile bersih",
             },
             {
                 "id": "nara",
@@ -279,7 +363,7 @@ class OfficeEngine:
                 "task": "Telkom University Thesis Literature & arXiv Synthesis",
                 "avatar_color": "#00DFD8",
                 "tool": "arXiv Explorer & Zotero",
-                "context": "Autonomous agent coordination protocols and university research archive",
+                "context": "Data benchmark terbaru membuktikan arsitektur event-driven 4.2x lebih efisien, 14 paper Scopus siap untuk novelti skripsi",
             },
             {
                 "id": "senna",
@@ -291,7 +375,7 @@ class OfficeEngine:
                 "task": "Cyber-Luxury Isometric Visual Tokens",
                 "avatar_color": "#FF0080",
                 "tool": "Figma & Shader Visualizer",
-                "context": "Cyber-luxury design system, gold-mesh trims, dark-glass aesthetics",
+                "context": "Lagi poles ritme spasi dan balance visual hero section, impresi obsidian premium makin tajam dan kontras tombol tegas",
             },
             {
                 "id": "idris",
@@ -303,7 +387,7 @@ class OfficeEngine:
                 "task": "FastAPI Telemetry Engine & Socket Streamer",
                 "avatar_color": "#00FF66",
                 "tool": "VS Code & Python REPL",
-                "context": "Async state engine, SSE event broadcaster, Pydantic type contracts",
+                "context": "Query join nested yang tadinya 400ms berhasil saya pangkas jadi 45ms, guard clause auth dari temuan Viktor udah rapi",
             },
             {
                 "id": "mika",
@@ -315,7 +399,7 @@ class OfficeEngine:
                 "task": "Isometric Canvas 2.5D Rendering Engine",
                 "avatar_color": "#FF8800",
                 "tool": "Chrome DevTools & CanvasProfiler",
-                "context": "HTML5 2.5D Isometric viewport, dynamic agent avatars, status glow",
+                "context": "Glitch drawer navigation mobile Safari udah beres, FPS Three.js locked 60 FPS waktu event SSE masuk bersamaan",
             },
             {
                 "id": "viktor",
@@ -327,7 +411,7 @@ class OfficeEngine:
                 "task": "Automated E2E Suite & 4-Layer Defense Audit",
                 "avatar_color": "#FF3333",
                 "tool": "Pytest Suite & Security Scanner",
-                "context": "E2E endpoint verification, PIN auth brute-force gate, test coverage",
+                "context": "Unhandled 500 error pas payload kosong udah beres ditambal Idris, semua 35 test suite hijau dan build layak naik staging",
             },
             {
                 "id": "elara",
@@ -339,7 +423,7 @@ class OfficeEngine:
                 "task": "Executive Calendar, Briefing Prep & Priority Logistics",
                 "avatar_color": "#E0AAFF",
                 "tool": "Executive Calendar & Briefing Suite",
-                "context": "Daniandra's itinerary, executive briefings, priority logistics, and VIP communications",
+                "context": "Menjaga ritme kerja Mas Dani tetap prima, briefing kalender dan rekap kas rapi, siap kawal evaluasi malam",
             },
             {
                 "id": "jovan",
@@ -351,7 +435,7 @@ class OfficeEngine:
                 "task": "Telkom University Campus Event Radar",
                 "avatar_color": "#39FF14",
                 "tool": "Campus Radar NOC Feeds",
-                "context": "Telkom University academic calendar, symposium alerts, student research feeds",
+                "context": "Jadwal revisi sidang fakultas terverifikasi dari menfess dan anak BEM, seminar event-driven 15 Okt klop sama skripsi Mas Dani",
             },
             {
                 "id": "daffa",
@@ -363,7 +447,19 @@ class OfficeEngine:
                 "task": "Executive Operations & Strategic Alignment",
                 "avatar_color": "#38BDF8",
                 "tool": "Executive Dashboard & Notion",
-                "context": "CEO Office operations, cross-department coordination, strategic follow-ups",
+                "context": "Menyelaraskan sprint dev Raziel, radar Jovan, dan traksi Soetahills Cucurella, memo briefing siap untuk meja Mas Dani",
+            },
+            {
+                "id": "cucurella",
+                "name": "Cucurella",
+                "role": "Head of Soetahills Growth",
+                "department": "Real Estate & Strategic Growth",
+                "room_id": "room-ceo",
+                "status": AgentStatus.WORKING,
+                "task": "Soetahills Property Market Intel & Content Strategy",
+                "avatar_color": "#10B981",
+                "tool": "Meta Creator Studio & Real Estate Analytics",
+                "context": "Menganalisis performa hook video Reels @soetahills, riset harga kompetitor properti sekitar, dan mengonversi leads WhatsApp survei lokasi",
             },
         ]
 
@@ -395,7 +491,7 @@ class OfficeEngine:
         self.add_activity(
             agent_id="raziel",
             action="SYSTEM_ONLINE",
-            details="Yudiaz Virtual HQ Spatial Engine booted. 11 autonomous agents deployed across 11 zones.",
+            details="Yudiaz Virtual HQ Spatial Engine booted. 12 autonomous agents deployed across 11 zones.",
             severity="SYSTEM",
         )
         self.add_activity(
@@ -404,6 +500,16 @@ class OfficeEngine:
             details="Daniandra Prayudisty initiated daily studio oversight from the Executive Suite.",
             severity="INFO",
         )
+
+    def sync_live_telegram_telemetry(self) -> None:
+        """Synchronizes live thought reasoning and active tasks from SQLite state.db."""
+        for aid, agent in self.agents.items():
+            live = get_agent_live_telegram_data(aid)
+            if live and live.get("thought"):
+                agent.telegram_live = live
+                agent.memory_context = live["thought"]
+                if live.get("tool"):
+                    agent.active_tool = live["tool"]
 
     def _generate_council_meeting(
         self,
@@ -435,6 +541,7 @@ class OfficeEngine:
             "Viktor Moreau (Lead QA & Security Engineer)",
             "Elara Sinclair (Personal Assistant to CEO)",
             "Jovan Aritza (Intelligence Officer)",
+            "Cucurella (Head of Soetahills Growth)",
         ]
 
         active_need_idx = (need_index or 0) % 3
@@ -502,6 +609,12 @@ class OfficeEngine:
                     speaker_name="Elara Sinclair",
                     role="Personal Assistant to CEO",
                     text="Seluruh data kalkulasi unit economics Rp 35k/paket, estimasi settlement ke clean ledger Finance (finance:9339), dan ringkasan arsitektur telah saya rangkum dalam notulensi resmi. Dokumen siap diserahkan kepada Daffa untuk dilaporkan kepada CEO Daniandra di CEO Suite.",
+                ),
+                MeetingDialogue(
+                    speaker_id="cucurella",
+                    speaker_name="Cucurella",
+                    role="Head of Soetahills Growth",
+                    text="Dari perspektif growth dan cross-monetization, modul dynamic QRIS ini juga bisa diintegrasikan langsung ke booking fee kilat unit properti Soetahills. Audiens Instagram @soetahills yang terkonversi dari konten Reels edukasi bisa langsung lock unit tanpa hambatan administrasi perbankan manual.",
                 ),
                 MeetingDialogue(
                     speaker_id="daffa",
@@ -608,6 +721,12 @@ class OfficeEngine:
                     text="Berkas PDF skripsi hasil kompilasi Tectonic Bab 1-4 dan lembar novelti penelitian telah selesai disiapkan di tablet eksekutif. Dokumen siap diserahkan kepada Daffa untuk dilaporkan ke CEO Daniandra.",
                 ),
                 MeetingDialogue(
+                    speaker_id="cucurella",
+                    speaker_name="Cucurella",
+                    role="Head of Soetahills Growth",
+                    text="Metodologi evaluasi sistem terdistribusi multi-agent dalam skripsi Mas Dani ini punya relevansi nyata untuk pemodelan analitik data spasial pasar properti dan cluster demografi pembeli hunian modern.",
+                ),
+                MeetingDialogue(
                     speaker_id="daffa",
                     speaker_name="Daffa",
                     role="CEO Office",
@@ -712,6 +831,12 @@ class OfficeEngine:
                     text="Ringkasan eksekutif hasil audit keamanan Sentinel, status stabilitas cluster 4 subdomain, dan metrik hardware telah dirangkum dalam one-page executive memo. Dokumen siap diserahkan kepada Daffa.",
                 ),
                 MeetingDialogue(
+                    speaker_id="cucurella",
+                    speaker_name="Cucurella",
+                    role="Head of Soetahills Growth",
+                    text="Proteksi data privasi leads dan berkas pembeli perumahan Soetahills (KTP, slip gaji KPR, invoice booking fee) mutlak terlindungi di bawah pertahanan Sentinel ini.",
+                ),
+                MeetingDialogue(
                     speaker_id="daffa",
                     speaker_name="Daffa",
                     role="CEO Office",
@@ -796,7 +921,8 @@ class OfficeEngine:
                 agent.updated_at = datetime.now(timezone.utc).isoformat()
 
     def get_state(self) -> OfficeStateResponse:
-        """Compile a complete, fresh snapshot of virtual office state."""
+        """Capture complete real-time snapshot of the virtual studio building diorama."""
+        self.sync_live_telegram_telemetry()
         uptime = round(time.time() - self._start_time, 1)
 
         # Dynamic telemetry
@@ -845,6 +971,726 @@ class OfficeEngine:
             return self.latest_meeting
         return None
 
+
+    def get_meeting_schedules(self) -> list[dict[str, Any]]:
+        """Fetch scheduled studio meetings and War Room councils."""
+        return [
+            {
+                "id": "sched-1",
+                "title": "Evaluasi Sprint Dev Core & Pipeline High-Availability",
+                "lead": "Daffa (CEO Office) & Raziel Hendrix (CTO)",
+                "participants": ["Raziel", "Idris", "Mika", "Viktor", "Kael"],
+                "day": "Senin",
+                "time": "09:00 WIB",
+                "room": "War Room (Grand Council)",
+                "status": "UPCOMING",
+                "agenda": "Review query latency Idris (45ms), canvas Three.js Mika 60 FPS, hasil audit edge-case Viktor, dan arsitektur modular Kael.",
+            },
+            {
+                "id": "sched-2",
+                "title": "Review Arsitektur Sistem & Sintesis Skripsi Tel-U",
+                "lead": "Kael Ashford & Nara Vasquez",
+                "participants": ["Kael", "Nara", "Raziel", "Daffa"],
+                "day": "Rabu",
+                "time": "14:00 WIB",
+                "room": "Atelier Architecture Lab",
+                "status": "UPCOMING",
+                "agenda": "Validasi sequence diagram event-driven loop, kurasi 14 paper Scopus, dan benchmark arXiv 4.2x efisiensi komputasi.",
+            },
+            {
+                "id": "sched-3",
+                "title": "Audit Keamanan & Penetrasi Sentinel Cluster",
+                "lead": "Viktor Moreau & Idris Nakamura",
+                "participants": ["Viktor", "Idris", "Raziel"],
+                "day": "Jumat",
+                "time": "16:00 WIB",
+                "room": "Server Fortress NOC",
+                "status": "UPCOMING",
+                "agenda": "Stress testing port 9449, verifikasi 35 test suite, simulasi serangan unhandled payload, dan rule hardening Fail2ban.",
+            },
+            {
+                "id": "sched-4",
+                "title": "Executive Council: Penyelarasan Strategis Studio & Soetahills Growth",
+                "lead": "Daffa (CEO Office) & Cucurella",
+                "participants": ["Daffa", "Cucurella", "Senna", "Elara", "Jovan"],
+                "day": "Setiap Hari Kerja",
+                "time": "16:30 WIB",
+                "room": "War Room (Grand Council)",
+                "status": "READY_TO_REPORT",
+                "agenda": "Penyelarasan deliverable dev Raziel, intelijen Tel-U Jovan, performa hook Reels @soetahills, dan agenda Mas Dani.",
+            },
+            {
+                "id": "sched-5",
+                "title": "Protokol Malam, Wellness & Briefing H+1 CEO",
+                "lead": "Elara Sinclair (PA to CEO)",
+                "participants": ["Elara", "Daffa"],
+                "day": "Setiap Malam",
+                "time": "21:00 WIB",
+                "room": "PA Executive Office",
+                "status": "UPCOMING",
+                "agenda": "Rekapitulasi keuangan Yudiaz Finance, finalisasi kalender esok, dan persiapan jadwal istirahat berkualitas Mas Dani.",
+            },
+        ]
+    def get_daily_living_schedule(self) -> dict[str, Any]:
+        """Fetch the full 24h daily living rhythm schedule of Yudiaz Creative Studio with real-time status."""
+        wib_now = datetime.now(timezone(timedelta(hours=7)))
+        current_time_str = wib_now.strftime("%H:%M WIB")
+        cur_minute = wib_now.hour * 60 + wib_now.minute
+
+        schedule_slots = [
+            {
+                "id": "slot-1",
+                "time_range": "08:30 – 09:15 WIB",
+                "start_min": 8 * 60 + 30,
+                "end_min": 9 * 60 + 15,
+                "activity": "☕ Morning Coffee & Daily Sync",
+                "category": "coffee",
+                "participants": "Idris, Kael, Viktor, Jovan, Daffa",
+                "room": "Pantry Lounge & Bar",
+                "desc": "Menyeduh espresso arabika pertama, sarapan ringan, dan review agenda harian sprint studio."
+            },
+            {
+                "id": "slot-2",
+                "time_range": "09:15 – 12:00 WIB",
+                "start_min": 9 * 60 + 15,
+                "end_min": 12 * 60,
+                "activity": "🎯 Deep Focus Work (Sprint Pagi)",
+                "category": "work",
+                "participants": "Seluruh Tim (11 Personel)",
+                "room": "Meja Kerja Divisi",
+                "desc": "Koding core backend, perakitan Three.js UI, sintesis naskah skripsi, desain token obsidian."
+            },
+            {
+                "id": "slot-3",
+                "time_range": "12:00 – 12:45 WIB",
+                "start_min": 12 * 60,
+                "end_min": 12 * 60 + 45,
+                "activity": "🍱 Istirahat Makan Siang & Rehat",
+                "category": "relax",
+                "participants": "Seluruh Karyawan (Dikoordinir Elara)",
+                "room": "Atrium & Lounge",
+                "desc": "Makan siang bersama, ngobrol santai lintas divisi, relaksasi setelah sesi koding intensif."
+            },
+            {
+                "id": "slot-4",
+                "time_range": "12:45 – 13:20 WIB",
+                "start_min": 12 * 60 + 45,
+                "end_min": 13 * 60 + 20,
+                "activity": "😴 Bio-Rhythm Sleep Pods (Power Nap)",
+                "category": "sleep",
+                "participants": "Idris, Viktor, Kael, Nara",
+                "room": "Sensory Sleep Pods",
+                "desc": "Tidur regenerasi biologis 20–30 menit dalam pod bertekanan udara zen untuk reset kognitif."
+            },
+            {
+                "id": "slot-5",
+                "time_range": "13:00 – 13:30 WIB",
+                "start_min": 13 * 60,
+                "end_min": 13 * 60 + 30,
+                "activity": "🏓 Ping-Pong Warming Up",
+                "category": "pingpong",
+                "participants": "Mika vs Idris, Raziel vs Viktor",
+                "room": "Recreation Lounge",
+                "desc": "Peregangan fisik & rally tenis meja santai agar tidak mengantuk pasca makan siang."
+            },
+            {
+                "id": "slot-6",
+                "time_range": "13:30 – 16:30 WIB",
+                "start_min": 13 * 60 + 30,
+                "end_min": 16 * 60 + 30,
+                "activity": "🎯 Deep Focus Work (Sprint Siang)",
+                "category": "work",
+                "participants": "Seluruh Tim (11 Personel)",
+                "room": "Meja Kerja Divisi",
+                "desc": "Refactoring API, audit keamanan 51 tests Sentinel, review PR, penyelarasan kampanye Soetahills."
+            },
+            {
+                "id": "slot-7",
+                "time_range": "16:30 – 17:15 WIB",
+                "start_min": 16 * 60 + 30,
+                "end_min": 17 * 60 + 15,
+                "activity": "☕ Afternoon Coffee & Tea Break",
+                "category": "coffee",
+                "participants": "Senna, Elara, Daniandra, Daffa",
+                "room": "Pantry Lounge & Bar",
+                "desc": "Seduh kopi sore atau teh herbal hangat untuk menjaga mood dan fokus sore hari."
+            },
+            {
+                "id": "slot-8",
+                "time_range": "16:45 – 17:45 WIB",
+                "start_min": 16 * 60 + 45,
+                "end_min": 17 * 60 + 45,
+                "activity": "🏓 Turnamen Ping-Pong Rekreasi",
+                "category": "pingpong",
+                "participants": "Raziel vs Daniandra, Daffa vs Jovan, Mika vs Senna",
+                "room": "Recreation Lounge",
+                "desc": "Ajang rekreasi kompetitif santai pelepas stres setelah jam koding maraton."
+            },
+            {
+                "id": "slot-9",
+                "time_range": "17:00 – 17:45 WIB",
+                "start_min": 17 * 60,
+                "end_min": 17 * 60 + 45,
+                "activity": "🛋️ Bersantai di Sofa Lounge",
+                "category": "sofa",
+                "participants": "Elara, Senna, Nara",
+                "room": "Executive Sofa Lounge",
+                "desc": "Duduk rileks mendengarkan synth studio, lurusin punggung, baca literatur dan diskusi santai."
+            },
+            {
+                "id": "slot-10",
+                "time_range": "17:45 – 18:15 WIB",
+                "start_min": 17 * 60 + 45,
+                "end_min": 18 * 60 + 15,
+                "activity": "🏛️ War Room Council & MoM",
+                "category": "council",
+                "participants": "Seluruh Tim (Dipimpin Daffa)",
+                "room": "War Room Amphitheater",
+                "desc": "Sidang koordinasi harian, evaluasi blokir kerja, dan penyusunan notulensi untuk meja CEO."
+            },
+            {
+                "id": "slot-11",
+                "time_range": "18:15 – 20:00 WIB",
+                "start_min": 18 * 60 + 15,
+                "end_min": 20 * 60,
+                "activity": "💻 Evening Sprint & Architecture Wrap-up",
+                "category": "work",
+                "participants": "Idris, Mika, Kael, Raziel",
+                "room": "Meja Kerja Divisi",
+                "desc": "Finalisasi commit kode harian, update dokumentasi teknis, dan verifikasi CI/CD pipeline."
+            },
+            {
+                "id": "slot-12",
+                "time_range": "20:00 – 21:00 WIB",
+                "start_min": 20 * 60,
+                "end_min": 21 * 60,
+                "activity": "🛋️ Night Chill & Standby Pods",
+                "category": "sleep",
+                "participants": "Tim On-Call (Viktor, Idris, Jovan)",
+                "room": "Lounge & Sleep Pods",
+                "desc": "Sesi santai malam, monitoring server berkala, dan power nap bagi personel on-call."
+            },
+            {
+                "id": "slot-13",
+                "time_range": "21:00 – 08:30 WIB",
+                "start_min": 21 * 60,
+                "end_min": 24 * 60 + 8 * 60 + 30,
+                "activity": "🌙 Night Quarters & Autonomous Standby",
+                "category": "night",
+                "participants": "Seluruh Sistem (Daemon Telemetry & Sentinel)",
+                "room": "Virtual Studio HQ",
+                "desc": "Monitoring otomatis daemon VPS, backup berkala, dan persiapan briefing esok pagi oleh Elara."
+            }
+        ]
+
+        active_phase = None
+        for slot in schedule_slots:
+            s_start = slot["start_min"]
+            s_end = slot["end_min"]
+            is_active = False
+            if s_end > 24 * 60:
+                if cur_minute >= s_start or cur_minute < (s_end - 24 * 60):
+                    is_active = True
+            else:
+                if s_start <= cur_minute < s_end:
+                    is_active = True
+            if is_active:
+                slot["status"] = "ACTIVE_NOW"
+                if not active_phase:
+                    active_phase = slot
+            elif s_end < cur_minute and s_end <= 24 * 60:
+                slot["status"] = "COMPLETED"
+            else:
+                slot["status"] = "UPCOMING"
+
+        if not active_phase:
+            active_phase = schedule_slots[0]
+
+        return {
+            "current_time_wib": current_time_str,
+            "active_phase": active_phase,
+            "slots": schedule_slots
+        }
+
+
+    def _seed_initial_conversations(self) -> None:
+        """Seed rich historical archive of thoughts and dialogues across all 11 studio members."""
+        now = datetime.now(timezone.utc)
+        
+        # 11 studio members catalog
+        initial_records = [
+            # Daniandra (CEO)
+            {
+                "sender_id": "dani",
+                "sender_name": "Daniandra Prayudisty",
+                "role": "Founder & CEO",
+                "room": "Executive Suite",
+                "time": "16:55 WIB",
+                "category": "executive",
+                "topic": "Studio Strategic Vision & Governance",
+                "type": "thought",
+                "message": "Mengevaluasi kesiapan ekosistem studio: dev pipeline Raziel solid, radar kampus Jovan aktif, kampanye Soetahills makin tajam.",
+                "color": "#F5A623",
+                "emote": "👑"
+            },
+            {
+                "sender_id": "dani",
+                "sender_name": "Daniandra Prayudisty",
+                "role": "Founder & CEO",
+                "room": "Executive Suite",
+                "time": "16:54 WIB",
+                "category": "executive",
+                "topic": "CEO Mandate on Living Persona",
+                "type": "dialogue",
+                "message": "Daffa, pastikan seluruh kepala divisi tetap berpegang pada prinsip kejujuran intelektual. Saya butuh data lapangan nyata, bukan laporan yang dipermanis.",
+                "color": "#F5A623",
+                "emote": "👑"
+            },
+            # Daffa (CEO Office)
+            {
+                "sender_id": "daffa",
+                "sender_name": "Daffa (CEO Office)",
+                "role": "CEO Office",
+                "room": "Executive Suite",
+                "time": "16:53 WIB",
+                "category": "executive",
+                "topic": "Executive Strategic Alignment",
+                "type": "thought",
+                "message": "Menyelaraskan sprint dev Raziel, radar Jovan, dan traksi Soetahills Cucurella, memo briefing siap untuk meja Mas Dani.",
+                "color": "#38BDF8",
+                "emote": "🎯"
+            },
+            {
+                "sender_id": "daffa",
+                "sender_name": "Daffa (CEO Office)",
+                "role": "CEO Office",
+                "room": "Executive Suite",
+                "time": "16:52 WIB",
+                "category": "executive",
+                "topic": "Telegram Command Bridge Briefing",
+                "type": "dialogue",
+                "message": "Seluruh catatan notulensi War Room sore ini sudah resmi saya arsipkan dan disposisi langsung ke Telegram Mas Dani via @japirBot.",
+                "color": "#38BDF8",
+                "emote": "🎯"
+            },
+            # Raziel Hendrix (CTO)
+            {
+                "sender_id": "raziel",
+                "sender_name": "Raziel Hendrix",
+                "role": "CTO & Orchestrator",
+                "room": "CTO Command Suite",
+                "time": "16:50 WIB",
+                "category": "engineering",
+                "topic": "Multi-Agent Cluster Throughput",
+                "type": "thought",
+                "message": "Barusan review PR Idris & Mika, latency stream 0.4ms aman dan arsitektur modular siap nampung beban multi-agent.",
+                "color": "#A855F7",
+                "emote": "🧐"
+            },
+            {
+                "sender_id": "raziel",
+                "sender_name": "Raziel Hendrix",
+                "role": "CTO & Orchestrator",
+                "room": "CTO Command Suite",
+                "time": "16:49 WIB",
+                "category": "engineering",
+                "topic": "Decoupling Service Sprint Review",
+                "type": "dialogue",
+                "message": "Kael, diagram modular decoupling service lu udah pas. Idris bisa langsung eksekusi refactoring tanpa nunggu sprint depan.",
+                "color": "#A855F7",
+                "emote": "🧐"
+            },
+            # Idris Nakamura (Senior Dev)
+            {
+                "sender_id": "idris",
+                "sender_name": "Idris Nakamura",
+                "role": "Senior Developer",
+                "room": "Dev Core Workstation",
+                "time": "16:48 WIB",
+                "category": "engineering",
+                "topic": "Query join optimization 400ms to 45ms",
+                "type": "thought",
+                "message": "Query join nested yang tadinya 400ms berhasil saya pangkas jadi 45ms, guard clause auth dari temuan Viktor udah rapi.",
+                "color": "#00FF66",
+                "emote": "🎧"
+            },
+            {
+                "sender_id": "idris",
+                "sender_name": "Idris Nakamura",
+                "role": "Senior Developer",
+                "room": "Dev Core Workstation",
+                "time": "16:47 WIB",
+                "category": "engineering",
+                "topic": "SSE Payload Optimization",
+                "type": "dialogue",
+                "message": "Mika, payload JSON untuk stream SSE udah saya perkecil 40%. Canvas di client bakal jauh lebih enteng waktu load banyak agent.",
+                "color": "#00FF66",
+                "emote": "🎧"
+            },
+            # Mika Stellan (Frontend)
+            {
+                "sender_id": "mika",
+                "sender_name": "Mika Stellan",
+                "role": "Frontend Engineer",
+                "room": "Dev Core Workstation",
+                "time": "16:46 WIB",
+                "category": "engineering",
+                "topic": "Safari Mobile Drawer & 60 FPS Three.js",
+                "type": "thought",
+                "message": "Glitch drawer navigation mobile Safari udah beres, FPS Three.js locked 60 FPS waktu event SSE masuk bersamaan.",
+                "color": "#FF8800",
+                "emote": "⚡"
+            },
+            {
+                "sender_id": "mika",
+                "sender_name": "Mika Stellan",
+                "role": "Frontend Engineer",
+                "room": "Dev Core Workstation",
+                "time": "16:45 WIB",
+                "category": "engineering",
+                "topic": "WebGL Mobile Optimization",
+                "type": "dialogue",
+                "message": "Idris, rendering 11 avatar di mobile sekarang smooth banget, memory footprint Three.js turun ke 36MB tanpa drop frame.",
+                "color": "#FF8800",
+                "emote": "⚡"
+            },
+            # Viktor Moreau (QA & Sec)
+            {
+                "sender_id": "viktor",
+                "sender_name": "Viktor Moreau",
+                "role": "Lead QA & Security",
+                "room": "Server Room NOC",
+                "time": "16:44 WIB",
+                "category": "security",
+                "topic": "Sentinel 4-Layer Defense Audit",
+                "type": "thought",
+                "message": "Unhandled 500 error pas payload kosong udah beres ditambal Idris, semua 35 test suite hijau dan build layak naik staging.",
+                "color": "#FF3333",
+                "emote": "🛡️"
+            },
+            {
+                "sender_id": "viktor",
+                "sender_name": "Viktor Moreau",
+                "role": "Lead QA & Security",
+                "room": "Server Room NOC",
+                "time": "16:43 WIB",
+                "category": "security",
+                "topic": "Port 9449 Security Hardening",
+                "type": "dialogue",
+                "message": "Raziel, hasil penetration test port 9449 aman. Rule Fail2ban dan CORS whitelist udah sesuai standar ISO studio.",
+                "color": "#FF3333",
+                "emote": "🛡️"
+            },
+            # Kael Ashford (Architect)
+            {
+                "sender_id": "kael",
+                "sender_name": "Kael Ashford",
+                "role": "Lead Architect",
+                "room": "Atelier Architecture Lab",
+                "time": "16:42 WIB",
+                "category": "architecture",
+                "topic": "Event-Driven Loop & LaTeX Compile",
+                "type": "thought",
+                "message": "Lagi kalkulasi beban database event-driven loop, circular dependency berhasil dicegah dan Tectonic compile bersih.",
+                "color": "#0070F3",
+                "emote": "📐"
+            },
+            {
+                "sender_id": "kael",
+                "sender_name": "Kael Ashford",
+                "role": "Lead Architect",
+                "room": "Atelier Architecture Lab",
+                "time": "16:41 WIB",
+                "category": "architecture",
+                "topic": "Thesis Chapter 3-4 Sequence Alignment",
+                "type": "dialogue",
+                "message": "Nara, sequence diagram Bab 3-4 sudah klop sama benchmark paper. Struktur publikasi skripsi Mas Dani makin solid.",
+                "color": "#0070F3",
+                "emote": "📐"
+            },
+            # Nara Vasquez (Researcher)
+            {
+                "sender_id": "nara",
+                "sender_name": "Nara Vasquez",
+                "role": "Lead Researcher",
+                "room": "Atelier Architecture Lab",
+                "time": "16:40 WIB",
+                "category": "architecture",
+                "topic": "arXiv 4.2x Efficiency Benchmark",
+                "type": "thought",
+                "message": "Data benchmark terbaru membuktikan arsitektur event-driven 4.2x lebih efisien, 14 paper Scopus siap untuk novelti skripsi.",
+                "color": "#00DFD8",
+                "emote": "📚"
+            },
+            {
+                "sender_id": "nara",
+                "sender_name": "Nara Vasquez",
+                "role": "Lead Researcher",
+                "room": "Atelier Architecture Lab",
+                "time": "16:39 WIB",
+                "category": "architecture",
+                "topic": "Scopus Q1 BibTeX Synthesis",
+                "type": "dialogue",
+                "message": "Kael, 14 paper Scopus Q1 sudah saya sintesis ke format BibTeX. Argumen efisiensi komputasi kita punya rujukan kuat.",
+                "color": "#00DFD8",
+                "emote": "📚"
+            },
+            # Senna Louviere (Creative Director)
+            {
+                "sender_id": "senna",
+                "sender_name": "Senna Louviere",
+                "role": "Creative Director",
+                "room": "Creative Studio",
+                "time": "16:38 WIB",
+                "category": "design",
+                "topic": "Obsidian Luxury Visual Balance",
+                "type": "thought",
+                "message": "Lagi poles ritme spasi dan balance visual hero section, impresi obsidian premium makin tajam dan kontras tombol tegas.",
+                "color": "#FF0080",
+                "emote": "🎨"
+            },
+            {
+                "sender_id": "senna",
+                "sender_name": "Senna Louviere",
+                "role": "Creative Director",
+                "room": "Creative Studio",
+                "time": "16:37 WIB",
+                "category": "design",
+                "topic": "Mobile Card Contrast Tuning",
+                "type": "dialogue",
+                "message": "Mika, token warna obsidian-emerald dan hierarki tipografi di mobile card udah saya sesuaikan biar nyaman di mata pengguna.",
+                "color": "#FF0080",
+                "emote": "🎨"
+            },
+            # Elara Sinclair (PA)
+            {
+                "sender_id": "elara",
+                "sender_name": "Elara Sinclair",
+                "role": "Personal Assistant",
+                "room": "PA Executive Office",
+                "time": "16:36 WIB",
+                "category": "executive",
+                "topic": "Executive Buffer & Night Prep",
+                "type": "thought",
+                "message": "Menjaga ritme kerja Mas Dani tetap prima, briefing kalender dan rekap kas rapi, siap kawal evaluasi malam.",
+                "color": "#E0AAFF",
+                "emote": "📋"
+            },
+            {
+                "sender_id": "elara",
+                "sender_name": "Elara Sinclair",
+                "role": "Personal Assistant",
+                "room": "PA Executive Office",
+                "time": "16:35 WIB",
+                "category": "executive",
+                "topic": "Calendar Buffer Advisory",
+                "type": "dialogue",
+                "message": "Mas Dani, jadwal sore ini sudah saya beri buffer 45 menit untuk istirahat setelah diskusi teknis maraton.",
+                "color": "#E0AAFF",
+                "emote": "📋"
+            },
+            # Jovan Aritza (Intel)
+            {
+                "sender_id": "jovan",
+                "sender_name": "Jovan Aritza",
+                "role": "Intelligence Officer",
+                "room": "Radar NOC",
+                "time": "16:34 WIB",
+                "category": "intel",
+                "topic": "Telkom University Campus Radar",
+                "type": "thought",
+                "message": "Jadwal revisi sidang fakultas terverifikasi dari menfess dan anak BEM, seminar event-driven 15 Okt klop sama skripsi Mas Dani.",
+                "color": "#39FF14",
+                "emote": "📡"
+            },
+            {
+                "sender_id": "jovan",
+                "sender_name": "Jovan Aritza",
+                "role": "Intelligence Officer",
+                "room": "Radar NOC",
+                "time": "16:33 WIB",
+                "category": "intel",
+                "topic": "Campus Seminar Seat Verification",
+                "type": "dialogue",
+                "message": "Daffa, radar BEM Telkom University mengonfirmasi kuota seminar arsitektur tinggal 20 kursi. Jadwal Mas Dani pas banget untuk hadir.",
+                "color": "#39FF14",
+                "emote": "📡"
+            },
+        ]
+        
+        wib_now = get_wib_now()
+        for idx, rec in enumerate(initial_records):
+            rec["id"] = f"chat-seed-{idx+1}"
+            # Align time dynamically to current office WIB clock
+            rec["time"] = (wib_now - timedelta(minutes=(idx * 2 + 1))).strftime("%H:%M:%S WIB")
+            self.conversation_history.append(rec)
+
+    def record_conversation_or_thought(
+        self,
+        agent_id: str,
+        message: str,
+        topic: str = "Aktivitas Kerja",
+        msg_type: str = "thought",
+        room_id: Optional[str] = None,
+        category: Optional[str] = None,
+    ) -> dict[str, Any]:
+        """Record an authentic thought or dialogue into the studio-wide conversation history."""
+        agent = self.agents.get(agent_id)
+        sender_name = agent.name if agent else agent_id.capitalize()
+        role = agent.role if agent else "Staff"
+        color = agent.avatar_color if agent else "#00F2FE"
+        
+        # Emotes catalog
+        emotes = {
+            "dani": "👑", "daffa": "🎯", "raziel": "🧐", "idris": "🎧",
+            "mika": "⚡", "viktor": "🛡️", "kael": "📐", "nara": "📚",
+            "senna": "🎨", "elara": "📋", "jovan": "📡", "cucurella": "🏡"
+        }
+        emote = emotes.get(agent_id, "👤")
+        
+        # Room naming
+        room_name = "Workstation"
+        if room_id and room_id in self.rooms:
+            room_name = self.rooms[room_id].name
+        elif agent and agent.position.room_id in self.rooms:
+            room_name = self.rooms[agent.position.room_id].name
+
+        # Category mapping
+        cat_map = {
+            "dani": "executive", "daffa": "executive", "elara": "executive",
+            "cucurella": "growth",
+            "raziel": "engineering", "idris": "engineering", "mika": "engineering",
+            "viktor": "security",
+            "kael": "architecture", "nara": "architecture",
+            "senna": "design",
+            "jovan": "intel",
+        }
+        computed_cat = category or cat_map.get(agent_id, "engineering")
+        
+        time_str = get_wib_now().strftime("%H:%M:%S WIB")
+        entry_id = f"chat-{int(datetime.now(timezone.utc).timestamp()*1000)}"
+        
+        entry = {
+            "id": entry_id,
+            "sender_id": agent_id,
+            "sender_name": sender_name,
+            "role": role,
+            "room": room_name,
+            "time": time_str,
+            "category": computed_cat,
+            "topic": topic,
+            "type": msg_type,
+            "message": message,
+            "color": color,
+            "emote": emote,
+        }
+        
+        # Insert at front, maintain max 250 items
+        self.conversation_history.insert(0, entry)
+        if len(self.conversation_history) > 250:
+            self.conversation_history = self.conversation_history[:250]
+            
+        return entry
+
+    def get_conversation_history(
+        self,
+        limit: int = 60,
+        agent_id: Optional[str] = None,
+        category: Optional[str] = None,
+        type: Optional[str] = None,
+        q: Optional[str] = None,
+    ) -> list[dict[str, Any]]:
+        """Fetch chronological log of conversations and real-time thoughts with comprehensive filters."""
+        results = list(self.conversation_history)
+        if agent_id and agent_id != "all":
+            results = [r for r in results if r.get("sender_id") == agent_id]
+        if category and category != "all":
+            results = [r for r in results if r.get("category") == category]
+        if type and type != "all":
+            results = [r for r in results if r.get("type") == type]
+        if q:
+            query = q.lower()
+            results = [
+                r for r in results
+                if query in r.get("message", "").lower()
+                or query in r.get("sender_name", "").lower()
+                or query in r.get("topic", "").lower()
+                or query in r.get("role", "").lower()
+            ]
+        return results[:limit]
+
+    async def send_meeting_telegram_report(self, meeting_id: Optional[str] = None) -> dict[str, Any]:
+        """Format and dispatch meeting minutes directly to CEO Daniandra via Telegram bot."""
+        meeting = self.get_meeting_by_id(meeting_id) if meeting_id else self.get_latest_meeting()
+        if not meeting:
+            return {"success": False, "error": "No meeting minutes available to report"}
+
+        bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+        if not bot_token:
+            env_file = "/home/daniilham/.hermes/.env"
+            if os.path.exists(env_file):
+                with open(env_file, "r", encoding="utf-8") as f:
+                    for line in f:
+                        if line.startswith("TELEGRAM_BOT_TOKEN="):
+                            bot_token = line.split("=", 1)[1].strip().strip("'\"").strip()
+
+        if not bot_token:
+            return {"success": False, "error": "TELEGRAM_BOT_TOKEN not configured"}
+
+        recipients = ["1062533303", "-5549212752"]
+
+        decisions_md = "\n".join([f"• {d}" for d in meeting.key_decisions[:4]])
+        action_items_md = "\n".join([f"• *{a.pic}*: {a.task} _(Target: {a.due})_" for a in meeting.action_items[:5]])
+        dialogue_md = "\n".join([f"• *{d.speaker_name}*: \"{d.text[:130]}...\"" for d in meeting.dialogues[:3]])
+
+        text = (
+            f"🏛️ *[NOTULENSI RESMI WAR ROOM — CEO OFFICE]*\n"
+            f"*Yudiaz Creative Studio Virtual HQ*\n\n"
+            f"Kepada: *CEO Daniandra Prayudisty (Mas Dani)*\n"
+            f"Dari: *Daffa — Head of CEO Office & Chief of Staff*\n\n"
+            f"Yth. Mas Dani,\n"
+            f"Berikut kami laporkan hasil rapat koordinasi strategis studio yang baru saja dipimpin oleh CEO Office di War Room:\n\n"
+            f"📋 *Topik:* {meeting.title}\n"
+            f"👤 *Pemimpin Sidang:* {meeting.leader_name}\n"
+            f"📝 *Notulis:* Elara Sinclair (Executive PA)\n"
+            f"📊 *Status:* {meeting.status} (Diserahkan ke Meja CEO)\n\n"
+            f"✨ *Keputusan Strategis yang Disahkan:*\n{decisions_md}\n\n"
+            f"📌 *Action Items & Komitmen PIC:*\n{action_items_md}\n\n"
+            f"💬 *Transkrip Diskusi Tim:*\n{dialogue_md}\n\n"
+            f"━━━━━━━━━━━━━━━━━━━\n"
+            f"🌐 *Dashboard Virtual HQ:* https://office.daniandraaa.my.id\n"
+            f"_Laporan ini resmi disampaikan melalui CEO Office Command Bridge. Siap menerima disposisi lanjutan dari Mas Dani._"
+        )
+
+        delivered = []
+        errors = []
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            for chat_id in recipients:
+                try:
+                    resp = await client.post(
+                        f"https://api.telegram.org/bot{bot_token}/sendMessage",
+                        json={
+                            "chat_id": chat_id,
+                            "text": text,
+                            "parse_mode": "Markdown",
+                            "disable_web_page_preview": True,
+                        }
+                    )
+                    if resp.status_code == 200:
+                        delivered.append(chat_id)
+                    else:
+                        errors.append(f"{chat_id}: {resp.text}")
+                except Exception as e:
+                    errors.append(f"{chat_id}: {str(e)}")
+
+        return {
+            "success": len(delivered) > 0,
+            "delivered_to": delivered,
+            "errors": errors,
+            "meeting_id": meeting.meeting_id,
+            "title": meeting.title,
+        }
+
     async def dispatch_ceo_command(self, command: str) -> CEOCommandResponse:
         """Process an executive command from CEO Daniandra via AI reasoning (9Router).
         Dispatches hierarchical dialogue cascade: CEO -> Daffa -> Target Agent -> Report back.
@@ -863,6 +1709,7 @@ class OfficeEngine:
             "viktor": {"name": "Viktor Moreau", "role": "Lead QA & Security", "emoji": "🛡️", "color": "#10B981"},
             "elara": {"name": "Elara Sinclair", "role": "Executive PA", "emoji": "📋", "color": "#F472B6"},
             "jovan": {"name": "Jovan Aritza", "role": "Intelligence Officer", "emoji": "📡", "color": "#6366F1"},
+            "cucurella": {"name": "Cucurella (Soetahills Growth)", "role": "Head of Soetahills Growth", "emoji": "🏡", "color": "#10B981"},
         }
 
         ai_data = await self._call_ai_engine(command)
@@ -1031,7 +1878,8 @@ class OfficeEngine:
                 "- Senna Louviere (Creative Director - Figma, tokens, Concept 2B, id: senna)\n"
                 "- Viktor Moreau (Lead QA & Security - UFW, Fail2ban, pytest, id: viktor)\n"
                 "- Elara Sinclair (Executive PA - jadwal CEO, finance portal, id: elara)\n"
-                "- Jovan Aritza (Intelligence Officer - Tel-U radar, id: jovan)\n\n"
+                "- Jovan Aritza (Intelligence Officer - Tel-U radar, id: jovan)\n"
+                "- Cucurella (Head of Soetahills Growth - riset pasar properti, Instagram @soetahills, video reels, id: cucurella)\n\n"
                 "Konteks riil studio: VPS Azure Seoul 54GB RAM Intel Xeon, 4 subdomains (office, vps, api, finance), "
                 "Tectonic LaTeX compiler Skripsi Tel-U, Micro-SaaS QRIS Dynamic Tripay payment gateway, Fail2ban IP 2.57.122.209 banned.\n\n"
                 "TUGAS: Ketika CEO memberikan perintah, analisis siapa yang harus mengerjakan, rancang tugasnya, dan hasilkan dialog berjenjang:\n"
@@ -1465,6 +2313,11 @@ class OfficeEngine:
                 "task": "Executive lounge sofa discussing vision & strategy",
                 "tool": "Executive iPad",
             },
+            "cucurella": {
+                "room": "room-concierge",
+                "task": "Casual chats over espresso about property market trends",
+                "tool": "Market Pulse Dashboard",
+            },
             "elara": {
                 "room": "room-concierge",
                 "task": "Espresso break & casual executive chat",
@@ -1584,67 +2437,67 @@ class OfficeEngine:
             (
                 "viktor",
                 "SECURITY_PROBE",
-                "Viktor Moreau memverifikasi Sentinel 4-Layer Defense: Fail2ban recidive jail memblokir IP 2.57.122.209 (48 attempts) dan port 9449 aman.",
+                "Viktor Moreau memverifikasi Sentinel 4-Layer Defense: unhandled 500 error saat payload kosong berhasil ditambal Idris, semua 35 test suite hijau 100%.",
                 "INFO",
             ),
             (
                 "nara",
                 "CITATIONS_INDEXED",
-                "Nara Vasquez menganalisis skema fee dynamic QRIS Tripay vs Mayar untuk monetisasi micro-SaaS Rp 35k/paket.",
+                "Nara Vasquez menemukan pembuktian empiris di paper arXiv terbaru: arsitektur event-driven 4.2x lebih hemat resource dibanding centralized orchestrator.",
                 "INFO",
             ),
             (
                 "idris",
-                "SSE_POOL_OPTIMIZED",
-                "Idris Nakamura menguji webhook HMAC-SHA256 dynamic QRIS di backend FastAPI port 9449: validasi signature lulus 100%.",
+                "QUERY_OPTIMIZED",
+                "Idris Nakamura berhasil memangkas query join nested dari 400ms menjadi 45ms dan mengaktifkan guard clause autentikasi di FastAPI port 9449.",
                 "INFO",
             ),
             (
                 "mika",
-                "SHADERS_COMPILED",
-                "Mika Stellan memperbarui shader glass cyber-luxury dan menguji widget dynamic QRIS checkout di Next.js.",
+                "ANIMATION_POLISHED",
+                "Mika Stellan memperhalus transisi drawer navigation mobile Safari dan mengunci frame rate Three.js di 60 FPS stabil tanpa jitter.",
                 "INFO",
             ),
             (
                 "senna",
-                "DESIGN_TOKENS_PUBLISHED",
-                "Senna Louviere merampungkan token visual obsidian emerald untuk portal merchant AI automation.",
+                "DESIGN_TOKENS_LOCKED",
+                "Senna Louviere merampungkan token visual obsidian emerald di Figma dan mengunci kontras tombol CTA agar ramah mata dan elegan.",
                 "INFO",
             ),
             (
                 "raziel",
-                "HEARTBEAT_ACKNOWLEDGED",
-                "Raziel Hendrix memverifikasi beban cluster Intel Xeon 4 vCPU & 54 GB ECC RAM: CPU 11.2%, RAM 6.4 GB terpakai, 4 live subdomains green.",
+                "PR_MERGED",
+                "Raziel Hendrix menyetujui branch feat/sse-optimize dari Idris & Mika setelah memvalidasi latency 0.4ms tanpa memory leak di cluster VPS.",
                 "INFO",
             ),
             (
                 "daffa",
                 "EXECUTIVE_ALIGNMENT",
-                "Daffa menyinkronkan status clean ledger Finance (finance:9339 - Rp 0) dan menyiapkan memo eksekutif untuk CEO.",
+                "Daffa menyelaraskan progres sprint dev Raziel dengan agenda pertumbuhan Soetahills Cucurella dan menyiapkan executive memo untuk Pak Dani.",
                 "INFO",
             ),
             (
                 "jovan",
                 "CAMPUS_RADAR_PING",
-                "Jovan Aritza memantau perimeter Sentinel (vps:9229) dan portal akademik Telkom University: semua parameter normal.",
+                "Jovan Aritza memverifikasi pengumuman resmi seminar arsitektur event-driven Telkom University 15 Oktober yang selaras dengan topik skripsi Mas Dani.",
                 "INFO",
             ),
             (
                 "elara",
-                "LOGISTICS_DISPATCH",
-                "Elara Sinclair mengarsipkan notulensi rapat eksekutif terbaru dan menyiapkan briefing pimpinan di PA Station.",
+                "WELLNESS_CHECK",
+                "Elara Sinclair memperbarui timeline kalender eksekutif Mas Dani, mengecek ritme istirahat, dan menyiapkan memo rekonsiliasi kas studio.",
                 "INFO",
             ),
             (
                 "kael",
-                "ARCHITECTURE_SPEC_SYNC",
-                "Kael Ashford berhasil mengompilasi Bab 3-4 skripsi via Tectonic LaTeX (/usr/local/bin/tectonic): 0 warning.",
+                "LATEX_COMPILED",
+                "Kael Ashford merampungkan diagram sequence interaksi antar-agent dan mengompilasi naskah Bab 3-4 via Tectonic LaTeX bersih tanpa error (1.4s).",
                 "INFO",
             ),
             (
                 "dani",
-                "ROADMAP_MILESTONE",
-                "Daniandra Prayudisty meninjau dokumen visi studio dan peta jalan ekspansi micro-SaaS dari Executive Suite.",
+                "ROADMAP_APPROVED",
+                "Daniandra Prayudisty meninjau dashboard studio dan mengesahkan doktrin komunikasi hidup anti-template untuk seluruh tim ekosistem Yudiaz.",
                 "INFO",
             ),
         ]
@@ -1781,11 +2634,15 @@ class OfficeEngine:
             has_active_pingpong = any(item.get("activity_type") == "ping_pong" for item in self._temporary_assignments.values())
             has_active_coffee = any(item.get("activity_type") == "coffee" for item in self._temporary_assignments.values())
             has_active_pod = any(item.get("activity_type") == "pod_rest" for item in self._temporary_assignments.values())
+            has_active_sofa = any(item.get("activity_type") == "sofa_relax" for item in self._temporary_assignments.values())
+            has_active_chat = any(item.get("activity_type") == "peer_chat" for item in self._temporary_assignments.values())
 
-            is_council_tick = force_event == "council" or (force_event is None and self._sim_ticks % 20 == 18)
-            is_pingpong_tick = force_event == "ping_pong" or (force_event is None and self._sim_ticks % 20 == 9)
-            is_coffee_tick = force_event == "coffee" or (force_event is None and self._sim_ticks % 20 == 12)
-            is_pod_tick = force_event == "pod" or (force_event is None and self._sim_ticks % 20 == 15)
+            is_pingpong_tick = force_event == "ping_pong" or (force_event is None and self._sim_ticks % 30 == 8)
+            is_coffee_tick = force_event == "coffee" or (force_event is None and self._sim_ticks % 30 == 12)
+            is_pod_tick = force_event == "pod" or (force_event is None and self._sim_ticks % 30 == 16)
+            is_sofa_tick = force_event == "sofa" or (force_event is None and self._sim_ticks % 30 == 20)
+            is_chat_tick = force_event == "chat" or (force_event is None and self._sim_ticks % 30 == 24)
+            is_council_tick = force_event == "council" or (force_event is None and self._sim_ticks % 30 == 28)
 
             # A. Council Meeting in War Room
             if is_council_tick and not self._council_active:
@@ -1798,7 +2655,6 @@ class OfficeEngine:
                 war_room = self.rooms["room-war"]
                 ceo_room = self.rooms["room-ceo"]
 
-                # CEO Daniandra stays in room-ceo reviewing strategic vision
                 dani_agent = self.agents["dani"]
                 if dani_agent.position.room_id != "room-ceo":
                     old_room = self.rooms.get(dani_agent.position.room_id)
@@ -1813,7 +2669,6 @@ class OfficeEngine:
                 dani_agent.current_task = "Executive Strategic Vision & Studio Governance Oversight (CEO Suite)"
                 dani_agent.updated_at = datetime.now(timezone.utc).isoformat()
 
-                # Move 10 operational personnel to War Room
                 for aid, ag in self.agents.items():
                     if aid == "dani":
                         continue
@@ -1855,13 +2710,17 @@ class OfficeEngine:
                 )
                 event_triggered = True
 
-            # B. Ping-Pong Break in Lounge
+            # B. Ping-Pong Match in Lounge (ALL 11 AGENTS ELIGIBLE!)
             elif is_pingpong_tick and not self._council_active and not has_active_pingpong:
-                pair_idx = (self._sim_ticks // 16) % 2
-                pairs = [("idris", "mika"), ("jovan", "viktor")]
-                pair = pairs[pair_idx]
-                if all(p not in self._temporary_assignments for p in pair):
+                all_candidates = list(self.agents.keys())
+                avail = [c for c in all_candidates if c not in self._temporary_assignments]
+                if len(avail) >= 2:
+                    p1_id = avail[self._sim_ticks % len(avail)]
+                    p2_candidates = [c for c in avail if c != p1_id]
+                    p2_id = p2_candidates[(self._sim_ticks // 2) % len(p2_candidates)]
+                    pair = (p1_id, p2_id)
                     concierge = self.rooms["room-concierge"]
+                    
                     for p in pair:
                         ag = self.agents[p]
                         old_room_id = ag.position.room_id
@@ -1872,7 +2731,7 @@ class OfficeEngine:
                         if p not in concierge.current_occupants:
                             concierge.current_occupants.append(p)
                         ag.status = AgentStatus.RESTING
-                        ag.current_task = "Ping-pong table match in Lounge"
+                        ag.current_task = "Pertandingan ping-pong tenis meja di Recreation Lounge"
                         ag.active_tool = "Ping-Pong Paddle"
                         ag.updated_at = datetime.now(timezone.utc).isoformat()
                         base = self._baseline_agents[p]
@@ -1882,10 +2741,14 @@ class OfficeEngine:
                             "log_on_return": f"{ag.name} concluded ping-pong match and returned to {self.rooms[base['room_id']].name} for deep focus.",
                         }
                     self._reposition_room_occupants("room-concierge")
-                    p1_name = self.agents[pair[0]].name
-                    p2_name = self.agents[pair[1]].name
+                    p1_name = self.agents[p1_id].name
+                    p2_name = self.agents[p2_id].name
+                    
+                    self.record_conversation_or_thought(p1_id, f"Rally topspin seru lawan {p2_name}! Jeda fisik efektif biar pikiran tetap tajam.", topic="TENIS MEJA REKREASI", msg_type="dialogue", room_id="room-concierge")
+                    self.record_conversation_or_thought(p2_id, f"Balasan backhand presisi! Rehat gerak bareng {p1_name} beneran naikin energi fokus.", topic="TENIS MEJA REKREASI", msg_type="dialogue", room_id="room-concierge")
+
                     self.add_activity(
-                        agent_id=pair[0],
+                        agent_id=p1_id,
                         action="PING_PONG_MATCH",
                         details=f"{p1_name} and {p2_name} take a break to play ping-pong in room-concierge.",
                         severity="INFO",
@@ -1893,12 +2756,12 @@ class OfficeEngine:
                     )
                     event_triggered = True
 
-            # C. Coffee / Lounge Chat
+            # C. Coffee & Espresso Break in Pantry (ALL 11 AGENTS ELIGIBLE!)
             elif is_coffee_tick and not self._council_active and not has_active_coffee:
-                candidates = ["viktor", "jovan", "elara", "senna", "kael", "nara", "raziel"]
-                available = [c for c in candidates if c not in self._temporary_assignments]
-                if available:
-                    chosen_id = available[self._sim_ticks % len(available)]
+                all_candidates = list(self.agents.keys())
+                avail = [c for c in all_candidates if c not in self._temporary_assignments]
+                if avail:
+                    chosen_id = avail[self._sim_ticks % len(avail)]
                     ag = self.agents[chosen_id]
                     old_room_id = ag.position.room_id
                     old_room = self.rooms.get(old_room_id)
@@ -1909,7 +2772,7 @@ class OfficeEngine:
                     if chosen_id not in concierge.current_occupants:
                         concierge.current_occupants.append(chosen_id)
                     ag.status = AgentStatus.RESTING
-                    ag.current_task = "Coffee break & casual executive chat"
+                    ag.current_task = "Menyeduh espresso arabika di mesin kopi Pantry Lounge"
                     ag.active_tool = "Italian Espresso Bar"
                     ag.updated_at = datetime.now(timezone.utc).isoformat()
                     base = self._baseline_agents[chosen_id]
@@ -1919,6 +2782,7 @@ class OfficeEngine:
                         "log_on_return": f"{ag.name} finished coffee break and returned to {self.rooms[base['room_id']].name} for deep focus.",
                     }
                     self._reposition_room_occupants("room-concierge")
+                    self.record_conversation_or_thought(chosen_id, f"Aroma seduhan espresso arabika segar di pantry bikin mood dan konsentrasi balik 100%.", topic="PANTRY COFFEE BREAK", msg_type="thought", room_id="room-concierge")
                     self.add_activity(
                         agent_id=chosen_id,
                         action="COFFEE_BREAK",
@@ -1928,12 +2792,12 @@ class OfficeEngine:
                     )
                     event_triggered = True
 
-            # D. Rest Pod Sleep/Recovery
+            # D. Bio-Rhythm Sleep Pod Rest (ALL 11 AGENTS ELIGIBLE!)
             elif is_pod_tick and not self._council_active and not has_active_pod:
-                candidates = ["viktor", "jovan", "nara", "kael", "idris"]
-                available = [c for c in candidates if c not in self._temporary_assignments]
-                if available:
-                    chosen_id = available[self._sim_ticks % len(available)]
+                all_candidates = list(self.agents.keys())
+                avail = [c for c in all_candidates if c not in self._temporary_assignments]
+                if avail:
+                    chosen_id = avail[self._sim_ticks % len(avail)]
                     ag = self.agents[chosen_id]
                     old_room_id = ag.position.room_id
                     old_room = self.rooms.get(old_room_id)
@@ -1954,6 +2818,7 @@ class OfficeEngine:
                         "log_on_return": f"{ag.name} completed rest pod recovery and returned to {self.rooms[base['room_id']].name} recharged for deep focus.",
                     }
                     self._reposition_room_occupants("room-pods")
+                    self.record_conversation_or_thought(chosen_id, f"Sensory Sleep Pod mode regenerasi 20 menit: detak jantung stabil, energi terisi penuh untuk sprint berikutnya.", topic="SLEEP POD RECOVERY", msg_type="thought", room_id="room-pods")
                     self.add_activity(
                         agent_id=chosen_id,
                         action="POD_RECOVERY",
@@ -1963,11 +2828,97 @@ class OfficeEngine:
                     )
                     event_triggered = True
 
-            # E. Ambient micro-action
+            # E. Sofa Lounging & Relaxing (ALL 11 AGENTS ELIGIBLE!)
+            elif is_sofa_tick and not self._council_active and not has_active_sofa:
+                all_candidates = list(self.agents.keys())
+                avail = [c for c in all_candidates if c not in self._temporary_assignments]
+                if avail:
+                    chosen_id = avail[self._sim_ticks % len(avail)]
+                    ag = self.agents[chosen_id]
+                    old_room_id = ag.position.room_id
+                    old_room = self.rooms.get(old_room_id)
+                    if old_room and chosen_id in old_room.current_occupants:
+                        old_room.current_occupants.remove(chosen_id)
+                        self._reposition_room_occupants(old_room_id)
+                    concierge = self.rooms["room-concierge"]
+                    if chosen_id not in concierge.current_occupants:
+                        concierge.current_occupants.append(chosen_id)
+                    ag.status = AgentStatus.RESTING
+                    ag.current_task = "Bersantai di sofa empuk Lounge, mendengarkan alunan lo-fi synth"
+                    ag.active_tool = "Executive Lounge Sofa"
+                    ag.updated_at = datetime.now(timezone.utc).isoformat()
+                    base = self._baseline_agents[chosen_id]
+                    self._temporary_assignments[chosen_id] = {
+                        "return_tick": self._sim_ticks + 2,
+                        "activity_type": "sofa_relax",
+                        "log_on_return": f"{ag.name} selesai santai di sofa lounge dan kembali fokus ke {self.rooms[base['room_id']].name}.",
+                    }
+                    self._reposition_room_occupants("room-concierge")
+                    self.record_conversation_or_thought(chosen_id, f"Duduk santai di sofa lounge sambil lurusin punggung, mendengarkan synthesizer studio sejuk banget.", topic="LOUNGE CHILL & RELAX", msg_type="thought", room_id="room-concierge")
+                    self.add_activity(
+                        agent_id=chosen_id,
+                        action="SOFA_RELAX",
+                        details=f"{ag.name} bersantai di sofa lounge empuk untuk meregangkan otot.",
+                        severity="INFO",
+                        room_id="room-concierge",
+                    )
+                    event_triggered = True
+
+            # F. Cross-Department Chat & Saling Ngobrol (ALL 11 AGENTS ELIGIBLE!)
+            elif is_chat_tick and not self._council_active and not has_active_chat:
+                all_candidates = list(self.agents.keys())
+                avail = [c for c in all_candidates if c not in self._temporary_assignments]
+                if len(avail) >= 2:
+                    c1_id = avail[self._sim_ticks % len(avail)]
+                    c2_candidates = [c for c in avail if c != c1_id]
+                    c2_id = c2_candidates[(self._sim_ticks // 3) % len(c2_candidates)]
+                    chat_pair = (c1_id, c2_id)
+                    concierge = self.rooms["room-concierge"]
+                    
+                    for p in chat_pair:
+                        ag = self.agents[p]
+                        old_room_id = ag.position.room_id
+                        old_room = self.rooms.get(old_room_id)
+                        if old_room and p in old_room.current_occupants:
+                            old_room.current_occupants.remove(p)
+                            self._reposition_room_occupants(old_room_id)
+                        if p not in concierge.current_occupants:
+                            concierge.current_occupants.append(p)
+                        ag.status = AgentStatus.WORKING
+                        ag.current_task = f"Diskusi santai dan tukar ide lintas divisi di Atrium Lounge"
+                        ag.active_tool = "Inter-Department Sync"
+                        ag.updated_at = datetime.now(timezone.utc).isoformat()
+                        base = self._baseline_agents[p]
+                        self._temporary_assignments[p] = {
+                            "return_tick": self._sim_ticks + 2,
+                            "activity_type": "peer_chat",
+                            "log_on_return": f"{ag.name} selesai ngobrol kolaborasi dan kembali ke {self.rooms[base['room_id']].name}.",
+                        }
+                    self._reposition_room_occupants("room-concierge")
+                    c1_name = self.agents[c1_id].name
+                    c2_name = self.agents[c2_id].name
+                    
+                    self.record_conversation_or_thought(c1_id, f"Ketemu {c2_name} di atrium, sinkronisasi ide teknis antar divisi ternyata klop banget!", topic="OBROLAN KOLABORASI", msg_type="dialogue", room_id="room-concierge")
+                    self.record_conversation_or_thought(c2_id, f"Iya {c1_name}, obrolan singkat gini sering nemuin jalan keluar yang fresh!", topic="OBROLAN KOLABORASI", msg_type="dialogue", room_id="room-concierge")
+
+                    self.add_activity(
+                        agent_id=c1_id,
+                        action="PEER_COLLAB_CHAT",
+                        details=f"{c1_name} dan {c2_name} saling ngobrol santai bertukar gagasan di Atrium Lounge.",
+                        severity="INFO",
+                        room_id="room-concierge",
+                    )
+                    event_triggered = True
+
+            # E. Ambient micro-action & Realtime Thought Rotation
             if not event_triggered and self._sim_ticks % 3 == 0:
                 ambient_events = self._get_ambient_events()
                 aid, act, dtl, sev = random.choice(ambient_events)
                 self.add_activity(agent_id=aid, action=act, details=dtl, severity=sev)
+                if aid in self.agents:
+                    self.agents[aid].memory_context = dtl
+                    self.agents[aid].updated_at = datetime.now(timezone.utc).isoformat()
+                    self.record_conversation_or_thought(aid, dtl, topic=act.replace("_", " "), msg_type="thought")
 
         # 4. Broadcast state on every tick via SSE
         self._broadcast_state()

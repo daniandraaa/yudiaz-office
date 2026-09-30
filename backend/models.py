@@ -59,6 +59,9 @@ class AgentInfo(BaseModel):
     )
     cpu_footprint: float = Field(default=0.0, description="Simulated compute footprint in %")
     ram_footprint: float = Field(default=0.0, description="Simulated memory footprint in MB")
+    telegram_live: Optional[dict[str, Any]] = Field(
+        default=None, description="Live synchronised telemetry from Hermes Telegram daemon"
+    )
     updated_at: str = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(),
         description="ISO 8601 timestamp of last state change",
@@ -156,7 +159,7 @@ class ServerTelemetry(BaseModel):
     uptime_seconds: float = Field(default=0.0)
     cpu_load_percent: float = Field(default=0.0)
     memory_load_mb: float = Field(default=0.0)
-    active_agents: int = Field(default=11)
+    active_agents: int = Field(default=12)
     total_rooms: int = Field(default=11)
     sim_ticks: int = Field(default=0)
     active_stream_clients: int = Field(default=0)

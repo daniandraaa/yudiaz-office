@@ -69,7 +69,7 @@ async def test_health_endpoints(async_client: AsyncClient):
     assert res_root.status_code == 200
     data_root = res_root.json()
     assert data_root["status"] == "ok"
-    assert data_root["active_agents"] == 11
+    assert data_root["active_agents"] == 12
     assert data_root["total_rooms"] == 11
 
     # API v1 route
@@ -92,7 +92,7 @@ async def test_get_office_state(async_client: AsyncClient):
     data = res.json()
 
     assert data["office_mode"] == OfficeMode.NORMAL.value
-    assert len(data["agents"]) == 11
+    assert len(data["agents"]) == 12
     assert len(data["rooms"]) == 11
     assert "server_telemetry" in data
     assert "uptime_seconds" in data["server_telemetry"]
@@ -178,7 +178,7 @@ async def test_list_and_get_agents(async_client: AsyncClient):
     res = await async_client.get("/api/v1/agents")
     assert res.status_code == 200
     agents = res.json()
-    assert len(agents) == 11
+    assert len(agents) == 12
 
     agent_map = {a["id"]: a for a in agents}
     expected_agents = [
@@ -193,6 +193,7 @@ async def test_list_and_get_agents(async_client: AsyncClient):
         ("elara", "Elara Sinclair", "Personal Assistant to CEO", "Executive Support", "room-pa", "WORKING", "Executive Calendar, Briefing Prep & Priority Logistics"),
         ("jovan", "Jovan Aritza", "Intelligence Officer", "Field Intelligence", "room-intel", "STANDBY", "Telkom University Campus Event Radar"),
         ("daffa", "Daffa", "CEO Office", "Executive Office", "room-ceo", "WORKING", "Executive Operations & Strategic Alignment"),
+        ("cucurella", "Cucurella", "Head of Soetahills Growth", "Real Estate & Strategic Growth", "room-ceo", "WORKING", "Soetahills Property Market Intel & Content Strategy"),
     ]
 
     for aid, name, role, dept, expected_room, exp_status, exp_task in expected_agents:
@@ -289,7 +290,7 @@ async def test_rooms_initial_occupants_distribution(async_client: AsyncClient):
     assert res.status_code == 200
     rooms = {r["id"]: r["current_occupants"] for r in res.json()}
 
-    assert set(rooms["room-ceo"]) == {"dani", "daffa"}
+    assert set(rooms["room-ceo"]) == {"dani", "daffa", "cucurella"}
     assert set(rooms["room-cto"]) == {"raziel"}
     assert set(rooms["room-pa"]) == {"elara"}
     assert set(rooms["room-atelier"]) == {"kael", "nara"}
@@ -318,7 +319,7 @@ async def test_gather_war_room_action(async_client: AsyncClient):
 
     assert data["office_mode"] == OfficeMode.WAR_ROOM.value
     war_room = [r for r in data["rooms"] if r["id"] == "room-war"][0]
-    assert len(war_room["current_occupants"]) == 10
+    assert len(war_room["current_occupants"]) == 11
     assert "daffa" in war_room["current_occupants"]
     assert "dani" not in war_room["current_occupants"]
 
@@ -330,7 +331,7 @@ async def test_gather_war_room_action(async_client: AsyncClient):
     assert agent_map["dani"]["position"]["room_id"] == "room-ceo"
     assert agent_map["dani"]["status"] == AgentStatus.WORKING.value
 
-    # Ensure all 10 War Room agents have meeting status
+    # Ensure all 11 War Room agents have meeting status
     for aid in war_room["current_occupants"]:
         assert agent_map[aid]["position"]["room_id"] == "room-war"
         assert agent_map[aid]["status"] == AgentStatus.MEETING.value
@@ -339,7 +340,7 @@ async def test_gather_war_room_action(async_client: AsyncClient):
     latest_meeting = data["latest_meeting"]
     assert latest_meeting is not None
     assert "Daffa" in latest_meeting["leader_name"]
-    assert len(latest_meeting["attendees"]) == 10
+    assert len(latest_meeting["attendees"]) == 11
     assert not any("Daniandra" in att for att in latest_meeting["attendees"])
     assert any("Micro-SaaS" in dec or "QRIS" in dec or "Bisnis" in dec or "9Router" in dec for dec in latest_meeting["key_decisions"])
 
@@ -356,7 +357,7 @@ async def test_trigger_sleep_cycle_action(async_client: AsyncClient):
 
     assert data["office_mode"] == OfficeMode.REST_CYCLE.value
     pods_room = [r for r in data["rooms"] if r["id"] == "room-pods"][0]
-    assert len(pods_room["current_occupants"]) == 11
+    assert len(pods_room["current_occupants"]) == 12
 
     for agent in data["agents"]:
         assert agent["position"]["room_id"] == "room-pods"
@@ -406,7 +407,7 @@ async def test_trigger_recreation_action(async_client: AsyncClient):
 
     # Verify room occupants distribution
     room_occupants = {r["id"]: r["current_occupants"] for r in data["rooms"]}
-    assert set(room_occupants["room-concierge"]) == {"idris", "mika", "elara", "senna", "jovan", "viktor"}
+    assert set(room_occupants["room-concierge"]) == {"idris", "mika", "elara", "senna", "jovan", "viktor", "cucurella"}
     assert set(room_occupants["room-ceo"]) == {"dani", "raziel", "daffa"}
     assert set(room_occupants["room-atelier"]) == {"kael", "nara"}
     assert len(room_occupants["room-war"]) == 0
@@ -472,13 +473,13 @@ async def test_all_mode_transitions(async_client: AsyncClient):
     res = await async_client.post("/api/v1/office/action", json={"action": "trigger_recreation"})
     data_rec = res.json()
     assert data_rec["office_mode"] == OfficeMode.RECREATION.value
-    assert len([r for r in data_rec["rooms"] if r["id"] == "room-concierge"][0]["current_occupants"]) == 6
+    assert len([r for r in data_rec["rooms"] if r["id"] == "room-concierge"][0]["current_occupants"]) == 7
 
     # 4. RECREATION -> REST_CYCLE
     res = await async_client.post("/api/v1/office/action", json={"action": "trigger_sleep_cycle"})
     data_sleep = res.json()
     assert data_sleep["office_mode"] == OfficeMode.REST_CYCLE.value
-    assert len([r for r in data_sleep["rooms"] if r["id"] == "room-pods"][0]["current_occupants"]) == 11
+    assert len([r for r in data_sleep["rooms"] if r["id"] == "room-pods"][0]["current_occupants"]) == 12
 
     # 5. REST_CYCLE -> NORMAL (resume deep work)
     res = await async_client.post("/api/v1/office/action", json={"action": "resume_deep_work"})
@@ -580,7 +581,7 @@ async def test_sse_stream_initialization(async_client: AsyncClient):
             payload_str = line[len("data:"):].strip()
             parsed = json.loads(payload_str)
             assert "agents" in parsed
-            assert len(parsed["agents"]) == 11
+            assert len(parsed["agents"]) == 12
             assert parsed["office_mode"] == "NORMAL"
             found_data = True
             break
@@ -613,7 +614,7 @@ def test_office_engine_direct_methods():
     """Direct unit testing of OfficeEngine helper methods."""
     engine = OfficeEngine()
     state = engine.get_state()
-    assert len(state.agents) == 11
+    assert len(state.agents) == 12
     assert len(state.rooms) == 11
 
     # Test seat position distribution
@@ -637,7 +638,7 @@ def test_office_engine_direct_methods():
     # Test direct trigger_recreation method
     rec_state = engine.trigger_recreation()
     assert rec_state.office_mode == OfficeMode.RECREATION
-    assert len([r for r in rec_state.rooms if r.id == "room-concierge"][0].current_occupants) == 6
+    assert len([r for r in rec_state.rooms if r.id == "room-concierge"][0].current_occupants) == 7
     assert len([r for r in rec_state.rooms if r.id == "room-ceo"][0].current_occupants) == 3
     assert len([r for r in rec_state.rooms if r.id == "room-atelier"][0].current_occupants) == 2
 
@@ -672,7 +673,7 @@ def test_autonomous_council_meeting_simulation():
     # 1. First council: Daffa (CEO Office) leads while Daniandra stays in room-ceo
     engine._simulate_tick(force_event="council")
     assert engine._council_active is True
-    assert len(engine.rooms["room-war"].current_occupants) == 10
+    assert len(engine.rooms["room-war"].current_occupants) == 11
     assert "dani" not in engine.rooms["room-war"].current_occupants
     assert engine.agents["dani"].position.room_id == "room-ceo"
     assert engine.agents["dani"].status == AgentStatus.WORKING
@@ -716,7 +717,7 @@ def test_autonomous_council_meeting_simulation():
     # 2. Second council: Daffa (CEO Office) leads subsequent need-based council
     engine._simulate_tick(force_event="council")
     assert engine._council_active is True
-    assert len(engine.rooms["room-war"].current_occupants) == 10
+    assert len(engine.rooms["room-war"].current_occupants) == 11
     assert engine.agents["dani"].position.room_id == "room-ceo"
     daffa_logs = [a for a in engine.get_activities(limit=5) if a.action == "COUNCIL_CONVENED"]
     assert len(daffa_logs) >= 1
@@ -819,7 +820,7 @@ def test_autonomous_sse_stream_broadcast():
 
     event_payload = q.get_nowait()
     data = json.loads(event_payload)
-    assert len(data["agents"]) == 11
+    assert len(data["agents"]) == 12
     assert len(data["rooms"]) == 11
     assert data["server_telemetry"]["sim_ticks"] == 1
 
@@ -846,7 +847,7 @@ async def test_get_latest_meeting_endpoint(async_client: AsyncClient):
     assert "started_at" in mom
 
     # Attendees: 10 operational personnel led by Daffa
-    assert len(mom["attendees"]) == 10
+    assert len(mom["attendees"]) == 11
     expected_agents = ["Daffa", "Raziel", "Kael", "Nara", "Senna", "Idris", "Mika", "Viktor", "Elara", "Jovan"]
     for agent_name in expected_agents:
         assert any(agent_name in att for att in mom["attendees"]), f"Missing {agent_name} in attendees"
@@ -906,7 +907,7 @@ async def test_meeting_minutes_lifecycle_transitions(async_client: AsyncClient):
     war_state = res_war.json()
     assert war_state["latest_meeting"]["status"] == "IN_PROGRESS"
     assert "Daffa" in war_state["latest_meeting"]["leader_name"]
-    assert len(war_state["latest_meeting"]["attendees"]) == 10
+    assert len(war_state["latest_meeting"]["attendees"]) == 11
     assert not any("Daniandra" in a for a in war_state["latest_meeting"]["attendees"])
 
     # Query latest meeting directly
@@ -946,9 +947,9 @@ def test_autonomous_council_meeting_minutes_generation():
     assert engine.latest_meeting is not None
     assert engine.latest_meeting.leader_name == "Daffa (CEO Office)"
     assert engine.latest_meeting.status == "IN_PROGRESS"
-    assert len(engine.latest_meeting.attendees) == 10
+    assert len(engine.latest_meeting.attendees) == 11
     assert not any("Daniandra" in a for a in engine.latest_meeting.attendees)
-    assert len(engine.latest_meeting.dialogues) == 11
+    assert len(engine.latest_meeting.dialogues) == 12
     assert "Micro-SaaS" in engine.latest_meeting.title or "QRIS" in engine.latest_meeting.title
 
     # Step through council deliberation (4 ticks)
@@ -998,7 +999,7 @@ def test_business_analysis_and_need_based_agendas():
     mom_biz = engine._generate_council_meeting(status="COMPLETED", need_index=0)
     assert mom_biz.title == "Analisis Strategis: Monetisasi Micro-SaaS AI & Dynamic QRIS Payment Gateway"
     assert mom_biz.leader_name == "Daffa (CEO Office)"
-    assert len(mom_biz.attendees) == 10
+    assert len(mom_biz.attendees) == 11
     assert not any("Daniandra" in a for a in mom_biz.attendees)
     assert any("9Router" in d.text for d in mom_biz.dialogues)
     assert any("Dynamic QRIS" in d.text or "QRIS" in d.text for d in mom_biz.dialogues)
@@ -1063,7 +1064,7 @@ async def test_get_meetings_history_endpoint(async_client: AsyncClient):
         assert "title" in mom
         assert "leader_name" in mom
         assert "status" in mom
-        assert len(mom["attendees"]) == 10
+        assert len(mom["attendees"]) == 11
         assert len(mom["dialogues"]) >= 10
         assert len(mom["key_decisions"]) >= 4
         assert len(mom["action_items"]) >= 5

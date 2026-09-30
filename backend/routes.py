@@ -73,15 +73,17 @@ async def get_room(room_id: str) -> RoomInfo:
     return room
 
 
-@router.get("/agents", response_model=list[AgentInfo], summary="List All 11 Personnel")
+@router.get("/agents", response_model=list[AgentInfo], summary="List All 12 Personnel")
 async def list_agents() -> list[AgentInfo]:
     """Retrieve profiles, locations, tasks, and telemetry for all studio agents."""
+    office_engine.sync_live_telegram_telemetry()
     return list(office_engine.agents.values())
 
 
 @router.get("/agents/{agent_id}", response_model=AgentInfo, summary="Get Specific Agent State")
 async def get_agent(agent_id: str) -> AgentInfo:
     """Retrieve profile and live spatial telemetry for a specific agent."""
+    office_engine.sync_live_telegram_telemetry()
     agent = office_engine.get_agent(agent_id)
     if not agent:
         raise HTTPException(
@@ -224,6 +226,32 @@ async def get_meetings_history() -> list[MeetingMinutes]:
     return office_engine.get_meetings_history()
 
 
+@router.get("/meetings/schedules", summary="Get Upcoming Meeting Schedules")
+async def get_meeting_schedules() -> list[dict[str, Any]]:
+    """Retrieve scheduled upcoming meetings for the studio."""
+    return office_engine.get_meeting_schedules()
+
+
+@router.get("/studio/daily-schedule", summary="Get Daily Living Rhythm Schedule & Current Active Phase")
+async def get_daily_living_schedule() -> dict[str, Any]:
+    """Retrieve full 24-hour daily living schedule with real-time active phase."""
+    return office_engine.get_daily_living_schedule()
+
+
+@router.post("/meetings/report-to-ceo", summary="Dispatch Meeting Report to CEO via Telegram")
+async def report_meeting_to_ceo(
+    meeting_id: Optional[str] = Query(default=None, description="Meeting ID or None for latest"),
+) -> dict[str, Any]:
+    """Format and send the specified or latest meeting minutes directly to CEO via Telegram."""
+    res = await office_engine.send_meeting_telegram_report(meeting_id=meeting_id)
+    if not res.get("success"):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to deliver meeting report to Telegram: {res.get('error') or res.get('errors')}",
+        )
+    return res
+
+
 @router.get(
     "/meetings/{meeting_id}",
     response_model=Optional[MeetingMinutes],
@@ -322,3 +350,22 @@ async def verify_auth(payload: AuthVerifyRequest) -> JSONResponse:
             "token": None,
         },
     )
+
+@router.get("/conversations/history", summary="Get Full Dialogue & Realtime Thought History")
+async def get_conversation_history(
+    limit: int = Query(default=60, ge=1, le=200),
+    agent_id: Optional[str] = Query(default=None, description="Filter by employee ID (e.g. idris, mika, daffa)"),
+    category: Optional[str] = Query(default=None, description="Filter by department / category"),
+    type: Optional[str] = Query(default=None, description="Filter by type: 'thought' or 'dialogue' or None for all"),
+    q: Optional[str] = Query(default=None, description="Search query keyword"),
+) -> list[dict[str, Any]]:
+    """Retrieve chronological log of conversations and real-time thoughts across all studio employees."""
+    return office_engine.get_conversation_history(
+        limit=limit,
+        agent_id=agent_id,
+        category=category,
+        type=type,
+        q=q,
+    )
+
+
