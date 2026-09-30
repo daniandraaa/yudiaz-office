@@ -27,6 +27,7 @@ PROFILE_DB_MAP: dict[str, Path] = {
     "elara": Path.home() / ".hermes" / "profiles" / "elara-pa" / "state.db",
     "jovan": Path.home() / ".hermes" / "profiles" / "jovan-intel" / "state.db",
     "cucurella": Path.home() / ".hermes" / "profiles" / "cucurella-soetahills" / "state.db",
+    "devera": Path.home() / ".hermes" / "profiles" / "devera-accountant" / "state.db",
     "kael": Path.home() / ".hermes" / "profiles" / "kael-architect" / "state.db",
     "nara": Path.home() / ".hermes" / "profiles" / "nara-researcher" / "state.db",
     "senna": Path.home() / ".hermes" / "profiles" / "senna-designer" / "state.db",
@@ -461,6 +462,18 @@ class OfficeEngine:
                 "tool": "Meta Creator Studio & Real Estate Analytics",
                 "context": "Menganalisis performa hook video Reels @soetahills, riset harga kompetitor properti sekitar, dan mengonversi leads WhatsApp survei lokasi",
             },
+            {
+                "id": "devera",
+                "name": "Devera",
+                "role": "CTO & Accountant",
+                "department": "Gold Capital & Finance Ops",
+                "room_id": "room-ceo",
+                "status": AgentStatus.WORKING,
+                "task": "NPP Gold Capital Reconciliation & Daily Desk Ledger",
+                "avatar_color": "#F59E0B",
+                "tool": "NPP Reconciliation Engine & SQLite WAL",
+                "context": "Memastikan rekonsiliasi modal emas Bang Fauzan & Konsorsium 7 lunas ditarik 100% di npp.daniandraaa.my.id",
+            },
         ]
 
         for cfg in agent_configs:
@@ -542,6 +555,7 @@ class OfficeEngine:
             "Elara Sinclair (Personal Assistant to CEO)",
             "Jovan Aritza (Intelligence Officer)",
             "Cucurella (Head of Soetahills Growth)",
+            "Devera (CTO & Accountant - NPP)",
         ]
 
         active_need_idx = (need_index or 0) % 3
@@ -615,6 +629,13 @@ class OfficeEngine:
                     speaker_name="Cucurella",
                     role="Head of Soetahills Growth",
                     text="Dari perspektif growth dan cross-monetization, modul dynamic QRIS ini juga bisa diintegrasikan langsung ke booking fee kilat unit properti Soetahills. Audiens Instagram @soetahills yang terkonversi dari konten Reels edukasi bisa langsung lock unit tanpa hambatan administrasi perbankan manual.",
+                ),
+                MeetingDialogue(
+                    speaker_id="devera",
+                    speaker_name="Devera",
+                    role="CTO & Accountant",
+                    text="Dari perspektif akuntansi dan rekonsiliasi arus kas, setiap aliran dana QRIS mikro maupun permodalan emas No Pusing Pusing harus dicatat dengan idempotency key ketat. Uang modal pokok dan laba transaksi terpisah secara atomik di buku kas.",
+                    action_item="Integrasikan rekonsiliasi pembayaran QRIS mikro ke buku besar akuntansi studio.",
                 ),
                 MeetingDialogue(
                     speaker_id="daffa",
@@ -725,6 +746,13 @@ class OfficeEngine:
                     speaker_name="Cucurella",
                     role="Head of Soetahills Growth",
                     text="Metodologi evaluasi sistem terdistribusi multi-agent dalam skripsi Mas Dani ini punya relevansi nyata untuk pemodelan analitik data spasial pasar properti dan cluster demografi pembeli hunian modern.",
+                ),
+                MeetingDialogue(
+                    speaker_id="devera",
+                    speaker_name="Devera",
+                    role="CTO & Accountant",
+                    text="Alokasi komputasi dan pembiayaan server untuk pipeline kompilasi Tectonic tetap berada dalam batas efisiensi anggaran permodalan studio.",
+                    action_item="Pantau konsumsi resource komputasi dokumen akademik dan modal operasional.",
                 ),
                 MeetingDialogue(
                     speaker_id="daffa",
@@ -1544,7 +1572,7 @@ class OfficeEngine:
         emotes = {
             "dani": "👑", "daffa": "🎯", "raziel": "🧐", "idris": "🎧",
             "mika": "⚡", "viktor": "🛡️", "kael": "📐", "nara": "📚",
-            "senna": "🎨", "elara": "📋", "jovan": "📡", "cucurella": "🏡"
+            "senna": "🎨", "elara": "📋", "jovan": "📡", "cucurella": "🏡", "devera": "🪙"
         }
         emote = emotes.get(agent_id, "👤")
         
@@ -1558,7 +1586,7 @@ class OfficeEngine:
         # Category mapping
         cat_map = {
             "dani": "executive", "daffa": "executive", "elara": "executive",
-            "cucurella": "growth",
+            "cucurella": "growth", "devera": "finance",
             "raziel": "engineering", "idris": "engineering", "mika": "engineering",
             "viktor": "security",
             "kael": "architecture", "nara": "architecture",
@@ -1710,6 +1738,7 @@ class OfficeEngine:
             "elara": {"name": "Elara Sinclair", "role": "Executive PA", "emoji": "📋", "color": "#F472B6"},
             "jovan": {"name": "Jovan Aritza", "role": "Intelligence Officer", "emoji": "📡", "color": "#6366F1"},
             "cucurella": {"name": "Cucurella (Soetahills Growth)", "role": "Head of Soetahills Growth", "emoji": "🏡", "color": "#10B981"},
+            "devera": {"name": "Devera (NPP CTO & Accountant)", "role": "CTO & Accountant", "emoji": "🪙", "color": "#F59E0B"},
         }
 
         ai_data = await self._call_ai_engine(command)
@@ -2317,6 +2346,11 @@ class OfficeEngine:
                 "room": "room-concierge",
                 "task": "Casual chats over espresso about property market trends",
                 "tool": "Market Pulse Dashboard",
+            },
+            "devera": {
+                "room": "room-concierge",
+                "task": "Reviewing gold market prices over espresso in Lounge",
+                "tool": "Gold Ledger & Espresso",
             },
             "elara": {
                 "room": "room-concierge",
