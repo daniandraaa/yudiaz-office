@@ -13,10 +13,22 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 ROOT = Path(__file__).resolve().parent
+import sys
+sys.path.insert(0, str(ROOT))
+from amounts import initialize, lookup
+import time
 FRONTEND = ROOT.parent / 'frontend' / 'beresinpocket'
 
 
 class OrderInput(BaseModel):
+    model_config = ConfigDict(extra='forbid', str_strip_whitespace=True)
+
+    @model_validator(mode='after')
+    def personal_limit(self):
+        if self.plan == 'personal' and self.users != 1:
+            raise ValueError('Personal hanya untuk tepat satu pengguna Telegram.')
+        return self
+
     name: str = Field(min_length=1, max_length=100)
     telegram: str = Field(pattern=r'^@[A-Za-z0-9_]{5,32}$')
     plan: Literal['personal', 'organization']
@@ -37,11 +49,25 @@ def create_app(db_path):
             status TEXT NOT NULL DEFAULT 'awaiting_quote',
             payment_status TEXT NOT NULL DEFAULT 'pending', amount_idr INTEGER,
             CHECK (payment_status = 'pending'), CHECK (amount_idr IS NULL))''')
+    initialize(db_path)
     os.chmod(db_path, 0o600)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
 
     @app.middleware('http')
     async def privacy_headers(request: Request, call_next):
+        origin = request.headers.get('origin')
+        if request.method == 'POST' and origin and origin not in {
+            'https://office.daniandraaa.my.id', 'https://beresinpocket.daniandraaa.my.id',
+            'http://127.0.0.1:9889', 'http://testserver'
+        }:
+            return JSONResponse({'detail': 'Origin tidak diizinkan.'}, status_code=403)
+        if request.method == 'POST':
+            body = bytearray()
+            async for chunk in request.stream():
+                body.extend(chunk)
+                if len(body) > 16384:
+                    return JSONResponse({'detail': 'Permintaan terlalu besar.'}, status_code=413)
+            request._body = bytes(body)
         response = await call_next(request)
         response.headers['Cache-Control'] = 'no-store'
         response.headers['Referrer-Policy'] = 'no-referrer'
@@ -56,11 +82,21 @@ def create_app(db_path):
         return {'status': 'ok', 'mode': 'admin_confirmed_quote', 'payment_enabled': False}
 
     def public(row):
-        return {'id': row['id'], 'plan': row['plan'], 'users': row['users'],
+        quote = lookup(db_path, row['id'])
+        expired = bool(quote and quote['expires_at'] <= int(time.time()))
+        return {'base_idr': quote['base_idr'] if quote else None,
+                'unique_code': format(quote['unique_code'], '03d') if quote else None,
+                'total_idr': quote['total_idr'] if quote else None,
+                'expires_at': quote['expires_at'] if quote else None,
+                'quote_expired': expired,
+                'late_payment_requires_manual_review': True,
+                'workflow_status': ('expired_manual_review' if expired else 'pending_payment') if quote else 'awaiting_quote',
+                'id': row['id'], 'plan': row['plan'], 'users': row['users'],
                 'created_at': row['created_at'], 'status': row['status'],
-                'amount_idr': row['amount_idr'], 'currency': 'IDR',
+                'amount_idr': quote['total_idr'] if quote else None, 'currency': 'IDR',
                 'payment_status': row['payment_status'],
                 'payment_instructions_status': 'awaiting_admin_instructions',
+                'payment_method': 'qris_manual', 'payment_destination_enabled': False,
                 'activated': False}
 
     @app.post('/beresinpocket/api/orders', status_code=201)
@@ -85,6 +121,11 @@ def create_app(db_path):
         if not row or not secrets.compare_digest(row['token_hash'], hashlib.sha256(token.encode()).hexdigest()):
             raise HTTPException(404, 'Pesanan tidak ditemukan atau akses tidak sesuai.')
         return public(row)
+
+    @app.post('/beresinpocket/api/orders/{order_id}/submit-payment')
+    def submit_payment(order_id: str, request: Request):
+        get_order(order_id, request)
+        raise HTTPException(409, 'QRIS milik pengelola dan nominal belum dikonfirmasi. Pengiriman bukti dinonaktifkan; jangan melakukan pembayaran.')
 
     app.mount('/beresinpocket', StaticFiles(directory=FRONTEND, html=True), name='landing')
     return app
