@@ -31,26 +31,180 @@
 <section id="konsep" class="section wrap" aria-labelledby="konsep-title"><div class="section-label">01 / IDE DI BALIKNYA</div><div class="section-heading"><h2 id="konsep-title">Satu pintu masuk.<br><span class="serif">Banyak cara dibantu.</span></h2><p>Sepuluh pekerja virtual adalah arah konsep kami: beragam peran yang dihubungkan lewat satu percakapan. Bukan sepuluh aplikasi yang perlu kamu urus.</p></div>
 <div class="work-list"><article><span class="index">A</span><h3>Riset & rangkuman</h3><p>Menelusuri bahan, mengurai informasi, dan menyusun gambaran awal untuk ditinjau.</p></article><article><span class="index">B</span><h3>Dokumen & draf</h3><p>Merapikan catatan menjadi kerangka, draf proposal, atau bahan presentasi.</p></article><article><span class="index">C</span><h3>Konten & ide</h3><p>Mengembangkan sudut pandang, draf tulisan, dan rencana konten dari arahanmu.</p></article><article><span class="index">D</span><h3>Agenda & koordinasi</h3><p>Membantu menata prioritas, rencana kegiatan, dan daftar tindak lanjut.</p></article></div><p class="section-note">Bidang di atas menggambarkan arah pengembangan, bukan daftar fitur yang sudah tersedia.</p></section>
 <section id="untuk-siapa" class="audience" aria-labelledby="audience-title"><div class="wrap audience-inner"><div><p class="section-label">02 / UNTUK KESEHARIAN YANG BERAGAM</p><h2 id="audience-title">Urusan sendiri.<br>Urusan <span class="serif">bersama.</span></h2><p class="audience-intro">Kebutuhannya berbeda. Idenya sama: tempat yang lebih sederhana untuk meminta bantuan.</p></div><div class="audience-list"><article><span>PRIBADI</span><h3>Untuk rencana yang ingin kamu jalankan.</h3><p>Dari bahan belajar dan proyek pribadi hingga ide konten serta agenda harian. Mulai dari hal yang sedang kamu kerjakan.</p></article><article><span>ORGANISASI</span><h3>Untuk pekerjaan yang perlu dirapikan bersama.</h3><p>Dari catatan rapat dan bahan proposal hingga rencana kegiatan komunitas, tim, atau organisasi.</p></article></div></div></section>
-<section class="section wrap faq" aria-labelledby="faq-title"><div><p class="section-label">03 / SEBELUM MELANGKAH</p><h2 id="faq-title">Biar <span class="serif">jelas.</span></h2></div><div class="faq-list"><details open><summary>Apakah sudah bisa digunakan?</summary><p>Belum. BeresInPocket masih dalam tahap prapeluncuran. Halaman ini memperkenalkan konsep, bukan membuka akses ke layanan yang sudah berjalan.</p></details><details><summary>Kenapa melalui Telegram?</summary><p>Konsepnya adalah satu tempat untuk menyampaikan kebutuhan, memberi konteks, dan meninjau hasil. Telegram direncanakan sebagai pintu percakapan tersebut.</p></details><details><summary>Apa arti 10 pekerja virtual?</summary><p>Ini adalah konsep sepuluh peran bantuan virtual, bukan sepuluh staf manusia. Pembagian peran dan kemampuan akhirnya masih dikembangkan.</p></details><details><summary>Kapan diluncurkan dan berapa biayanya?</summary><p>Tanggal peluncuran dan harga belum diumumkan. Ikuti akun Instagram resmi untuk kabar pengembangan dan informasi berikutnya.</p></details><details><summary>Apakah halaman ini menerima data atau berkas?</summary><p>Formulir penawaran menyimpan nama panggilan, username Telegram, jenis kebutuhan, dan jumlah pengguna untuk ditinjau admin. Tidak ada unggahan berkas atau pembayaran di halaman ini. Jangan sertakan dokumen rahasia. Permintaan penghapusan data dapat diajukan melalui akun Instagram resmi dengan menyebut nomor permintaan.</p></details></div></section>
-<section id="pesan" class="section wrap" aria-labelledby="order-title">
-<p class="section-label">04 / PERMINTAAN PENAWARAN</p>
-<h2 id="order-title">Mulai dari <span class="serif">kebutuhanmu.</span></h2>
-<p>Ajukan kebutuhan untuk ditinjau admin. Ini bukan pembelian atau jaminan ketersediaan layanan. Harga final dan jadwal perlu dikonfirmasi admin terlebih dahulu.</p>
-<p><strong>QRIS milik pengelola: belum dikonfigurasi. Pembayaran dinonaktifkan.</strong> Jangan transfer sebelum nominal dan tujuan pembayaran milik pengelola dikonfirmasi secara pribadi. Tidak ada aktivasi otomatis.</p>
-<form id="order-form" class="order-form">
-<label>Nama panggilan<input name="name" required maxlength="100" autocomplete="nickname"></label>
-<label>Username Telegram<input name="telegram" required pattern="@[A-Za-z0-9_]{5,32}" placeholder="@username" maxlength="33" autocomplete="off"></label>
-<label>Jenis kebutuhan<select name="plan"><option value="personal">Pribadi · tepat 1 pengguna Telegram</option><option value="organization">Organisasi · maksimal 5 pengguna Telegram</option></select></label>
-<label>Jumlah pengguna<input name="users" type="number" min="1" max="1" value="1" required></label>
-<label>Kebutuhan singkat (opsional)<textarea name="needs" maxlength="2000" rows="4" placeholder="Jangan sertakan dokumen rahasia atau data pembayaran."></textarea></label>
-<label class="order-consent"><input name="consent" type="checkbox" required> Saya setuju nama, username Telegram, dan kebutuhan disimpan untuk tindak lanjut penawaran oleh admin. Tidak perlu mengirim NIK, rekening, atau berkas rahasia.</label>
-<button id="order-submit" class="button blue" type="submit" disabled>Ajukan penawaran</button>
-</form>
-<p id="order-message" role="status" aria-live="polite">Memeriksa ketersediaan formulir…</p>
-<p><button type="button" disabled aria-disabled="true">Bayar dengan QRIS · menunggu konfigurasi</button></p>
-<div id="order-status" hidden><p id="order-detail"></p><button id="order-refresh" class="button blue" type="button">Periksa status</button><button id="order-forget" type="button">Hapus akses dari perangkat ini</button></div>
-<noscript>Formulir membutuhkan JavaScript. Kabar resmi tersedia di Instagram @beresinpocket.</noscript>
-</section>
+<section class="section wrap faq" aria-labelledby="faq-title"><div><p class="section-label">03 / SEBELUM MELANGKAH</p><h2 id="faq-title">Biar <span class="serif">jelas.</span></h2></div><div class="faq-list"><details open><summary>Apakah sudah bisa dipesan?</summary><p>Pemesanan Batch Perdana sudah dibuka! Anda dapat memilih paket dan melakukan pembayaran melalui QRIS resmi BeresInPocket. Akses bot akan diaktivasi ke akun Telegram Anda setelah verifikasi mutasi selesai.</p></details><details><summary>Kenapa melalui Telegram?</summary><p>Konsepnya adalah satu tempat untuk menyampaikan kebutuhan, memberi konteks, dan meninjau hasil. Telegram direncanakan sebagai pintu percakapan tersebut.</p></details><details><summary>Apa arti 10 pekerja virtual?</summary><p>Ini adalah konsep sepuluh peran bantuan virtual, bukan sepuluh staf manusia. Pembagian peran dan kemampuan akhirnya masih dikembangkan.</p></details><details><summary>Berapa biaya langganannya?</summary><p>Paket Pribadi: <strong>Rp 39.000 / bulan</strong> (tepat 1 pengguna Telegram). Paket Organisasi: <strong>Rp 89.000 / bulan</strong> (hingga 5 akun pengurus inti). Pembayaran menggunakan QRIS resmi berstandar nasional.</p></details><details><summary>Apakah halaman ini menerima data atau berkas?</summary><p>Formulir penawaran menyimpan nama panggilan, username Telegram, jenis kebutuhan, dan jumlah pengguna untuk ditinjau admin. Tidak ada unggahan berkas atau pembayaran di halaman ini. Jangan sertakan dokumen rahasia. Permintaan penghapusan data dapat diajukan melalui akun Instagram resmi dengan menyebut nomor permintaan.</p></details></div></section>
+<section id="pesan" class="section wrap order-section" aria-labelledby="order-title">
+<div class="section-label">04 / PEMESANAN & PEMBAYARAN</div>
+<div class="section-heading">
+  <div>
+    <h2 id="order-title">Pesan Sekarang &amp; <br><span class="serif">Bereskan Rencana.</span></h2>
+    <p class="order-subtitle">Pilih paket yang sesuai, selesaikan pembayaran via QRIS resmi BeresInPocket, dan dapatkan aktivasi bot langsung di akun Telegram Anda.</p>
+  </div>
+</div>
+
+<!-- Pricing Package Selection Cards -->
+<div class="pricing-cards">
+  <div class="pricing-card" id="card-personal">
+    <div class="pricing-badge">PALING POPULER</div>
+    <h3>Paket Pribadi</h3>
+    <div class="pricing-price">Rp 39.000 <span>/ bulan</span></div>
+    <p class="pricing-desc">Cocok untuk mahasiswa akhir, akademisi, profesional, dan kreator mandiri.</p>
+    <ul class="pricing-features">
+      <li>✓ <strong>1 Akun Telegram</strong> (Whitelist Eksklusif)</li>
+      <li>✓ <strong>10 Asisten Virtual Lengkap</strong> (All-in-One)</li>
+      <li>✓ Riset &amp; Bedah Jurnal Otomatis</li>
+      <li>✓ Draf Surat, Proposal, &amp; Dokumen Rapi</li>
+      <li>✓ Jadwal &amp; Pengingat Agenda Harian</li>
+    </ul>
+    <button type="button" class="button blue btn-select-plan" data-plan="personal">Pilih Paket Pribadi</button>
+  </div>
+
+  <div class="pricing-card" id="card-organization">
+    <div class="pricing-badge org-badge">UNTUK TIM &amp; BPH</div>
+    <h3>Paket Organisasi</h3>
+    <div class="pricing-price">Rp 89.000 <span>/ bulan</span></div>
+    <p class="pricing-desc">Dirancang untuk BPH UKM, Himpunan, BEM, kepanitiaan, dan komunitas.</p>
+    <ul class="pricing-features">
+      <li>✓ <strong>Hingga 5 Akun Telegram</strong> (Pengurus Inti)</li>
+      <li>✓ <strong>10 Dedicated Officers</strong> Terkoordinasi</li>
+      <li>✓ Format Proposal &amp; LPJ Standar Resmi</li>
+      <li>✓ Notulensi Rapat &amp; Rekap Kas/RAB</li>
+      <li>✓ Timeline Proker &amp; Koordinasi Acara</li>
+    </ul>
+    <button type="button" class="button blue btn-select-plan" data-plan="organization">Pilih Paket Organisasi</button>
+  </div>
+</div>
+
+<!-- Order Creation Form -->
+<div id="order-form-container">
+  <form id="order-form" class="order-form">
+    <div class="form-title">
+      <h4>Formulir Pemesanan</h4>
+      <p>Isi data Anda untuk membuat kode pembayaran QRIS unik.</p>
+    </div>
+
+    <label>
+      <span>Nama Lengkap / Panggilan PIC</span>
+      <input name="name" required maxlength="100" placeholder="Contoh: Daniandra" autocomplete="name">
+    </label>
+
+    <label>
+      <span>Username Telegram Anda (Diawali @)</span>
+      <input name="telegram" required pattern="@[A-Za-z0-9_]{4,32}" placeholder="@username" maxlength="33" autocomplete="off">
+      <small class="field-hint">Akun ini yang nantinya akan dihubungkan dan diberi hak akses bot.</small>
+    </label>
+
+    <label>
+      <span>Pilihan Paket Langganan</span>
+      <select name="plan" id="plan-select">
+        <option value="personal">Paket Pribadi · Rp 39.000/bln (Tepat 1 Pengguna)</option>
+        <option value="organization">Paket Organisasi · Rp 89.000/bln (Maksimal 5 Pengguna)</option>
+      </select>
+    </label>
+
+    <label id="users-field">
+      <span>Jumlah Pengguna Telegram</span>
+      <input name="users" id="users-input" type="number" min="1" max="1" value="1" required>
+      <small class="field-hint" id="users-hint">Paket Pribadi dikunci tepat untuk 1 pengguna.</small>
+    </label>
+
+    <label>
+      <span>Kebutuhan Utama / Catatan (Opsional)</span>
+      <textarea name="needs" maxlength="2000" rows="3" placeholder="Contoh: Butuh bantuan fokus draf skripsi dan ringkasan jurnal internasional."></textarea>
+    </label>
+
+    <label class="order-consent">
+      <input name="consent" type="checkbox" required>
+      <span>Saya menyetujui data pemesanan di atas diproses untuk penerbitan tagihan QRIS dan aktivasi bot BeresInPocket.</span>
+    </label>
+
+    <button id="order-submit" class="button blue" type="submit">
+      <span>Lanjut ke Pembayaran QRIS</span>
+      <span aria-hidden="true">→</span>
+    </button>
+  </form>
+</div>
+
+<p id="order-message" role="status" aria-live="polite"></p>
+
+<!-- Dynamic Payment Details Panel -->
+<div id="order-status" class="payment-panel" hidden>
+  <div class="payment-header">
+    <div class="payment-badge-status" id="badge-status">MENUNGGU PEMBAYARAN</div>
+    <div class="order-id-label">ID Pesanan: <strong id="order-id-text">-</strong></div>
+  </div>
+
+  <div class="payment-grid">
+    <!-- QRIS Card Display -->
+    <div class="qris-card-box">
+      <div class="qris-brand-tag">QRIS STANDAR PEMBAYARAN NASIONAL</div>
+      <div class="qris-merchant-info">
+        <div class="merchant-name" id="qris-merchant">BeresInPocket, Elektronik</div>
+        <div class="merchant-nmid" id="qris-nmid">NMID: ID1026620533368</div>
+      </div>
+      <div class="qris-image-wrapper">
+        <img id="qris-img" src="assets/qris_beresinpocket_card.png" alt="QRIS BeresInPocket, Elektronik">
+      </div>
+      <div class="qris-support-logos">
+        <span>BCA</span> • <span>Mandiri</span> • <span>BRI</span> • <span>BNI</span> • <span>GoPay</span> • <span>OVO</span> • <span>Dana</span> • <span>ShopeePay</span>
+      </div>
+      <a href="assets/qris_beresinpocket_full.jpg" target="_blank" class="qris-download-link">Buka Lembar QRIS Lengkap ↗</a>
+    </div>
+
+    <!-- Amount Breakdown & Confirmation -->
+    <div class="payment-details-box">
+      <h4>Rincian Nominal Transfer</h4>
+      <div class="amount-table">
+        <div class="amount-row">
+          <span>Harga Paket (<span id="summary-plan">-</span>)</span>
+          <span id="summary-base">Rp 0</span>
+        </div>
+        <div class="amount-row highlight-code">
+          <span>Kode Unik Verifikasi (3 Digit Terakhir)</span>
+          <span id="summary-code">+Rp 0</span>
+        </div>
+        <div class="amount-total-box">
+          <div class="total-label">TOTAL WAJIB DITRANSFER:</div>
+          <div class="total-value" id="summary-total">Rp 0</div>
+          <button type="button" class="btn-copy-amount" id="btn-copy">📋 Salin Nominal Persis</button>
+        </div>
+      </div>
+
+      <div class="amount-warning-box">
+        <strong>⚠️ PENTING:</strong> Mohon transfer <strong>persis sampai 3 digit terakhir</strong>. Kode unik ini digunakan oleh tim finance kami untuk mencocokkan mutasi pembayaran Anda secara akurat.
+      </div>
+
+      <div class="expiry-timer-box">
+        Masa berlaku kode unik: <span id="summary-expiry">24 Jam</span>
+      </div>
+
+      <!-- Payment Confirmation Section -->
+      <div class="payment-action-box" id="payment-action-box">
+        <h5>Konfirmasi Pembayaran</h5>
+        <p>Sudah berhasil memindai QRIS dan transfer dari aplikasi bank/e-wallet Anda?</p>
+        <div class="confirm-inputs">
+          <input type="text" id="sender-name-input" placeholder="Nama Akun Pengirim (Contoh: Daniandra / BCA)">
+          <button id="btn-confirm-payment" class="button blue" type="button">
+            <span>✓ Saya Sudah Bayar via QRIS</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="payment-success-notice" id="payment-success-notice" hidden>
+        <div class="notice-icon">✓</div>
+        <div class="notice-text">
+          <strong>Konfirmasi Pembayaran Diterima!</strong>
+          <p>Tim finance kami sedang mencocokkan mutasi nominal QRIS Anda. Akses bot BeresInPocket akan segera diaktivasi ke Telegram <strong id="notice-telegram"></strong> setelah verifikasi selesai.</p>
+        </div>
+      </div>
+
+      <div class="panel-control-buttons">
+        <button id="order-refresh" class="button-secondary" type="button">🔄 Cek Status Terkini</button>
+        <button id="order-forget" class="button-link" type="button">Buat Pesanan Baru / Ganti Akun</button>
+      </div>
+    </div>
+  </div>
+</div>
+</section></section>
 <section class="closing" aria-labelledby="closing-title"><div class="wrap closing-inner"><div><p class="eyebrow">MASIH DISIAPKAN. BOLEH KENALAN DULU.</p><h2 id="closing-title">Simpan ruang untuk<br>cara kerja <span class="serif">berikutnya.</span></h2></div><div class="closing-action"><a class="button cream" href="https://www.instagram.com/beresinpocket/" target="_blank" rel="noopener noreferrer">Ikuti @beresinpocket <span aria-hidden="true">↗</span></a><p>Kabar pengembangan dan pengumuman<br>akan dibagikan di Instagram resmi.</p></div></div></section>
 </main>
 <footer class="wrap footer"><span>BeresInPocket</span><p>Konsep 10 pekerja virtual. Satu chat Telegram.</p><a href="https://www.instagram.com/beresinpocket/" target="_blank" rel="noopener noreferrer">Instagram <span aria-hidden="true">↗</span></a><small>Tahap prapeluncuran · Belum tersedia untuk digunakan.</small></footer>
